@@ -16,6 +16,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.familycircle.android.sync.LocationApi
+import org.familycircle.android.util.Rfc3339
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -122,6 +123,82 @@ class ApiClient(
 
     override suspend fun uploadLocations(points: List<LocationPointDto>): LocationUploadResult =
         decode(authed("POST", listOf("locations"), encode(LocationUpload(points))))
+
+    // ---------------------------------------------------------------- alerts (docs/ALERTS.md)
+
+    /** `GET /alerts?after=&limit=` – alerts with id > [after], oldest first (catch-up). */
+    suspend fun alerts(after: Long, limit: Int = ALERT_PAGE): AlertsResponse = decode(
+        authed("GET", listOf("alerts"), query = mapOf("after" to after.coerceAtLeast(0).toString(), "limit" to limit.toString())),
+    )
+
+    /** `POST /sos`; without [position] the server uses the last known one (empty body). */
+    suspend fun sendSos(position: PositionDto?): AlertCreated =
+        decode(authed("POST", listOf("sos"), body = position?.let { encode(it) } ?: ""))
+
+    /** `POST /sos/resolve` ("I am safe"); returns how many open SOS were resolved. Idempotent. */
+    suspend fun resolveSos(): Int = decode<SosResolved>(authed("POST", listOf("sos", "resolve"), body = "")).resolved
+
+    suspend fun checkIn(request: CheckInRequest): AlertCreated =
+        decode(authed("POST", listOf("check-ins"), encode(request)))
+
+    /** `POST /battery-alerts` – device sessions only. */
+    suspend fun batteryAlert(request: BatteryAlertRequest): BatteryAlertResult =
+        decode(authed("POST", listOf("battery-alerts"), encode(request)))
+
+    /** Let the person's phones ring. 403 = not allowed by the person, 404 = no common family. */
+    suspend fun ring(userId: String): RemoteRequestResult =
+        decode(authed("POST", listOf("users", userId, "ring"), body = ""))
+
+    /** Ask the person's phone for a fresh position. 403 = not allowed, 404 = no common family. */
+    suspend fun locate(userId: String): RemoteRequestResult =
+        decode(authed("POST", listOf("users", userId, "locate"), body = ""))
+
+    // ---------------------------------------------------------------- history
+
+    /**
+     * `GET /users/{id}/locations?from=&to=&limit=` – own history or one the person shared with me
+     * (newest first). Anything not allowed is a 404.
+     */
+    suspend fun history(userId: String, fromMs: Long, toMs: Long, limit: Int = HISTORY_LIMIT): List<HistoryPoint> =
+        decode<HistoryResponse>(
+            authed(
+                "GET",
+                listOf("users", userId, "locations"),
+                query = mapOf(
+                    "from" to Rfc3339.format(fromMs),
+                    "to" to Rfc3339.format(toMs),
+                    "limit" to limit.toString(),
+                ),
+            ),
+        ).points
+
+    /** `PATCH /shares/{userId} {"history": …}` – let this viewer see my history (or not any more). */
+    suspend fun setShareHistory(userId: String, history: Boolean) {
+        expectNoContent(authed("PATCH", listOf("shares", userId), encode(ShareUpdate(history))))
+    }
+
+    // ---------------------------------------------------------------- places
+
+    suspend fun places(familyId: String): List<Place> =
+        decode<PlacesResponse>(authed("GET", listOf("families", familyId, "places"))).places
+
+    /** 409 = the family already has the maximum number of places. */
+    suspend fun createPlace(familyId: String, input: PlaceInput): String =
+        decode<PlaceCreated>(authed("POST", listOf("families", familyId, "places"), encode(input))).id
+
+    /** Creator or family admin only (403 otherwise). */
+    suspend fun updatePlace(placeId: String, input: PlaceInput) {
+        expectNoContent(authed("PATCH", listOf("places", placeId), encode(input)))
+    }
+
+    suspend fun deletePlace(placeId: String) {
+        expectNoContent(authed("DELETE", listOf("places", placeId)))
+    }
+
+    /** `PUT` (muted) / `DELETE` (unmuted) `/places/{id}/mute` – arrival/departure alerts for me. */
+    suspend fun setPlaceMuted(placeId: String, muted: Boolean) {
+        expectNoContent(authed(if (muted) "PUT" else "DELETE", listOf("places", placeId, "mute"), body = if (muted) "" else null))
+    }
 
     /**
      * `GET /users/{id}/avatar?v={version}` – JPEG bytes, or null when the user has no picture or is
@@ -262,6 +339,8 @@ class ApiClient(
         private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         private val EMPTY_BODY: RequestBody = ByteArray(0).toRequestBody(null)
         private val METHODS_REQUIRING_BODY = setOf("POST", "PUT", "PATCH")
+        const val ALERT_PAGE = 100
+        const val HISTORY_LIMIT = 5000
 
         fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)

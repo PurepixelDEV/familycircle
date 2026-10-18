@@ -47,7 +47,7 @@ object LiveMapReducer {
             state,
             if (state.familyId != null && event.familyId == state.familyId) LiveEffect.REFETCH_MAP else LiveEffect.REFETCH_FAMILIES,
         )
-        is LiveEvent.Hello, is LiveEvent.Unknown -> Reduction(state, LiveEffect.NONE)
+        is LiveEvent.Hello, is LiveEvent.Unknown, is LiveEvent.PlacesChanged, is LiveEvent.AlertReceived -> Reduction(state, LiveEffect.NONE)
     }
 
     /** Applies [events] in order (used to replay events that arrived while a fetch was running). */

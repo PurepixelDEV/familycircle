@@ -145,7 +145,59 @@ class MarkerRenderer(private val density: Float, private val densityDpi: Int, fo
         return bmp
     }
 
+    /** Name label of a place: white pill with a green border (centred on the place). */
+    fun renderLabel(label: String): Bitmap {
+        text.textSize = px(LABEL_TEXT_DP * textScale)
+        val shown = if (label.length > LABEL_MAX_CHARS) label.take(LABEL_MAX_CHARS - 1) + "…" else label
+        val width = text.measureText(shown) + px(PILL_PAD_DP * 2) + px(4f)
+        val height = px(LABEL_H_DP * textScale) + px(4f)
+        val bmp = createBitmap(width.toInt().coerceAtLeast(1), height.toInt().coerceAtLeast(1))
+        bmp.density = densityDpi
+        val c = Canvas(bmp)
+        val rect = RectF(px(2f), px(2f), width - px(2f), height - px(2f))
+        val r = rect.height() / 2
+        fill.reset()
+        fill.isAntiAlias = true
+        fill.color = Color.WHITE
+        fill.setShadowLayer(px(2f), 0f, px(1f), SHADOW)
+        c.drawRoundRect(rect, r, r, fill)
+        fill.clearShadowLayer()
+        stroke.pathEffect = null
+        stroke.strokeWidth = px(1.5f)
+        stroke.color = PLACE_GREEN
+        c.drawRoundRect(rect, r, r, stroke)
+        text.color = INK
+        c.drawText(shown, width / 2, rect.centerY() - (text.descent() + text.ascent()) / 2, text)
+        return bmp
+    }
+
+    /** Red SOS pin: red circle with white border and the text "SOS" (never colour only). */
+    fun renderSos(): Bitmap {
+        val size = px(SOS_DP)
+        val bmp = createBitmap(size.toInt().coerceAtLeast(1), size.toInt().coerceAtLeast(1))
+        bmp.density = densityDpi
+        val c = Canvas(bmp)
+        val cx = size / 2
+        fill.reset()
+        fill.isAntiAlias = true
+        fill.color = Color.WHITE
+        fill.setShadowLayer(px(3f), 0f, px(1.5f), SHADOW)
+        c.drawCircle(cx, cx, size / 2 - px(3f), fill)
+        fill.clearShadowLayer()
+        fill.color = SOS_RED
+        c.drawCircle(cx, cx, size / 2 - px(6f), fill)
+        text.color = Color.WHITE
+        text.textSize = px(SOS_TEXT_DP)
+        c.drawText("SOS", cx, cx - (text.descent() + text.ascent()) / 2, text)
+        return bmp
+    }
+
     companion object {
+        const val LABEL_TEXT_DP = 12.5f
+        const val LABEL_H_DP = 22f
+        const val LABEL_MAX_CHARS = 28
+        const val SOS_DP = 52f
+        const val SOS_TEXT_DP = 14f
         const val PILL_AREA_DP = 24f
         const val PILL_H_DP = 19f
         const val PILL_PAD_DP = 7f
@@ -168,6 +220,11 @@ class MarkerRenderer(private val density: Float, private val densityDpi: Int, fo
         private val SHADOW = Color.argb(70, 0, 0, 0)
         private val INK = "#1b2a2e".toColorInt()
         private val PILL_BORDER = "#d3dcd6".toColorInt()
+        private val SOS_RED = "#c62828".toColorInt()
+
+        /** Place areas: the app's primary green (same as the web app's places). */
+        const val PLACE_GREEN_HEX = "#1e6b52"
+        private val PLACE_GREEN = PLACE_GREEN_HEX.toColorInt()
 
         private fun parse(hex: String): Int = try {
             hex.toColorInt()

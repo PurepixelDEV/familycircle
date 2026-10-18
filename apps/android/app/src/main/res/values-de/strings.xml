@@ -357,8 +357,158 @@
     <string name="diag_live">Live-Aktualisierung</string>
     <string name="diag_live_connected">verbunden</string>
     <string name="diag_live_connecting">wird verbunden</string>
-    <string name="diag_live_idle">aus (nur bei geöffneter Karte)</string>
+    <string name="diag_live_idle">aus (verbunden bei geöffneter Karte, während du teilst oder wenn Alarme sofort empfangen werden)</string>
     <string name="diag_copy">Diagnose kopieren</string>
     <string name="diag_copy_note">Der Bericht ist auf Englisch, damit Entwickler ihn lesen können.</string>
     <string name="diag_copied">Diagnose kopiert</string>
+
+    <!-- Meldungen (docs/ALERTS.md): Benachrichtigungskanäle und Benachrichtigungen -->
+    <string name="alert_channel_sos">SOS</string>
+    <string name="alert_channel_sos_desc">Alarm, wenn jemand aus deiner Familie SOS auslöst. Laut, auch bei lautlos.</string>
+    <string name="alert_channel_ring">Mein Handy klingeln lassen</string>
+    <string name="alert_channel_ring_desc">Wird angezeigt, solange dein Handy klingelt, weil du oder jemand aus der Familie es wollte.</string>
+    <string name="alert_channel_checkins">Check-ins</string>
+    <string name="alert_channel_checkins_desc">Wenn jemand aus deiner Familie meldet, gut angekommen zu sein.</string>
+    <string name="alert_channel_places">Orte</string>
+    <string name="alert_channel_places_desc">Wenn jemand bei einem Ort deiner Familie ankommt oder ihn verlässt.</string>
+    <string name="alert_channel_battery">Akku</string>
+    <string name="alert_channel_battery_desc">Wenn der Akku von jemandem aus der Familie fast leer ist oder das Handy ausgeschaltet wurde.</string>
+    <string name="alert_channel_service">Alarme sofort empfangen</string>
+    <string name="alert_channel_service_desc">Wird angezeigt, solange FamilyCircle die Verbindung für Alarme offen hält.</string>
+    <string name="alert_sos_title">SOS von %1$s</string>
+    <string name="alert_sos_text">%1$s hat einen SOS-Alarm ausgelöst</string>
+    <string name="alert_sos_hint">Tippe, um die Position auf der Karte zu sehen.</string>
+    <string name="alert_action_open_map">Karte öffnen</string>
+    <string name="alert_sos_resolved">%1$s ist in Sicherheit</string>
+    <string name="alert_checkin">%1$s ist angekommen</string>
+    <string name="alert_checkin_at">%1$s ist angekommen – %2$s</string>
+    <string name="alert_arrival">%1$s ist bei %2$s angekommen</string>
+    <string name="alert_departure">%1$s hat %2$s verlassen</string>
+    <string name="alert_battery_low">%1$s: Akku %2$d %%</string>
+    <string name="alert_last_location">Handy von %1$s wurde ausgeschaltet – letzter Standort gespeichert</string>
+    <string name="alert_ring">%1$s lässt dein Handy klingeln</string>
+    <string name="alert_ring_self">Dein Handy klingelt</string>
+    <string name="alert_ring_text">Tippe auf «Stopp», um den Ton zu beenden.</string>
+    <string name="alert_action_stop">Stopp</string>
+    <string name="alert_service_title">Alarme werden sofort empfangen</string>
+    <string name="alert_service_text">SOS und Klingel-Anfragen deiner Familie kommen sofort an. Du kannst das in den Einstellungen ausschalten.</string>
+
+    <!-- SOS und Check-in -->
+    <string name="safety_title">Notfall und Ankunft</string>
+    <string name="safety_sos_body">Halte den Knopf 3 Sekunden lang gedrückt. Alle in deiner Familie werden sofort mit deiner Position alarmiert – auch wer deinen Standort sonst nicht sieht.</string>
+    <string name="safety_checkin_body">Irgendwo angekommen? Sag es deiner Familie mit einem Tipp (mit deiner aktuellen Position).</string>
+    <string name="sos_label">SOS</string>
+    <string name="sos_button_cd">SOS. 3 Sekunden gedrückt halten, um deine Familie zu alarmieren.</string>
+    <string name="sos_button_action">SOS senden</string>
+    <string name="sos_hold_hint">3 Sekunden gedrückt halten</string>
+    <string name="sos_keep_holding">Weiter halten…</string>
+    <string name="sos_sending">SOS wird gesendet…</string>
+    <string name="sos_confirm_title">SOS senden?</string>
+    <string name="sos_confirm_body">Alle in deiner Familie werden sofort mit deiner Position alarmiert.</string>
+    <string name="sos_active_title">SOS aktiv</string>
+    <string name="sos_active_body">Deine Familie wurde alarmiert. Wenn du in Sicherheit bist, sag es ihr.</string>
+    <string name="sos_resolve">Ich bin in Sicherheit</string>
+    <string name="sos_resolved_msg">Deine Familie weiss jetzt, dass du in Sicherheit bist.</string>
+    <string name="sos_other_title">%1$s braucht Hilfe (SOS)</string>
+    <string name="sos_no_position">keine Position bekannt</string>
+    <string name="sos_show_on_map">Auf Karte zeigen</string>
+    <plurals name="sos_sent">
+        <item quantity="one">SOS an %1$d Person gesendet.</item>
+        <item quantity="other">SOS an %1$d Personen gesendet.</item>
+    </plurals>
+    <string name="checkin_button">Bin angekommen</string>
+    <string name="checkin_sending">Wird gesendet…</string>
+    <string name="checkin_title">Bin angekommen</string>
+    <string name="checkin_body">Deine Familie bekommt eine Nachricht mit deiner aktuellen Position.</string>
+    <string name="checkin_message">Nachricht (freiwillig)</string>
+    <string name="checkin_send">Senden</string>
+    <string name="checkin_no_fix">Deine Position konnte nicht bestimmt werden. Prüfe, ob der Standort eingeschaltet ist, und versuche es im Freien oder am Fenster nochmals.</string>
+    <plurals name="checkin_sent">
+        <item quantity="one">An %1$d Person gesendet.</item>
+        <item quantity="other">An %1$d Personen gesendet.</item>
+    </plurals>
+    <string name="ringing_banner">Dein Handy klingelt</string>
+
+    <!-- Familie: Fernaktionen, Verlauf, Orte -->
+    <string name="member_locate">Standort aktualisieren</string>
+    <string name="member_ring">Klingeln lassen</string>
+    <string name="member_ring_self">Meine anderen Geräte klingeln lassen</string>
+    <string name="member_history">Verlauf</string>
+    <string name="member_history_self">Mein Verlauf</string>
+    <string name="member_history_grant">%1$s darf meinen Verlauf sehen</string>
+    <string name="member_history_grant_desc">Zeigt, wo du an früheren Tagen warst.</string>
+    <string name="member_history_grant_off">Dein Verlauf ist ausgeschaltet (Einstellungen), es gibt also nichts zu teilen.</string>
+    <string name="ring_confirm_title">Handy von %1$s klingeln lassen?</string>
+    <string name="ring_confirm_body">Das Handy von %1$s klingelt bis zu einer Minute laut, auch bei lautlos.</string>
+    <string name="ring_self_confirm_title">Deine anderen Geräte klingeln lassen?</string>
+    <string name="ring_self_confirm_body">Deine anderen Handys mit FamilyCircle klingeln bis zu einer Minute laut, auch bei lautlos. Dieses Handy klingelt nicht.</string>
+    <string name="ring_confirm_action">Klingeln</string>
+    <string name="ring_sent">Das Handy von %1$s klingelt jetzt.</string>
+    <string name="ring_sent_offline">Das Handy von %1$s ist gerade nicht verbunden. Es klingelt, wenn es sich innert 2 Minuten verbindet.</string>
+    <string name="ring_sent_self">Deine anderen Geräte klingeln jetzt.</string>
+    <string name="ring_sent_self_offline">Keines deiner anderen Geräte ist gerade verbunden. Sie klingeln, wenn sie sich innert 2 Minuten verbinden.</string>
+    <string name="locate_sent">Das Handy von %1$s wurde nach einer frischen Position gefragt.</string>
+    <string name="locate_sent_offline">Das Handy von %1$s ist gerade nicht verbunden. Es sendet eine Position, wenn es sich innert 5 Minuten verbindet.</string>
+    <string name="remote_not_allowed">Die Person hat das nicht erlaubt.</string>
+    <string name="places_title">Orte</string>
+    <string name="places_intro">Erhalte eine Nachricht, wenn jemand bei einem Ort ankommt oder ihn verlässt – nur für Personen, deren Standort du siehst.</string>
+    <string name="places_none">Noch keine Orte.</string>
+    <string name="place_add">Ort hinzufügen</string>
+    <string name="place_add_here">Neuer Ort hier</string>
+    <string name="place_edit">Ändern</string>
+    <string name="place_edit_title">Ort ändern</string>
+    <string name="place_delete">Löschen</string>
+    <string name="place_delete_title">«%1$s» löschen?</string>
+    <string name="place_delete_body">Niemand in deiner Familie bekommt dann noch Ankunfts-Nachrichten für diesen Ort.</string>
+    <string name="place_name">Name</string>
+    <string name="place_name_hint">z. B. Zuhause, Schule</string>
+    <string name="place_radius">Radius: %1$d m</string>
+    <string name="place_radius_value">%1$d m Radius</string>
+    <string name="place_radius_hint">Wähle mindestens 100–150 m, damit die Nachrichten zuverlässig kommen.</string>
+    <string name="place_position_me">Der Mittelpunkt ist deine aktuelle Position.</string>
+    <string name="place_position_pressed">Der Mittelpunkt ist dort, wo du auf die Karte gedrückt hast.</string>
+    <string name="place_move_to_me">Mittelpunkt auf meine aktuelle Position setzen</string>
+    <string name="place_save">Speichern</string>
+    <string name="place_saved">Ort gespeichert.</string>
+    <string name="place_added">Ort hinzugefügt.</string>
+    <string name="place_deleted">Ort gelöscht.</string>
+    <string name="place_no_fix">Deine Position konnte nicht bestimmt werden. Schalte den Standort ein und versuche es nochmals.</string>
+    <string name="place_too_many">Diese Familie hat schon die höchstens möglichen 50 Orte.</string>
+    <string name="place_nobody_there">Gerade niemand dort</string>
+    <plurals name="place_there">
+        <item quantity="one">Jetzt dort: %1$s</item>
+        <item quantity="other">Jetzt dort: %1$s</item>
+    </plurals>
+    <string name="place_alerts">Meldungen</string>
+    <string name="place_alerts_desc">Benachrichtige mich, wenn jemand ankommt oder geht.</string>
+
+    <!-- Verlauf -->
+    <string name="history_title">Verlauf von %1$s</string>
+    <string name="history_title_self">Mein Verlauf</string>
+    <string name="history_today">Heute</string>
+    <string name="history_yesterday">Gestern</string>
+    <string name="history_pick_day">Datum wählen</string>
+    <string name="history_show_day">Anzeigen</string>
+    <string name="history_empty">Für diesen Tag gibt es keine Positionen.</string>
+    <string name="history_not_available">Dieser Verlauf ist nicht (mehr) verfügbar: Er wurde nicht mit dir geteilt, das Teilen ist pausiert oder der Verlauf ist ausgeschaltet.</string>
+    <plurals name="history_count">
+        <item quantity="one">%1$d Position</item>
+        <item quantity="other">%1$d Positionen</item>
+    </plurals>
+    <plurals name="history_map_cd">
+        <item quantity="one">Karte mit dem Weg des Tages, %1$d Position</item>
+        <item quantity="other">Karte mit dem Weg des Tages, %1$d Positionen</item>
+    </plurals>
+
+    <!-- Einstellungen: Alarme und Fernzugriff -->
+    <string name="settings_history_open">Meinen Verlauf ansehen</string>
+    <string name="settings_alerts">Alarme und Fernzugriff</string>
+    <string name="settings_alerts_always">Alarme immer sofort empfangen</string>
+    <string name="settings_alerts_always_desc">SOS und «Handy klingeln lassen» kommen innert Sekunden an, auch wenn du deinen Standort nicht teilst. Braucht etwas mehr Akku und zeigt eine dauerhafte Benachrichtigung. Ohne diese Einstellung kommen Alarme an, solange du teilst, sonst innert etwa 15 Minuten.</string>
+    <string name="settings_allow_ring">Familie darf mein Handy klingeln lassen</string>
+    <string name="settings_allow_ring_desc">Hilft, ein verlorenes Handy zu finden: Es klingelt laut, auch bei lautlos. Deine eigenen Geräte kannst du immer klingeln lassen.</string>
+    <string name="settings_allow_locate">Familie darf meinen Standort aktualisieren</string>
+    <string name="settings_allow_locate_desc">Wer deinen Standort sieht, darf dein Handy nach einer frischen Position fragen.</string>
+    <string name="settings_battery_alerts">Akku-Meldungen</string>
+    <string name="settings_battery_alerts_desc">Sag allen, die deinen Standort sehen, wenn dein Akku fast leer ist oder dein Handy ausgeschaltet wird.</string>
 </resources>

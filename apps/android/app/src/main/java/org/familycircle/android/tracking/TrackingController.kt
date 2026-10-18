@@ -22,6 +22,11 @@ import org.familycircle.android.sync.UploadResult
 import org.familycircle.android.util.Logger
 import kotlin.coroutines.resume
 
+/** A position for an explicit action (never logged). */
+data class FreshFix(val lat: Double, val lon: Double, val accuracyM: Double?) {
+    override fun toString(): String = "FreshFix(<redacted>)"
+}
+
 /** Process-wide runtime state of the location service (not persisted). */
 object TrackingRuntime {
     val running = MutableStateFlow(false)
@@ -142,6 +147,29 @@ class TrackingController(
             return SendNowResult.Failed(TrackingProblem.PERMISSION_MISSING)
         } finally {
             _sendNowRunning.value = false
+        }
+    }
+
+    /**
+     * A fresh position for SOS / check-in / a new place, without recording it: the newest of a
+     * one-shot fix within [timeoutMs] and – if that fails – the last fix recorded on this phone if
+     * it is at most [maxAgeMs] old. Null without permission or position.
+     */
+    @SuppressLint("MissingPermission") // checked in precheck()
+    suspend fun freshFix(timeoutMs: Long, maxAgeMs: Long = 0): FreshFix? {
+        val fallback = recorder.latest.value
+            ?.takeIf { maxAgeMs > 0 && clock() - it.recordedAtMs <= maxAgeMs }
+            ?.let { FreshFix(it.lat, it.lon, it.accuracyM.takeIf { acc -> acc > 0 }) }
+        if (precheck() != null) return fallback
+        val lm = locationManager
+        val provider = ProviderSelector.selectOneShot(availableProviders(lm)) ?: return fallback
+        return try {
+            withTimeoutOrNull(timeoutMs) { currentLocation(lm, provider) }
+                ?.let { FreshFix(it.latitude, it.longitude, if (it.hasAccuracy() && it.accuracy > 0) it.accuracy.toDouble() else null) }
+                ?: fallback
+        } catch (e: SecurityException) {
+            Logger.w(TAG, "fresh fix denied", e)
+            fallback
         }
     }
 

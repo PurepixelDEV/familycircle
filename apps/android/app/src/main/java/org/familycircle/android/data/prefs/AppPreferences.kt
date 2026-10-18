@@ -46,6 +46,8 @@ data class AppPrefs(
     /** Cached `share_battery` setting; battery data is not even sent while this is false. */
     val shareBattery: Boolean = false,
     val selectedFamilyId: String? = null,
+    /** "Alarme immer sofort empfangen": keep the live connection in its own foreground service. */
+    val alertsAlwaysOn: Boolean = false,
 )
 
 /**
@@ -110,6 +112,8 @@ class AppPreferences(context: Context) {
 
     fun setShareBattery(share: Boolean) = write { putBoolean(K_SHARE_BATTERY, share) }
 
+    fun setAlertsAlwaysOn(on: Boolean) = write { putBoolean(K_ALERTS_ALWAYS_ON, on) }
+
     fun setSelectedFamily(id: String?) = write {
         if (id == null) remove(K_SELECTED_FAMILY) else putString(K_SELECTED_FAMILY, id)
     }
@@ -148,6 +152,7 @@ class AppPreferences(context: Context) {
         lastUploadCount = sp.getInt(K_UPLOAD_COUNT, 0),
         shareBattery = sp.getBoolean(K_SHARE_BATTERY, false),
         selectedFamilyId = sp.getString(K_SELECTED_FAMILY, null),
+        alertsAlwaysOn = sp.getBoolean(K_ALERTS_ALWAYS_ON, false),
     )
 
     private fun SharedPreferences.longOrNull(key: String): Long? = if (contains(key)) getLong(key, 0) else null
@@ -177,11 +182,12 @@ class AppPreferences(context: Context) {
         const val K_UPLOAD_COUNT = "last_upload_count"
         const val K_SHARE_BATTERY = "share_battery"
         const val K_SELECTED_FAMILY = "selected_family"
+        const val K_ALERTS_ALWAYS_ON = "alerts_always_on"
 
         val ACCOUNT_KEYS = listOf(
             K_USER_ID, K_USER_EMAIL, K_USER_NAME, K_DEVICE_ID, K_TRACKING_DESIRED, K_TRACKING_PAUSED,
             K_TRACKING_MODE, K_LIVE_STARTED, K_TRACKING_PROBLEM, K_LAST_FIX, K_LAST_FIX_ACC, K_UPLOAD_AT, K_UPLOAD_OK,
-            K_UPLOAD_ERROR, K_UPLOAD_COUNT, K_SHARE_BATTERY, K_SELECTED_FAMILY,
+            K_UPLOAD_ERROR, K_UPLOAD_COUNT, K_SHARE_BATTERY, K_SELECTED_FAMILY, K_ALERTS_ALWAYS_ON,
         )
     }
 }

@@ -51,6 +51,10 @@ class LocationService : LifecycleService() {
     private var lastStartId = 0
 
     private val uploadTrigger = Channel<Unit>(Channel.CONFLATED)
+
+    /** Alerts arrive over the shared live connection while sharing runs (docs/ALERTS.md). */
+    private var holdingLive = false
+    private lateinit var battery: BatteryAlertMonitor
     private var liveTimer: Job? = null
     private var retryJob: Job? = null
 
@@ -58,6 +62,12 @@ class LocationService : LifecycleService() {
         super.onCreate()
         locationManager = getSystemService(LocationManager::class.java)
         Notifications.ensureChannels(this)
+        battery = BatteryAlertMonitor(
+            context = this,
+            scope = container.scope, // outlives the service for the short shutdown request
+            latestFix = { container.recorder.latest.value },
+            send = { request -> container.api.batteryAlert(request) },
+        )
         lifecycleScope.launch { uploadLoop() }
         lifecycleScope.launch {
             container.prefs.state
@@ -114,6 +124,11 @@ class LocationService : LifecycleService() {
             foreground = true
             TrackingRuntime.running.value = true
             container.prefs.setTrackingProblem(null)
+            if (!holdingLive) {
+                container.liveHub.hold(LIVE_HOLDER)
+                holdingLive = true
+            }
+            battery.register()
             true
         } catch (e: Exception) {
             // SecurityException (permission revoked / location off on 14+) or
@@ -303,14 +318,22 @@ class LocationService : LifecycleService() {
         retryJob?.cancel()
         if (foreground) ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         foreground = false
+        releaseLiveAndBattery()
         TrackingRuntime.running.value = false
         TrackingRuntime.effectiveMode.value = null
         TrackingRuntime.providers.value = emptyList()
         stopSelfResult(lastStartId)
     }
 
+    private fun releaseLiveAndBattery() {
+        if (holdingLive) container.liveHub.release(LIVE_HOLDER)
+        holdingLive = false
+        battery.unregister()
+    }
+
     override fun onDestroy() {
         removeUpdates()
+        releaseLiveAndBattery()
         TrackingRuntime.running.value = false
         TrackingRuntime.effectiveMode.value = null
         TrackingRuntime.providers.value = emptyList()
@@ -321,6 +344,7 @@ class LocationService : LifecycleService() {
 
     companion object {
         private const val TAG = "LocationService"
+        private const val LIVE_HOLDER = "location"
         const val ACTION_START = "org.familycircle.android.action.START"
         const val ACTION_PAUSE = "org.familycircle.android.action.PAUSE"
         const val ACTION_STOP = "org.familycircle.android.action.STOP"

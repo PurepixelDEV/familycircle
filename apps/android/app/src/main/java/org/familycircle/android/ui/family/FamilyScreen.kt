@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -29,6 +30,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.familycircle.android.R
 import org.familycircle.android.api.MemberLocation
+import org.familycircle.android.api.Place
 import org.familycircle.android.ui.components.FreshnessBadge
 import org.familycircle.android.ui.components.SwitchRow
 import org.familycircle.android.ui.components.motionText
@@ -62,14 +67,26 @@ import kotlin.math.roundToInt
 private const val AUTO_REFRESH_MS = 30_000L
 
 @Composable
-fun FamilyScreen(snackbar: SnackbarHostState) {
+fun FamilyScreen(snackbar: SnackbarHostState, onOpenHistory: (userId: String, name: String, self: Boolean) -> Unit) {
     val vm = containerViewModel { FamilyViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
+    val message by vm.message.collectAsStateWithLifecycle()
     val now by rememberNow(10_000)
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val noMapsApp = stringResource(R.string.family_no_maps_app)
+    var ringTarget by remember { mutableStateOf<MemberRow?>(null) }
+    var placeDialog by remember { mutableStateOf<PlaceDialogMode?>(null) }
+    var deleteTarget by remember { mutableStateOf<Place?>(null) }
+
+    val messageText = message?.let { familyMessageText(it) }
+    LaunchedEffect(message) {
+        if (messageText != null) {
+            vm.messageShown()
+            snackbar.showSnackbar(messageText)
+        }
+    }
 
     LaunchedEffect(state.shareRequested) {
         val invite = state.invite
@@ -138,7 +155,13 @@ fun FamilyScreen(snackbar: SnackbarHostState) {
                 member = member,
                 now = now,
                 shareBusy = member.userId in state.shareBusy,
+                requestBusy = member.userId in state.requestBusy,
+                myHistoryEnabled = state.myHistoryEnabled,
                 onShareChange = { vm.setSharing(member.userId, it) },
+                onHistoryGrantChange = { vm.setHistoryGrant(member.userId, it) },
+                onLocate = { vm.remote(member, RemoteAction.LOCATE) },
+                onRing = { ringTarget = member },
+                onHistory = { onOpenHistory(member.userId, member.name, member.isSelf) },
                 onOpenMap = { loc ->
                     val label = Uri.encode(member.name)
                     val uri = "geo:${loc.lat},${loc.lon}?q=${loc.lat},${loc.lon}($label)".toUri()
@@ -150,7 +173,100 @@ fun FamilyScreen(snackbar: SnackbarHostState) {
                 },
             )
         }
+        if (state.selectedFamilyId != null && state.loaded) {
+            item {
+                PlacesSection(
+                    places = state.places,
+                    memberNames = state.members.associate { it.userId to it.name },
+                    busy = state.placeBusy,
+                    canEdit = vm::canEdit,
+                    onAdd = { placeDialog = PlaceDialogMode.Add },
+                    onEdit = { placeDialog = PlaceDialogMode.Edit(it) },
+                    onDelete = { deleteTarget = it },
+                    onAlertsChange = vm::setPlaceAlerts,
+                )
+            }
+        }
     }
+
+    ringTarget?.let { member ->
+        AlertDialog(
+            onDismissRequest = { ringTarget = null },
+            title = { Text(stringResource(if (member.isSelf) R.string.ring_self_confirm_title else R.string.ring_confirm_title, member.name)) },
+            text = { Text(stringResource(if (member.isSelf) R.string.ring_self_confirm_body else R.string.ring_confirm_body, member.name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    ringTarget = null
+                    vm.remote(member, RemoteAction.RING)
+                }) { Text(stringResource(R.string.ring_confirm_action)) }
+            },
+            dismissButton = { TextButton(onClick = { ringTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+
+    when (val mode = placeDialog) {
+        PlaceDialogMode.Add -> PlaceDialog(
+            title = stringResource(R.string.place_add),
+            initial = null,
+            positionNote = stringResource(R.string.place_position_me),
+            busy = state.placeBusy,
+            onConfirm = { name, radius, _ ->
+                placeDialog = null
+                vm.addPlace(name, radius)
+            },
+            onDismiss = { placeDialog = null },
+        )
+        is PlaceDialogMode.Edit -> PlaceDialog(
+            title = stringResource(R.string.place_edit_title),
+            initial = mode.place,
+            positionNote = null,
+            busy = state.placeBusy,
+            allowMove = true,
+            onConfirm = { name, radius, move ->
+                placeDialog = null
+                vm.updatePlace(mode.place, name, radius, move)
+            },
+            onDismiss = { placeDialog = null },
+        )
+        null -> Unit
+    }
+
+    deleteTarget?.let { place ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text(stringResource(R.string.place_delete_title, place.name)) },
+            text = { Text(stringResource(R.string.place_delete_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    deleteTarget = null
+                    vm.deletePlace(place)
+                }) { Text(stringResource(R.string.place_delete)) }
+            },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
+private sealed interface PlaceDialogMode {
+    data object Add : PlaceDialogMode
+    data class Edit(val place: Place) : PlaceDialogMode
+}
+
+@Composable
+private fun familyMessageText(message: FamilyMessage): String = when (message) {
+    is FamilyMessage.RequestSent -> when {
+        message.action == RemoteAction.RING && message.self ->
+            stringResource(if (message.online) R.string.ring_sent_self else R.string.ring_sent_self_offline)
+        message.action == RemoteAction.RING ->
+            stringResource(if (message.online) R.string.ring_sent else R.string.ring_sent_offline, message.name)
+        else -> stringResource(if (message.online) R.string.locate_sent else R.string.locate_sent_offline, message.name)
+    }
+    is FamilyMessage.NotAllowed -> stringResource(R.string.remote_not_allowed)
+    FamilyMessage.PlaceSaved -> stringResource(R.string.place_saved)
+    FamilyMessage.PlaceDeleted -> stringResource(R.string.place_deleted)
+    FamilyMessage.NoFix -> stringResource(R.string.place_no_fix)
+    FamilyMessage.TooManyPlaces -> stringResource(R.string.place_too_many)
+    is FamilyMessage.Failed -> uiErrorText(message.error)
 }
 
 /** Admins: create an invite link and send it with any app (WhatsApp, SMS, e-mail …). */
@@ -194,7 +310,13 @@ private fun MemberCard(
     member: MemberRow,
     now: Long,
     shareBusy: Boolean,
+    requestBusy: Boolean,
+    myHistoryEnabled: Boolean?,
     onShareChange: (Boolean) -> Unit,
+    onHistoryGrantChange: (Boolean) -> Unit,
+    onLocate: () -> Unit,
+    onRing: () -> Unit,
+    onHistory: () -> Unit,
     onOpenMap: (MemberLocation) -> Unit,
 ) {
     val loc = member.location
@@ -251,6 +373,24 @@ private fun MemberCard(
                 )
             }
 
+            // Remote actions (the server decides whether they are allowed; 403 is explained).
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (member.isSelf) {
+                    OutlinedButton(onClick = onRing, enabled = !requestBusy) { Text(stringResource(R.string.member_ring_self)) }
+                    if (myHistoryEnabled == true) {
+                        OutlinedButton(onClick = onHistory) { Text(stringResource(R.string.member_history_self)) }
+                    }
+                } else {
+                    if (member.sharesWithMe) {
+                        OutlinedButton(onClick = onLocate, enabled = !requestBusy) { Text(stringResource(R.string.member_locate)) }
+                    }
+                    OutlinedButton(onClick = onRing, enabled = !requestBusy) { Text(stringResource(R.string.member_ring)) }
+                    if (member.historyVisible) {
+                        OutlinedButton(onClick = onHistory) { Text(stringResource(R.string.member_history)) }
+                    }
+                }
+            }
+
             if (!member.isSelf) {
                 SwitchRow(
                     title = stringResource(R.string.family_share_with, member.name),
@@ -259,6 +399,16 @@ private fun MemberCard(
                     enabled = !shareBusy,
                     onCheckedChange = onShareChange,
                 )
+                if (member.iShareWith) {
+                    val historyOn = myHistoryEnabled == true
+                    SwitchRow(
+                        title = stringResource(R.string.member_history_grant, member.name),
+                        description = stringResource(if (historyOn) R.string.member_history_grant_desc else R.string.member_history_grant_off),
+                        checked = member.seesMyHistory && historyOn,
+                        enabled = !shareBusy && historyOn,
+                        onCheckedChange = onHistoryGrantChange,
+                    )
+                }
             }
         }
     }

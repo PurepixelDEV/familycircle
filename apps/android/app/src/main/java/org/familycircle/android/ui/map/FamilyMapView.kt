@@ -34,6 +34,8 @@ import org.familycircle.android.map.MapGeoJson
 import org.familycircle.android.map.MarkerRenderer
 import org.familycircle.android.map.MarkerSpec
 import org.familycircle.android.map.MarkerVisual
+import org.familycircle.android.map.PlaceShape
+import org.familycircle.android.map.SosPin
 import org.familycircle.android.util.Logger
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -55,8 +57,11 @@ import org.maplibre.android.style.sources.GeoJsonSource
 /** One marker to draw: data + its rendered look. */
 data class MapMarker(val spec: MarkerSpec, val visual: MarkerVisual)
 
-/** A camera move requested by the UI; a new [nonce] triggers it again. */
-data class CameraRequest(val nonce: Int, val focusUserId: String?)
+/**
+ * A camera move requested by the UI; a new [nonce] triggers it again. With [lat]/[lon] the camera
+ * centres on that coordinate (e.g. an SOS position), otherwise on [focusUserId] or on everyone.
+ */
+data class CameraRequest(val nonce: Int, val focusUserId: String?, val lat: Double? = null, val lon: Double? = null)
 
 /**
  * MapLibre map with the family's markers, accuracy circles and a subtle pulse for live positions.
@@ -79,6 +84,10 @@ fun FamilyMapView(
     onMarkerClick: (String) -> Unit,
     onStyleFailed: () -> Unit,
     modifier: Modifier = Modifier,
+    places: List<PlaceShape> = emptyList(),
+    sosPins: List<SosPin> = emptyList(),
+    onSosClick: (String) -> Unit = {},
+    onLongPress: ((lat: Double, lon: Double) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -87,6 +96,8 @@ fun FamilyMapView(
     val currentOnClick by rememberUpdatedState(onMarkerClick)
     val currentOnFailed by rememberUpdatedState(onStyleFailed)
     val currentPadding by rememberUpdatedState(paddingProvider)
+    val currentOnSos by rememberUpdatedState(onSosClick)
+    val currentOnLongPress by rememberUpdatedState(onLongPress)
 
     val mapView = remember {
         MapLibre.getInstance(context.applicationContext)
@@ -137,9 +148,19 @@ fun FamilyMapView(
         mapView.getMapAsync { map ->
             controller.configure(map)
             map.addOnMapClickListener { point ->
+                val sos = controller.sosAt(map, point)
+                if (sos != null) {
+                    currentOnSos(sos)
+                    return@addOnMapClickListener true
+                }
                 val id = controller.markerAt(map, point)
                 if (id != null) currentOnClick(id)
                 id != null
+            }
+            map.addOnMapLongClickListener { point ->
+                val handler = currentOnLongPress ?: return@addOnMapLongClickListener false
+                handler(point.latitude, point.longitude)
+                true
             }
             map.setStyle(Style.Builder().fromUri(styleUrl)) { style ->
                 controller.onStyleLoaded(map, style)
@@ -159,11 +180,21 @@ fun FamilyMapView(
         }
     }
 
+    LaunchedEffect(styleReady, places) {
+        if (styleReady) controller.updatePlaces(places)
+    }
+
+    LaunchedEffect(styleReady, sosPins) {
+        if (styleReady) controller.updateSos(sosPins)
+    }
+
     LaunchedEffect(styleReady, cameraRequest?.nonce) {
         val request = cameraRequest ?: return@LaunchedEffect
         if (!styleReady) return@LaunchedEffect
         val padding = currentPadding()
-        val plan = if (request.focusUserId != null) {
+        val plan = if (request.lat != null && request.lon != null) {
+            CameraFit.focus(request.lat, request.lon, maxOf(controller.currentZoom(), CameraFit.SINGLE_ZOOM), padding)
+        } else if (request.focusUserId != null) {
             val m = markers.firstOrNull { it.spec.userId == request.focusUserId } ?: return@LaunchedEffect
             CameraFit.focus(m.spec.lat, m.spec.lon, controller.currentZoom(), padding)
         } else {
@@ -203,7 +234,7 @@ private const val PULSE_MS = 2600L
 private const val PULSE_FRAME_MS = 66L
 
 /** Forwards lifecycle events to the [MapView] exactly once each, in order. */
-private class MapViewLifecycle(private val view: MapView) : LifecycleEventObserver {
+internal class MapViewLifecycle(private val view: MapView) : LifecycleEventObserver {
     private var started = false
     private var resumed = false
     private var destroyed = false
@@ -266,6 +297,8 @@ private class MapController(private val renderer: MarkerRenderer, private val de
     private var map: MapLibreMap? = null
     private var style: Style? = null
     private val images = HashSet<String>()
+    private val placeImages = HashSet<String>()
+    private var sosImage = false
     var fittedOnce = false
 
     fun configure(map: MapLibreMap) {
@@ -274,12 +307,14 @@ private class MapController(private val renderer: MarkerRenderer, private val de
             isRotateGesturesEnabled = false
             isTiltGesturesEnabled = false
             isCompassEnabled = false
-            // Keep the map attribution visible above the bottom sheet (top end, below the status chip).
+            // Keep the map attribution visible above the bottom sheet: top end, below the SOS button
+            // (64 dp + 12 dp padding) of the map screen.
             attributionGravity = Gravity.TOP or Gravity.END
             logoGravity = Gravity.TOP or Gravity.END
             val m = (8 * density).toInt()
-            setAttributionMargins(0, m, m, 0)
-            setLogoMargins(0, m, (40 * density).toInt(), 0)
+            val top = (ATTRIBUTION_TOP_DP * density).toInt()
+            setAttributionMargins(0, top, m, 0)
+            setLogoMargins(0, top, (40 * density).toInt(), 0)
         }
         map.setMaxZoomPreference(19.0)
     }
@@ -288,8 +323,36 @@ private class MapController(private val renderer: MarkerRenderer, private val de
         this.map = map
         this.style = style
         images.clear()
+        placeImages.clear()
+        sosImage = false
+        // Places first (below everything), then accuracy circles, labels, markers, SOS pins on top.
+        style.addSource(GeoJsonSource(SRC_PLACES, MapGeoJson.placeAreas(emptyList())))
+        style.addSource(GeoJsonSource(SRC_PLACE_LABELS, MapGeoJson.placeLabels(emptyList()) { "" }))
         style.addSource(GeoJsonSource(SRC_ACCURACY, MapGeoJson.accuracy(emptyList())))
         style.addSource(GeoJsonSource(SRC_MARKERS, MapGeoJson.markers(emptyList(), null) { "" }))
+        style.addSource(GeoJsonSource(SRC_SOS, MapGeoJson.sosPins(emptyList())))
+        style.addLayer(
+            FillLayer(LAYER_PLACE_FILL, SRC_PLACES).withProperties(
+                PropertyFactory.fillColor(MarkerRenderer.PLACE_GREEN_HEX),
+                PropertyFactory.fillOpacity(0.10f),
+            ),
+        )
+        style.addLayer(
+            LineLayer(LAYER_PLACE_LINE, SRC_PLACES).withProperties(
+                PropertyFactory.lineColor(MarkerRenderer.PLACE_GREEN_HEX),
+                PropertyFactory.lineOpacity(0.7f),
+                PropertyFactory.lineWidth(2f),
+                PropertyFactory.lineDasharray(arrayOf(3f, 2f)),
+            ),
+        )
+        style.addLayer(
+            SymbolLayer(LAYER_PLACE_LABELS, SRC_PLACE_LABELS).withProperties(
+                PropertyFactory.iconImage(Expression.get(MapGeoJson.PROP_ICON)),
+                PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER),
+                PropertyFactory.iconAllowOverlap(false),
+                PropertyFactory.iconOptional(false),
+            ),
+        )
         style.addLayer(
             FillLayer(LAYER_ACC_FILL, SRC_ACCURACY).withProperties(
                 PropertyFactory.fillColor(Expression.toColor(Expression.get(MapGeoJson.PROP_COLOR))),
@@ -330,6 +393,52 @@ private class MapController(private val renderer: MarkerRenderer, private val de
                 ),
             ),
         )
+        style.addLayer(
+            SymbolLayer(LAYER_SOS, SRC_SOS).withProperties(
+                PropertyFactory.iconImage(IMAGE_SOS),
+                PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),
+            ),
+        )
+    }
+
+    fun updatePlaces(places: List<PlaceShape>) {
+        val style = style ?: return
+        if (!style.isFullyLoaded) return
+        fun key(p: PlaceShape) = "place|${p.name}"
+        val needed = places.map(::key).toSet()
+        for (p in places) {
+            val k = key(p)
+            if (k !in placeImages) {
+                style.addImage(k, renderer.renderLabel(p.name))
+                placeImages += k
+            }
+        }
+        style.getSourceAs<GeoJsonSource>(SRC_PLACES)?.setGeoJson(MapGeoJson.placeAreas(places))
+        style.getSourceAs<GeoJsonSource>(SRC_PLACE_LABELS)?.setGeoJson(MapGeoJson.placeLabels(places, ::key))
+        val obsolete = placeImages - needed
+        obsolete.forEach { style.removeImage(it) }
+        placeImages -= obsolete
+    }
+
+    fun updateSos(pins: List<SosPin>) {
+        val style = style ?: return
+        if (!style.isFullyLoaded) return
+        if (!sosImage && pins.isNotEmpty()) {
+            style.addImage(IMAGE_SOS, renderer.renderSos())
+            sosImage = true
+        }
+        style.getSourceAs<GeoJsonSource>(SRC_SOS)?.setGeoJson(MapGeoJson.sosPins(pins))
+    }
+
+    /** User id of the SOS pin at [point], if any. */
+    fun sosAt(map: MapLibreMap, point: LatLng): String? {
+        if (!sosImage) return null
+        val screen = map.projection.toScreenLocation(point)
+        val slop = 8 * density
+        val rect = RectF(screen.x - slop, screen.y - slop, screen.x + slop, screen.y + slop)
+        return map.queryRenderedFeatures(rect, LAYER_SOS).firstNotNullOfOrNull { it.getStringProperty(MapGeoJson.PROP_ID) }
     }
 
     fun update(markers: List<MapMarker>, selectedId: String?) {
@@ -410,6 +519,8 @@ private class MapController(private val renderer: MarkerRenderer, private val de
         map = null
         style = null
         images.clear()
+        placeImages.clear()
+        sosImage = false
     }
 
     companion object {
@@ -419,7 +530,16 @@ private class MapController(private val renderer: MarkerRenderer, private val de
         const val LAYER_ACC_LINE = "fc-accuracy-line"
         const val LAYER_HALO = "fc-halo"
         const val LAYER_MARKERS = "fc-marker-icons"
+        const val SRC_PLACES = "fc-places"
+        const val SRC_PLACE_LABELS = "fc-place-labels"
+        const val SRC_SOS = "fc-sos"
+        const val LAYER_PLACE_FILL = "fc-place-fill"
+        const val LAYER_PLACE_LINE = "fc-place-line"
+        const val LAYER_PLACE_LABELS = "fc-place-labels"
+        const val LAYER_SOS = "fc-sos-pins"
+        const val IMAGE_SOS = "fc-sos-pin"
         const val CAMERA_MS = 600
+        const val ATTRIBUTION_TOP_DP = 84f
     }
 }
 

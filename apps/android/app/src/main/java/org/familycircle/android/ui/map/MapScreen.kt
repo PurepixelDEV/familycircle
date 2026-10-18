@@ -29,6 +29,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -62,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import org.familycircle.android.R
+import org.familycircle.android.api.Alert
 import org.familycircle.android.api.MapMember
 import org.familycircle.android.live.LiveConnectionState
 import org.familycircle.android.map.CameraFit
@@ -71,8 +74,17 @@ import org.familycircle.android.map.MarkerModel
 import org.familycircle.android.map.MarkerSource
 import org.familycircle.android.map.MarkerSpec
 import org.familycircle.android.map.MarkerVisual
+import org.familycircle.android.map.PlaceShape
+import org.familycircle.android.map.SosPin
 import org.familycircle.android.tracking.TrackingRuntime
+import org.familycircle.android.ui.alerts.OthersSosBanner
+import org.familycircle.android.ui.alerts.OwnSosBanner
+import org.familycircle.android.ui.alerts.SafetyViewModel
+import org.familycircle.android.ui.alerts.SosHoldButton
+import org.familycircle.android.ui.alerts.safetyMessageText
 import org.familycircle.android.ui.components.FreshnessBadge
+import org.familycircle.android.ui.components.uiErrorMessage
+import org.familycircle.android.ui.family.PlaceDialog
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.MemberAvatar
 import org.familycircle.android.ui.components.containerViewModel
@@ -96,10 +108,15 @@ private const val WIDE_DP = 600
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(onOpenSharing: () -> Unit) {
+fun MapScreen(onOpenSharing: () -> Unit, snackbar: SnackbarHostState) {
     val container = LocalAppContainer.current
     val vm = containerViewModel { MapViewModel(it) }
+    val safety = containerViewModel { SafetyViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
+    val sos by safety.sos.collectAsStateWithLifecycle()
+    val safetyState by safety.state.collectAsStateWithLifecycle()
+    val safetyMessage by safety.message.collectAsStateWithLifecycle()
+    val focusRequest by container.mapFocus.request.collectAsStateWithLifecycle()
     val liveState by vm.liveState.collectAsStateWithLifecycle()
     val prefs by container.prefs.state.collectAsStateWithLifecycle()
     val queue by container.dao.countFlow().collectAsStateWithLifecycle(0)
@@ -108,6 +125,7 @@ fun MapScreen(onOpenSharing: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Live socket + polling only while the map is visible.
     LaunchedEffect(lifecycleOwner) {
@@ -134,6 +152,43 @@ fun MapScreen(onOpenSharing: () -> Unit) {
         cameraNonce++
         cameraRequest = CameraRequest(cameraNonce, userId)
     }
+
+    fun focusPoint(lat: Double, lon: Double) {
+        cameraNonce++
+        cameraRequest = CameraRequest(cameraNonce, null, lat, lon)
+    }
+
+    fun showSos(alert: Alert) {
+        val loc = alert.location
+        if (loc != null) focusPoint(loc.lat, loc.lon) else focus(alert.actor.userId)
+    }
+
+    val messageText = safetyMessage?.let { safetyMessageText(it) }
+    LaunchedEffect(safetyMessage) {
+        if (messageText != null) {
+            safety.messageShown()
+            snackbar.showSnackbar(messageText)
+        }
+    }
+
+    // "Show on map" from a notification (SOS: the SOS position).
+    LaunchedEffect(focusRequest, state.loaded) {
+        val request = focusRequest ?: return@LaunchedEffect
+        if (!state.loaded || !container.mapFocus.take(request)) return@LaunchedEffect
+        val sosAlert = sos.others.firstOrNull { it.actor.userId == request.userId }
+        if (request.sos && sosAlert != null) {
+            showSos(sosAlert)
+        } else {
+            vm.select(request.userId)
+            focus(request.userId)
+        }
+    }
+
+    val placeShapes = remember(state.places) { state.places.map(PlaceShape::from) }
+    val sosPins = remember(sos.others) { sos.others.mapNotNull(SosPin::from) }
+    var newPlaceAt by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var placeBusy by remember { mutableStateOf(false) }
+    val placeAdded = stringResource(R.string.place_added)
 
     val panelContent: @Composable (Modifier) -> Unit = { modifier ->
         MemberPanel(
@@ -167,19 +222,36 @@ fun MapScreen(onOpenSharing: () -> Unit) {
                     },
                     onStyleFailed = { styleFailed = true },
                     modifier = Modifier.fillMaxSize(),
+                    places = placeShapes,
+                    sosPins = sosPins,
+                    onSosClick = { id -> sos.others.firstOrNull { it.actor.userId == id }?.let(::showSos) },
+                    onLongPress = if (state.familyId != null) { lat, lon -> newPlaceAt = lat to lon } else null,
                 )
             } else {
                 Card(Modifier.align(Alignment.Center).padding(24.dp)) {
                     Text(stringResource(R.string.map_unavailable), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
                 }
             }
-            Row(
+            Column(
                 Modifier
                     .align(Alignment.TopStart)
+                    .fillMaxWidth()
                     .padding(12.dp)
                     .onSizeChanged { topOverlayPx = it.height + with(density) { 12.dp.roundToPx() } },
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TrackingChip(status, queue, onOpenSharing)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    Box(Modifier.weight(1f)) { TrackingChip(status, queue, onOpenSharing) }
+                    // Hold 3 s; the map attribution sits below it (see FamilyMapView).
+                    SosHoldButton(
+                        onTriggered = safety::sendSos,
+                        size = 64.dp,
+                        sending = safetyState.sendingSos,
+                        showHint = false,
+                    )
+                }
+                if (sos.own != null) OwnSosBanner(safetyState.resolving, safety::resolveSos)
+                OthersSosBanner(sos.others, now, onShow = ::showSos)
             }
         }
     }
@@ -222,6 +294,26 @@ fun MapScreen(onOpenSharing: () -> Unit) {
         LaunchedEffect(cameraRequest?.nonce) {
             if (cameraRequest != null && sheetState.currentValue == SheetValue.Expanded) sheetState.partialExpand()
         }
+    }
+
+    // Long-press on the map: new place at that point.
+    newPlaceAt?.let { (lat, lon) ->
+        PlaceDialog(
+            title = stringResource(R.string.place_add_here),
+            initial = null,
+            positionNote = stringResource(R.string.place_position_pressed),
+            busy = placeBusy,
+            onConfirm = { name, radius, _ ->
+                placeBusy = true
+                scope.launch {
+                    val error = vm.createPlace(name, radius, lat, lon)
+                    placeBusy = false
+                    newPlaceAt = null
+                    snackbar.showSnackbar(if (error == null) placeAdded else uiErrorMessage(context, error))
+                }
+            },
+            onDismiss = { newPlaceAt = null },
+        )
     }
 }
 

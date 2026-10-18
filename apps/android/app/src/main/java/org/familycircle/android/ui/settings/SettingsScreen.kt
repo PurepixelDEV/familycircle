@@ -1,8 +1,10 @@
 package org.familycircle.android.ui.settings
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,6 +39,7 @@ import kotlinx.coroutines.launch
 import org.familycircle.android.AppContainer
 import org.familycircle.android.BuildConfig
 import org.familycircle.android.R
+import org.familycircle.android.alerts.AlertService
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.api.PrivacySettings
 import org.familycircle.android.api.PrivacySettingsUpdate
@@ -97,6 +101,12 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** "Alarme immer sofort empfangen": local setting + the foreground service holding the connection. */
+    fun setAlertsAlwaysOn(context: Context, on: Boolean) {
+        container.prefs.setAlertsAlwaysOn(on)
+        if (on) AlertService.startIfWanted(context) else AlertService.stop(context)
+    }
+
     fun logout() {
         remote.update { it.copy(signingOut = true) }
         viewModelScope.launch { container.account.logout() }
@@ -111,8 +121,9 @@ class SettingsViewModel(private val container: AppContainer) : ViewModel() {
 private enum class Confirm { LOGOUT, CHANGE_SERVER, DISABLE_HISTORY }
 
 @Composable
-fun SettingsScreen(onOpenPermissions: () -> Unit) {
+fun SettingsScreen(onOpenPermissions: () -> Unit, onOpenHistory: () -> Unit) {
     val vm = containerViewModel { SettingsViewModel(it) }
+    val context = LocalContext.current
     val state by vm.state.collectAsStateWithLifecycle()
     var confirm by remember { mutableStateOf<Confirm?>(null) }
     val settings = state.settings
@@ -173,6 +184,49 @@ fun SettingsScreen(onOpenPermissions: () -> Unit) {
                     onCheckedChange = { enable ->
                         if (enable) vm.update(PrivacySettingsUpdate(historyEnabled = true)) else confirm = Confirm.DISABLE_HISTORY
                     },
+                )
+                if (settings?.historyEnabled == true) {
+                    TextButton(onClick = onOpenHistory, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.settings_history_open))
+                    }
+                }
+            }
+        }
+
+        // Alarms and remote actions (docs/ALERTS.md)
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                SectionTitle(stringResource(R.string.settings_alerts), Modifier.padding(top = 8.dp))
+                SwitchRow(
+                    title = stringResource(R.string.settings_alerts_always),
+                    description = stringResource(R.string.settings_alerts_always_desc),
+                    checked = state.prefs.alertsAlwaysOn,
+                    enabled = !state.signingOut,
+                    onCheckedChange = { on -> vm.setAlertsAlwaysOn(context, on) },
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = stringResource(R.string.settings_allow_ring),
+                    description = stringResource(R.string.settings_allow_ring_desc),
+                    checked = settings?.allowRing == true,
+                    enabled = editable,
+                    onCheckedChange = { vm.update(PrivacySettingsUpdate(allowRing = it)) },
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = stringResource(R.string.settings_allow_locate),
+                    description = stringResource(R.string.settings_allow_locate_desc),
+                    checked = settings?.allowLocateRequest == true,
+                    enabled = editable,
+                    onCheckedChange = { vm.update(PrivacySettingsUpdate(allowLocateRequest = it)) },
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = stringResource(R.string.settings_battery_alerts),
+                    description = stringResource(R.string.settings_battery_alerts_desc),
+                    checked = settings?.batteryAlerts == true,
+                    enabled = editable,
+                    onCheckedChange = { vm.update(PrivacySettingsUpdate(batteryAlerts = it)) },
                 )
             }
         }

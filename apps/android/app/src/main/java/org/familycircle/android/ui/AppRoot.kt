@@ -2,11 +2,17 @@ package org.familycircle.android.ui
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
@@ -14,12 +20,20 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.painterResource
@@ -32,6 +46,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.familycircle.android.R
 import org.familycircle.android.api.AuthSession
@@ -41,6 +56,7 @@ import org.familycircle.android.ui.auth.LoginScreen
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.windowWidthDp
 import org.familycircle.android.ui.family.FamilyScreen
+import org.familycircle.android.ui.history.HistoryScreen
 import org.familycircle.android.ui.home.HomeScreen
 import org.familycircle.android.ui.map.MapScreen
 import org.familycircle.android.ui.onboarding.ServerScreen
@@ -92,6 +108,8 @@ fun AppRoot() {
 
 @Serializable object PermissionsRoute
 
+@Serializable data class HistoryRoute(val userId: String, val name: String, val self: Boolean)
+
 private data class Tab(val route: Any, val type: KClass<*>, @StringRes val label: Int, @DrawableRes val icon: Int)
 
 private val tabs = listOf(
@@ -125,6 +143,14 @@ private fun MainScaffold() {
 
     IncomingLinkInApp(snackbar)
 
+    // A tapped alert notification opens the map (the map screen focuses the person / SOS).
+    val container = LocalAppContainer.current
+    val focusRequest by container.mapFocus.request.collectAsStateWithLifecycle()
+    LaunchedEffect(focusRequest) {
+        if (focusRequest != null) open(MapRoute)
+    }
+    val ringing by container.ringer.ringing.collectAsStateWithLifecycle()
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
@@ -146,26 +172,61 @@ private fun MainScaffold() {
             }
         },
     ) { padding ->
-        Row(Modifier.padding(padding).fillMaxSize()) {
-            if (wide) {
-                NavigationRail {
-                    tabs.forEach { tab ->
-                        NavigationRailItem(
-                            selected = isSelected(tab),
-                            onClick = { open(tab.route) },
-                            icon = { Icon(painterResource(tab.icon), contentDescription = null) },
-                            label = { Text(stringResource(tab.label), maxLines = 1) },
-                        )
+        Column(Modifier.padding(padding).fillMaxSize()) {
+            if (ringing) RingingBanner(onStop = container.ringer::stop)
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                if (wide) {
+                    NavigationRail {
+                        tabs.forEach { tab ->
+                            NavigationRailItem(
+                                selected = isSelected(tab),
+                                onClick = { open(tab.route) },
+                                icon = { Icon(painterResource(tab.icon), contentDescription = null) },
+                                label = { Text(stringResource(tab.label), maxLines = 1) },
+                            )
+                        }
                     }
                 }
+                NavHost(nav, startDestination = MapRoute, modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    composable<MapRoute> { MapScreen(onOpenSharing = { open(HomeRoute) }, snackbar = snackbar) }
+                    composable<HomeRoute> { HomeScreen(snackbar) }
+                    composable<FamilyRoute> {
+                        FamilyScreen(snackbar, onOpenHistory = { id, name, self -> nav.navigate(HistoryRoute(id, name, self)) })
+                    }
+                    composable<SettingsRoute> {
+                        SettingsScreen(
+                            onOpenPermissions = { nav.navigate(PermissionsRoute) },
+                            onOpenHistory = {
+                                val p = container.prefs.current
+                                p.userId?.let { nav.navigate(HistoryRoute(it, p.userName.orEmpty(), self = true)) }
+                            },
+                        )
+                    }
+                    composable<HistoryRoute> { entry ->
+                        val route = entry.toRoute<HistoryRoute>()
+                        HistoryScreen(route.userId, route.name, route.self, onBack = { nav.popBackStack() })
+                    }
+                    composable<PermissionsRoute> { PermissionScreen(onDone = { nav.popBackStack() }, onBack = { nav.popBackStack() }) }
+                }
             }
-            NavHost(nav, startDestination = MapRoute, modifier = Modifier.weight(1f).fillMaxHeight()) {
-                composable<MapRoute> { MapScreen(onOpenSharing = { open(HomeRoute) }) }
-                composable<HomeRoute> { HomeScreen(snackbar) }
-                composable<FamilyRoute> { FamilyScreen(snackbar) }
-                composable<SettingsRoute> { SettingsScreen(onOpenPermissions = { nav.navigate(PermissionsRoute) }) }
-                composable<PermissionsRoute> { PermissionScreen(onDone = { nav.popBackStack() }, onBack = { nav.popBackStack() }) }
-            }
+        }
+    }
+}
+
+/** Shown while this phone rings ("let my phone ring"); the notification has the same "Stop". */
+@Composable
+private fun RingingBanner(onStop: () -> Unit) {
+    Surface(color = colorResource(R.color.sos_red), contentColor = Color.White, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { liveRegion = LiveRegionMode.Assertive },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.ringing_banner), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Button(
+                onClick = onStop,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = colorResource(R.color.sos_red)),
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text(stringResource(R.string.alert_action_stop)) }
         }
     }
 }

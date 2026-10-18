@@ -93,6 +93,9 @@ fun Throwable.toUiError(): UiError = when (this) {
 @Composable
 fun uiErrorText(error: UiError): String = stringResource(uiErrorRes(error))
 
+/** For messages shown from a coroutine (snackbar) outside composition. */
+fun uiErrorMessage(context: android.content.Context, error: UiError): String = context.getString(uiErrorRes(error))
+
 fun uiErrorRes(error: UiError): Int = when (error) {
     UiError.NETWORK -> R.string.error_network
     UiError.SESSION_EXPIRED -> R.string.error_session_expired

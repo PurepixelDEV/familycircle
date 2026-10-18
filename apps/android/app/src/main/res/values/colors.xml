@@ -3,4 +3,6 @@
     <color name="window_background">#FFFBFDFB</color>
     <color name="ic_launcher_background">#FFFFFFFF</color>
     <color name="notification_accent">#FF1E6B52</color>
+    <!-- SOS: always paired with the text "SOS"; white on it has a contrast of 6:1. -->
+    <color name="sos_red">#FFC62828</color>
 </resources>
