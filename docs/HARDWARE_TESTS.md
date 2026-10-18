@@ -30,7 +30,7 @@ und ersetzen keinen Hardwaretest. Kurzanleitung für Testerinnen und Tester: [TE
 | ID | Ablauf | Erwartung |
 |---|---|---|
 | H-02 | Teilen „Ausgewogen“ auf A und B, beide 30 min mitnehmen (gehen, fahren) | Beide sehen sich **gegenseitig auf der Karte in der App** und im Web; Abstand ≈ 2 min in Bewegung, ≤ 5 min in Ruhe (Ziel, keine Garantie) |
-| H-03 | Bildschirm aus, App aus der Übersicht wischen, 30 min | Benachrichtigung bleibt; Positionen kommen weiter |
+| H-03 | Bildschirm aus, App aus der Übersicht wischen, 30 min – je einmal mit und ohne Akku-Optimierung | Benachrichtigung bleibt; Positionen kommen weiter. Beendet der Hersteller die App trotzdem: Neustart nach ≤ 15 min (mit „Immer erlauben“) oder Hinweis „Android hat FamilyCircle beendet“. Teilen endet nur über „Beenden“/„Pausieren“ |
 | H-04 | Flugmodus 15 min während Bewegung, danach wieder online | Status „N Positionen warten“; danach alle nachgeliefert (Web: Verlauf, falls aktiviert); Karte beim Gegenüber zeigt währenddessen „veraltet“ |
 | H-06 | Modus „Live“ 30 min | Häufigere Updates (≈ 15 s); nach 30 min automatisch „Ausgewogen“ |
 | H-08 | Akku < 15 % | Modus wird eine Stufe sparsamer; Status zeigt das an |
@@ -55,7 +55,7 @@ und ersetzen keinen Hardwaretest. Kurzanleitung für Testerinnen und Tester: [TE
 | H-10 | Gerät im Web unter Privatsphäre → Anmeldungen und Geräte entfernen | App wird abgemeldet, keine Uploads mehr |
 | H-12 | Server über HTTPS mit gültigem Zertifikat (Nginx Proxy Manager) | Verbindung ohne Warnung, keine Klartext-Warnung in der App, Live-Updates funktionieren |
 | H-22 | Mehr als 1 h angemeldet lassen (Access-Token läuft ab) | Keine erneute Anmeldung nötig, Uploads gehen weiter (Token-Rotation) |
-| H-23 | App-Update: neuere APK über die alte installieren | Konto bleibt angemeldet; Teilen muss ggf. fortgesetzt werden – App zeigt „pausiert“ korrekt an |
+| H-23 | App-Update: neuere APK über die alte installieren | Konto bleibt angemeldet. Mit „Immer erlauben“: Teilen läuft von selbst weiter. Ohne: Hinweis „FamilyCircle wurde aktualisiert“, App zeigt „pausiert“ |
 | H-24 | Server-Wechsel (Einstellungen → anderer Server) | Lokale Daten werden nach Rückfrage gelöscht, Neuanmeldung möglich |
 
 ## Ergebnisse (physische Geräte)

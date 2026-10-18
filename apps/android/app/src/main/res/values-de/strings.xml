@@ -102,8 +102,8 @@
     <string name="perm_notif_body">Solange dein Standort geteilt wird, zeigt eine Benachrichtigung das an. Dort kannst du mit einem Tipp pausieren. Ohne diese Berechtigung würdest du nicht sehen, dass das Teilen läuft.</string>
     <string name="perm_notif_button">Benachrichtigungen erlauben</string>
     <string name="perm_status_allowed">Erlaubt</string>
-    <string name="perm_bg_title">Nach einem Neustart fortsetzen (optional)</string>
-    <string name="perm_bg_body">Normalerweise musst du FamilyCircle nach einem Neustart des Handys einmal öffnen. Wenn du den Standortzugriff \"immer\" erlaubst, wird das Teilen von selbst fortgesetzt. FamilyCircle nutzt diese Berechtigung für nichts anderes.</string>
+    <string name="perm_bg_title">Automatisch fortsetzen (optional)</string>
+    <string name="perm_bg_body">Normalerweise musst du FamilyCircle nach einem Neustart, einem App-Update oder wenn Android die App beendet hat, wieder öffnen. Wenn du den Standortzugriff \"immer\" erlaubst, wird das Teilen von selbst fortgesetzt. FamilyCircle nutzt diese Berechtigung für nichts anderes.</string>
     <string name="perm_bg_how">Wähle auf dem nächsten Bildschirm \"%1$s\".</string>
     <string name="perm_bg_label_fallback">Immer zulassen</string>
     <string name="perm_bg_needs_location">Erlaube zuerst den Standortzugriff.</string>
@@ -165,6 +165,10 @@
     <string name="home_sharing_paused_title">Für alle verborgen</string>
     <string name="home_sharing_paused_body">\"Teilen pausieren\" ist in den Einstellungen eingeschaltet: Niemand sieht deinen Standort, auch wenn das Teilen läuft.</string>
     <string name="home_sharing_paused_resume">Meinen Standort wieder zeigen</string>
+    <string name="home_background_title">Teilen im Hintergrund absichern</string>
+    <string name="home_background_body">Damit Android das Teilen nicht beendet, wenn du FamilyCircle wegwischst, das Handy neu startest oder die App aktualisierst, erlaube Folgendes. Das Teilen endet dann nur, wenn du es hier oder in der Benachrichtigung beendest.</string>
+    <string name="home_background_battery">Akku-Optimierung ausschalten</string>
+    <string name="home_background_always">Standort immer erlauben</string>
     <string name="problem_permission">FamilyCircle darf nicht auf deinen Standort zugreifen.</string>
     <string name="problem_location_off">Der Standort ist auf diesem Handy ausgeschaltet.</string>
     <string name="problem_no_provider">Dieses Handy hat keine nutzbare Standortquelle.</string>
@@ -237,6 +241,9 @@
     <string name="notif_action_pause">Pausieren</string>
     <string name="notif_resume_title">Standort-Teilen ist pausiert</string>
     <string name="notif_resume_text">Dein Handy wurde neu gestartet. Öffne FamilyCircle, um das Teilen fortzusetzen.</string>
+    <string name="notif_resume_text_updated">FamilyCircle wurde aktualisiert. Öffne die App, um das Teilen fortzusetzen.</string>
+    <string name="notif_resume_text_interrupted">Android hat FamilyCircle beendet. Öffne die App, um das Teilen fortzusetzen. Tipp: In FamilyCircle die Akku-Optimierung ausschalten.</string>
+    <string name="notif_action_stop">Beenden</string>
 
     <!-- Navigation / kurze Altersangaben (v0.2) -->
     <string name="nav_map">Karte</string>
