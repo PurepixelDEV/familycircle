@@ -6,6 +6,7 @@ import { applyTheme, loadTheme, type ThemePref } from "../lib/theme";
 import { relativeTime } from "../lib/time";
 import { useNow } from "../lib/useNow";
 import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
+import { ConnectPhone } from "./ConnectPhone";
 
 const RETENTION_OPTIONS = [7, 30, 90, 365];
 
@@ -62,6 +63,7 @@ export function PrivacyView() {
           </section>
         )}
 
+        <ConnectPhone />
         <ProfileSection />
         <SessionsSection ask={ask} />
         <PasswordSection />

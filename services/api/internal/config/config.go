@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/netip"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -33,6 +34,11 @@ func (c Config) SecureContext() bool {
 
 // Load builds the configuration. getenv is os.Getenv in production and a map lookup in tests.
 func Load(getenv func(string) string, version string) (Config, error) {
+	return LoadWithFiles(getenv, os.ReadFile, version)
+}
+
+// LoadWithFiles is Load with an injectable file reader (for *_FILE variables, e.g. Docker secrets).
+func LoadWithFiles(getenv func(string) string, readFile func(string) ([]byte, error), version string) (Config, error) {
 	var errs []error
 	cfg := Config{
 		DatabaseURL: strings.TrimSpace(getenv("FC_DATABASE_URL")),
@@ -44,7 +50,15 @@ func Load(getenv func(string) string, version string) (Config, error) {
 	if cfg.DatabaseURL == "" {
 		// Compose/Portainer friendly: build the DSN from parts so that passwords with special
 		// characters need no manual URL encoding.
-		if pw := getenv("FC_DB_PASSWORD"); pw != "" {
+		pw := getenv("FC_DB_PASSWORD")
+		if path := strings.TrimSpace(getenv("FC_DB_PASSWORD_FILE")); path != "" {
+			b, err := readFile(path)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("FC_DB_PASSWORD_FILE: %w", err))
+			}
+			pw = strings.TrimRight(string(b), "\r\n")
+		}
+		if pw != "" {
 			u := url.URL{
 				Scheme:   "postgres",
 				User:     url.UserPassword(orDefault(getenv("FC_DB_USER"), "familycircle"), pw),
@@ -54,7 +68,7 @@ func Load(getenv func(string) string, version string) (Config, error) {
 			}
 			cfg.DatabaseURL = u.String()
 		} else {
-			errs = append(errs, errors.New("FC_DATABASE_URL or FC_DB_PASSWORD is required"))
+			errs = append(errs, errors.New("FC_DATABASE_URL, FC_DB_PASSWORD or FC_DB_PASSWORD_FILE is required"))
 		}
 	}
 

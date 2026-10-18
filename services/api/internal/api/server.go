@@ -49,10 +49,11 @@ type Server struct {
 	lim    limiters
 	web    http.Handler
 
-	setupMu    sync.Mutex
-	setupToken string
-	ownerLocks sync.Map // uuid.UUID -> *sync.Mutex, see ownerLock
-	now        func() time.Time
+	setupMu       sync.Mutex
+	setupToken    string
+	ownerLocks    sync.Map // uuid.UUID -> *sync.Mutex, see ownerLock
+	proxyHintOnce sync.Once
+	now           func() time.Time
 }
 
 type Options struct {
@@ -110,6 +111,7 @@ func (s *Server) Routes() []Route {
 		{"PATCH", "/me", userAuth, s.handleUpdateMe},
 		{"DELETE", "/me", userAuth, s.handleDeleteMe},
 		{"PUT", "/me/password", userAuth, s.handleChangePassword},
+		{"POST", "/me/pairing-codes", userAuth, s.handleCreatePairingCode},
 		{"GET", "/me/settings", userAuth, s.handleGetSettings},
 		{"PATCH", "/me/settings", userAuth, s.handleUpdateSettings},
 		{"PUT", "/me/avatar", userAuth, s.handlePutAvatar},

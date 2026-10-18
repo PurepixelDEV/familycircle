@@ -3,6 +3,7 @@
 # Exercises: setup → invite → register → device login → location upload → share → map → revoke.
 #
 # Usage: FC_URL=http://localhost:9092 FC_SETUP_CODE=XXXX-XXXX scripts/smoke-test.sh
+# FC_CURL_INSECURE=1 accepts a self-signed certificate (HTTPS proxy test only).
 # The instance must be fresh (setup not yet done). Requires curl and python3.
 set -euo pipefail
 
@@ -25,6 +26,7 @@ json() { "$PY" -c "import json,sys; d=json.load(sys.stdin); print(eval(sys.argv[
 req() {
   local jar="$1" bearer="$2" method="$3" path="$4" body="${5:-}"
   local args=(-s -o "$TMP/body" -w '%{http_code}' -X "$method" -H 'X-FC-CSRF: 1')
+  [[ "${FC_CURL_INSECURE:-}" == "1" ]] && args+=(-k)
   [[ "$jar" != "-" ]] && args+=(-b "$TMP/$jar" -c "$TMP/$jar")
   [[ "$bearer" != "-" ]] && args+=(-H "Authorization: Bearer $bearer")
   [[ -n "$body" ]] && args+=(-H 'Content-Type: application/json' --data "$body")
@@ -34,9 +36,9 @@ req() {
 expect() { local st; st="$(cat "$TMP/status")"; [[ "$st" == "$1" ]] || fail "$2 (HTTP $st: $(cat "$TMP/body"))"; pass "$2"; }
 
 echo "FamilyCircle smoke test against $URL"
-curl -sf "$URL/healthz" >/dev/null && pass "healthz"
-curl -sf "$URL/readyz" >/dev/null && pass "readyz (database reachable)"
-curl -sf "$URL/" | grep -q '<div id="root">' && pass "web app served"
+curl -sf ${FC_CURL_INSECURE:+-k} "$URL/healthz" >/dev/null && pass "healthz"
+curl -sf ${FC_CURL_INSECURE:+-k} "$URL/readyz" >/dev/null && pass "readyz (database reachable)"
+curl -sf ${FC_CURL_INSECURE:+-k} "$URL/" | grep -q '<div id="root">' && pass "web app served"
 [[ "$(req - - GET /instance | json 'd["setup_required"]')" == "True" ]] && pass "instance requires setup"
 
 PW="smoke test password 1"

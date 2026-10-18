@@ -5,6 +5,22 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.2.0] - unveröffentlicht
+
+Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Deployment (in Arbeit).
+
+### Hinzugefügt
+- Kopplungscodes: Handy per QR-Code mit bestehendem Konto verbinden (`POST /me/pairing-codes`,
+  `grant_type=pairing_code`, 10 min, einmalig) – Migration `0002_pairing_codes`.
+- Web: QR-Codes für „Handy verbinden“ und Einladungen, Hinweisseite `/pair`.
+- `FC_DB_PASSWORD_FILE` (Passwort als Datei/Secret); Log-Hinweis mit der Adresse eines nicht vertrauten Proxys.
+- Testskripte: Datenbank-Upgrade (`scripts/upgrade-test.sh`), HTTPS über Reverse Proxy
+  (`scripts/https-proxy-test.sh`), Entwicklungs-Testdaten (`scripts/seed-dev-data.py`),
+  Image-Archiv für Portainer-Import (`scripts/build-image-archive.sh`).
+
+### Geändert
+- Repository `PurepixelDEV/familycircle`, Image `ghcr.io/purepixeldev/familycircle`.
+
 ## [0.1.0] - unveröffentlicht
 
 Erster vertikaler Prototyp (Phase 0 + erster Teil von Phase 1). Noch nicht als Release getaggt.

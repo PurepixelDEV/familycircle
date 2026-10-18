@@ -258,6 +258,7 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 		DeviceName   string `json:"device_name"`
 		AppVersion   string `json:"app_version"`
 		RefreshToken string `json:"refresh_token"`
+		PairingCode  string `json:"pairing_code"`
 		InviteCode   string `json:"invite_code"`
 		DisplayName  string `json:"display_name"`
 	}
@@ -277,6 +278,28 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, "token_reused", "this refresh token was already used; please sign in again")
 		case errors.Is(err, store.ErrNotFound):
 			writeError(w, http.StatusUnauthorized, "invalid_grant", "refresh token invalid or expired")
+		case err != nil:
+			s.fail(w, r, err)
+		default:
+			s.writeTokens(w, tokens, u)
+		}
+	case "pairing_code":
+		if ok, wait := s.lim.sensitive.Allow(s.clientIP(r)); !ok {
+			tooMany(w, wait)
+			return
+		}
+		f := fieldErrors{}
+		in.DeviceName = cleanName(in.DeviceName)
+		f.check(runeLen(in.DeviceName) >= 1 && runeLen(in.DeviceName) <= 64, "device_name", "1–64 characters")
+		f.check(len(in.AppVersion) <= 32, "app_version", "at most 32 characters")
+		f.check(in.PairingCode != "" && len(in.PairingCode) <= 64, "pairing_code", "required")
+		if f.write(w) {
+			return
+		}
+		tokens, u, err := s.store.RedeemPairingCode(r.Context(), in.PairingCode, in.DeviceName, in.AppVersion, r.UserAgent())
+		switch {
+		case errors.Is(err, store.ErrNotFound):
+			writeError(w, http.StatusUnauthorized, "invalid_grant", "pairing code invalid, expired or already used")
 		case err != nil:
 			s.fail(w, r, err)
 		default:
@@ -318,8 +341,27 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 		}
 		s.writeTokens(w, tokens, u)
 	default:
-		writeFieldErrors(w, http.StatusBadRequest, "invalid_input", "invalid input", map[string]string{"grant_type": "must be password or refresh_token"})
+		writeFieldErrors(w, http.StatusBadRequest, "invalid_input", "invalid input", map[string]string{"grant_type": "must be password, refresh_token or pairing_code"})
 	}
+}
+
+// handleCreatePairingCode issues a QR pairing code for the caller's own account (docs/QR_FORMAT.md).
+func (s *Server) handleCreatePairingCode(w http.ResponseWriter, r *http.Request) {
+	uid := principalFrom(r).user.ID
+	if ok, wait := s.lim.sensitive.Allow("pair:" + uid.String()); !ok {
+		tooMany(w, wait)
+		return
+	}
+	code, expires, err := s.store.CreatePairingCode(r.Context(), uid)
+	if errors.Is(err, store.ErrTooManyCodes) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many open pairing codes; use or let one expire first")
+		return
+	}
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"code": code, "expires_at": expires})
 }
 
 func (s *Server) writeTokens(w http.ResponseWriter, t store.Tokens, u store.User) {

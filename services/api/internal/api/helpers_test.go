@@ -324,3 +324,9 @@ func shiftStoreClock(e *env, seconds int) {
 	d := time.Duration(seconds) * time.Second
 	e.store.SetClock(func() time.Time { return time.Now().UTC().Add(d) })
 }
+
+// mustFamily returns the ID of the client's first family.
+func (c *client) mustFamily() string {
+	c.e.t.Helper()
+	return c.must(200, "GET", "/families", nil).body["families"].([]any)[0].(map[string]any)["id"].(string)
+}

@@ -58,5 +58,8 @@ func (s *Store) Purge(ctx context.Context) (PurgeResult, error) {
 		return r, err
 	}
 	r.Invites = tag.RowsAffected()
+	if _, err = s.pool.Exec(ctx, `DELETE FROM pairing_codes WHERE expires_at < $1::timestamptz - interval '1 day'`, now); err != nil {
+		return r, err
+	}
 	return r, nil
 }
