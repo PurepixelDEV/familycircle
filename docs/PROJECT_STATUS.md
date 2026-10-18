@@ -64,7 +64,7 @@ QR-Kamera-Scan (H-13/H-14), HTTPS mit echtem Zertifikat (H-12), Hersteller-Energ
 | Thema | Stand |
 |---|---|
 | Repository / Image | entschieden: `PurepixelDEV/familycircle`, `ghcr.io/purepixeldev/familycircle` |
-| Android applicationId | **unverändert `org.familycircle.android`** – Änderung nur mit Freigabe (`ch.putepixel.familycircle` vorgeschlagen, nicht umgesetzt) |
-| Kontaktadresse | `hello@putepixel.ch` festgelegt, **öffentliche Verwendung nicht freigegeben** (nicht in Doku eingetragen) |
-| Git-Autor | neue Commits `PutePixel <hello@putepixel.ch>`; alte Commits unverändert |
+| Android applicationId | **unverändert `org.familycircle.android`** – Änderung nur mit Freigabe (`ch.purepixel.familycircle` als Kandidat, nicht umgesetzt) |
+| Kontaktadresse | `hello@purepixel.ch` festgelegt, **öffentliche Verwendung nicht freigegeben** (nicht in Doku eingetragen) |
+| Git-Autor | ab jetzt `PurePixel <hello@purepixel.ch>`; die 4 Commits vom 2026-10-18 tragen noch die Schreibweise `PutePixel <hello@putepixel.ch>`, ältere `kingstickers.ch` – nicht umgeschrieben |
 | targetSdk 37 | offen (R-03) |
