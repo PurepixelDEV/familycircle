@@ -95,7 +95,12 @@ jobs:
           FC_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           FC_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           FC_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon :app:testReleaseUnitTest :app:assembleRelease
+        # AGP 9 only creates unit-test tasks for the debug variant.
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleRelease
+      - name: Verify APK signature
+        run: |
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner | sort -V | tail -1)"
+          "$apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk | grep -E "Verified using|Signer #1 certificate (DN|SHA-256)"
       - name: Rename and checksum
         env:
           VERSION: ${{ needs.verify.outputs.version }}
