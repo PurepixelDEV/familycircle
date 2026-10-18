@@ -1,0 +1,103 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "a8e552fb2c361ccaa5a44f0313d81492",
+    "entities": [
+      {
+        "tableName": "pending_locations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `recorded_at_ms` INTEGER NOT NULL, `lat` REAL NOT NULL, `lon` REAL NOT NULL, `accuracy_m` REAL NOT NULL, `altitude_m` REAL, `speed_mps` REAL, `bearing_deg` REAL, `battery_pct` INTEGER, `battery_charging` INTEGER, `motion` TEXT NOT NULL, `created_at_ms` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recordedAtMs",
+            "columnName": "recorded_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat",
+            "columnName": "lat",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lon",
+            "columnName": "lon",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accuracyM",
+            "columnName": "accuracy_m",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "altitudeM",
+            "columnName": "altitude_m",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "speedMps",
+            "columnName": "speed_mps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "bearingDeg",
+            "columnName": "bearing_deg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "batteryPct",
+            "columnName": "battery_pct",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "batteryCharging",
+            "columnName": "battery_charging",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "motion",
+            "columnName": "motion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "created_at_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pending_locations_recorded_at_ms",
+            "unique": false,
+            "columnNames": [
+              "recorded_at_ms"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pending_locations_recorded_at_ms` ON `${TABLE_NAME}` (`recorded_at_ms`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a8e552fb2c361ccaa5a44f0313d81492')"
+    ]
+  }
+}

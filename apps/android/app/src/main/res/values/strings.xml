@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">FamilyCircle</string>
+
+    <!-- Common -->
+    <string name="action_continue">Continue</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_back">Back</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="nav_home">My sharing</string>
+    <string name="nav_family">Family</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="age_just_now">just now</string>
+    <plurals name="age_minutes">
+        <item quantity="one">%d minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="age_hours">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="age_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+
+    <string name="error_network">Cannot reach the server. Check your internet connection.</string>
+    <string name="error_session_expired">You have been signed out. Please sign in again.</string>
+    <string name="error_rate_limited">Too many attempts. Please wait a moment and try again.</string>
+    <string name="error_not_found">Not found, or you are no longer allowed to see it.</string>
+    <string name="error_forbidden">You are not allowed to do this.</string>
+    <string name="error_server">The server has a problem. Please try again later.</string>
+    <string name="error_unexpected">Something went wrong. Please try again.</string>
+
+    <!-- Unencrypted connection -->
+    <string name="cleartext_banner_title">Unencrypted connection</string>
+    <string name="cleartext_banner_body">This server is used over http://. Others on the same network could read your locations and your password. Use https:// whenever possible.</string>
+    <string name="cleartext_dialog_title">Use an unencrypted connection?</string>
+    <string name="cleartext_dialog_body">The address starts with http://. Everything – including your password and your locations – is sent without encryption. Only continue if this server is in your own home network and you trust that network.</string>
+    <string name="cleartext_dialog_confirm">Use anyway</string>
+
+    <!-- Server -->
+    <string name="server_title">Welcome to FamilyCircle</string>
+    <string name="server_intro">FamilyCircle connects to your family\'s own server. Enter the address you received from the person who set it up.</string>
+    <string name="server_url_label">Server address</string>
+    <string name="server_url_hint">For example https://familycircle.example.org</string>
+    <string name="server_verify">Verify connection</string>
+    <string name="server_connected">Connected – FamilyCircle %1$s</string>
+    <string name="server_setup_required_title">This server is not set up yet</string>
+    <string name="server_setup_required_body">Open the server address in a web browser and finish the setup there first. Then come back and verify again.</string>
+    <string name="server_registration_closed">New accounts cannot be created on this server. You can still sign in with an existing account.</string>
+    <string name="server_error_empty">Please enter the server address.</string>
+    <string name="server_error_invalid">This is not a valid address.</string>
+    <string name="server_error_scheme">Only addresses starting with https:// or http:// are supported.</string>
+    <string name="server_error_credentials">Please enter the address without a user name or password.</string>
+    <string name="server_error_query">Please enter only the address, without \"?\" or \"#\" parts.</string>
+    <string name="server_error_network">The server could not be reached. Check the address and your connection.</string>
+    <string name="server_error_redirect">The server redirects to another address. Please enter the final address (usually starting with https://).</string>
+    <string name="server_error_not_fc">This address does not seem to be a FamilyCircle server.</string>
+
+    <!-- Login -->
+    <string name="login_title">Sign in</string>
+    <string name="login_server">Server: %1$s</string>
+    <string name="login_session_expired_title">You have been signed out</string>
+    <string name="login_session_expired_body">Your sign-in on this phone is no longer valid (for example because it was removed in the web app). Sharing has been stopped. Please sign in again.</string>
+    <string name="login_tab_signin">I have an account</string>
+    <string name="login_tab_invite">I have an invite code</string>
+    <string name="login_invite_intro">With an invite code you create a new account and join the family right away.</string>
+    <string name="login_invite_code">Invite code</string>
+    <string name="login_display_name">Your name</string>
+    <string name="login_display_name_hint">Shown to your family</string>
+    <string name="login_email">E-mail</string>
+    <string name="login_password">Password</string>
+    <string name="login_password_hint">At least 10 characters</string>
+    <string name="login_device_name">Name of this phone</string>
+    <string name="login_device_name_hint">Helps you recognise this phone in the list of your devices</string>
+    <string name="login_submit_signin">Sign in</string>
+    <string name="login_submit_register">Create account and join</string>
+    <string name="login_change_server">Use a different server</string>
+    <string name="login_error_missing">Please fill in all fields.</string>
+    <string name="login_error_password_short">The password must have at least 10 characters.</string>
+    <string name="login_error_device_name">Please enter a name for this phone (at most 64 characters).</string>
+    <string name="login_error_credentials">E-mail or password is wrong.</string>
+    <string name="login_error_invite">The invite code is invalid, expired or already used.</string>
+    <string name="login_error_email_taken">An account with this e-mail address already exists. Sign in instead.</string>
+    <string name="login_error_registration_closed">New accounts cannot be created on this server.</string>
+    <string name="login_error_invalid_input">Some entries are not valid. Please check the highlighted fields.</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">Before you start</string>
+    <string name="perm_intro">FamilyCircle only shares your location when you switch it on, and only with the family members you choose. You can pause it at any time.</string>
+    <string name="perm_location_title">Your location</string>
+    <string name="perm_location_body">So your family can see where you are, the app needs access to your location. Please choose \"Precise\" – with \"Approximate\" your family only sees roughly where you are (a few kilometres).</string>
+    <string name="perm_location_button">Allow location access</string>
+    <string name="perm_status_precise">Precise location allowed</string>
+    <string name="perm_status_approximate">Only approximate location allowed – your family will see an area of a few kilometres.</string>
+    <string name="perm_denied_settings">Location access was declined. You can allow it in the app settings under \"Permissions\".</string>
+    <string name="perm_open_settings">Open app settings</string>
+    <string name="perm_notif_title">Notifications (recommended)</string>
+    <string name="perm_notif_body">While your location is shared, a notification shows it and lets you pause with one tap. Without this permission you would not see that sharing is on.</string>
+    <string name="perm_notif_button">Allow notifications</string>
+    <string name="perm_status_allowed">Allowed</string>
+    <string name="perm_bg_title">Resume after a restart (optional)</string>
+    <string name="perm_bg_body">Normally you need to open FamilyCircle once after your phone restarts. If you allow location access \"all the time\", sharing resumes on its own. FamilyCircle does not use this permission for anything else.</string>
+    <string name="perm_bg_how">On the next screen choose \"%1$s\".</string>
+    <string name="perm_bg_label_fallback">Allow all the time</string>
+    <string name="perm_bg_needs_location">Allow location access first.</string>
+    <string name="perm_bg_button">Allow all the time</string>
+    <string name="perm_change_later">You can change all of this later in the settings.</string>
+
+    <!-- Tracking modes -->
+    <string name="mode_title">How often to share</string>
+    <string name="mode_intro">These are targets – your phone may update less often to save battery.</string>
+    <string name="mode_off">Off</string>
+    <string name="mode_off_desc">Your location is not shared.</string>
+    <string name="mode_saver">Battery saver</string>
+    <string name="mode_saver_desc">About every 15 minutes or 250 m. Uses the least battery.</string>
+    <string name="mode_balanced">Balanced</string>
+    <string name="mode_balanced_desc">About every 2 minutes or 50 m. Good for every day.</string>
+    <string name="mode_live">Live</string>
+    <string name="mode_live_desc">About every 15 seconds. Uses a lot of battery and switches back to Balanced after 30 minutes.</string>
+
+    <!-- Home -->
+    <string name="home_title">My location sharing</string>
+    <string name="status_on">Sharing is on</string>
+    <string name="status_paused">Sharing is paused</string>
+    <string name="status_off">Sharing is off</string>
+    <string name="status_mode">Mode: %1$s</string>
+    <string name="status_mode_reduced">Currently using %1$s (battery low or Live time is over)</string>
+    <plurals name="status_live_remaining">
+        <item quantity="one">Live for %d more minute</item>
+        <item quantity="other">Live for %d more minutes</item>
+    </plurals>
+    <string name="status_last_fix">Last position: %1$s (%2$s)</string>
+    <string name="status_no_fix">No position recorded yet</string>
+    <string name="status_queue_empty">All positions have been sent</string>
+    <plurals name="status_queue">
+        <item quantity="one">%d position waiting to be sent</item>
+        <item quantity="other">%d positions waiting to be sent</item>
+    </plurals>
+    <plurals name="status_upload_ok">
+        <item quantity="one">Last upload %1$s: %2$d position sent</item>
+        <item quantity="other">Last upload %1$s: %2$d positions sent</item>
+    </plurals>
+    <string name="status_upload_failed">Last upload attempt %1$s failed: %2$s</string>
+    <string name="upload_error_network">no internet connection – will retry automatically</string>
+    <string name="upload_error_server">the server is not available – will retry automatically</string>
+    <string name="upload_error_rate_limited">too many uploads – will retry automatically</string>
+    <string name="upload_error_unauthorized">you are signed out</string>
+    <string name="upload_error_rejected">the server rejected the upload</string>
+    <string name="home_start">Start sharing</string>
+    <string name="home_resume">Resume sharing</string>
+    <string name="home_stop">Stop sharing</string>
+    <string name="home_turn_off">Turn off completely</string>
+    <string name="home_send_now">Send my location now</string>
+    <string name="home_send_now_running">Finding your location…</string>
+    <string name="home_msg_sent">Your location has been sent.</string>
+    <string name="home_msg_queued">Your location was saved and will be sent as soon as possible.</string>
+    <string name="home_msg_no_fix">Could not determine your location. Try again outdoors or near a window.</string>
+    <string name="home_problem_title">Sharing needs your attention</string>
+    <string name="home_problem_grant">Allow location access</string>
+    <string name="home_problem_location_settings">Turn on location</string>
+    <string name="home_sharing_paused_title">Hidden from everyone</string>
+    <string name="home_sharing_paused_body">\"Pause sharing\" is switched on in the settings: nobody can see your location, even while sharing is on.</string>
+    <string name="home_sharing_paused_resume">Show my location again</string>
+    <string name="problem_permission">FamilyCircle is not allowed to access your location.</string>
+    <string name="problem_location_off">Location is turned off on this phone.</string>
+    <string name="problem_no_provider">This phone has no usable location source.</string>
+    <string name="problem_start_not_allowed">Android did not allow sharing to start. Open the app and try again.</string>
+    <string name="problem_signed_out">You have been signed out, so sharing was stopped.</string>
+
+    <!-- Family -->
+    <string name="family_title">Family</string>
+    <string name="family_none">You are not in a family yet. Ask a family admin for an invite code.</string>
+    <string name="family_updated">Updated %1$s</string>
+    <string name="family_you">%1$s (you)</string>
+    <string name="family_seen">Seen %1$s (%2$s)</string>
+    <string name="family_accuracy">Accurate to about %1$d m</string>
+    <string name="family_battery">Battery %1$d %%</string>
+    <string name="family_battery_charging">Battery %1$d %% (charging)</string>
+    <string name="family_open_map">Show in maps app</string>
+    <string name="family_no_maps_app">No maps app installed.</string>
+    <string name="family_not_shared">Does not share their location with you.</string>
+    <string name="family_no_location">No location yet.</string>
+    <string name="family_self_no_location">The server has no location of you yet.</string>
+    <string name="family_share_with">Share my location with %1$s</string>
+    <string name="freshness_live">Live</string>
+    <string name="freshness_recent">Recent</string>
+    <string name="freshness_stale">Outdated</string>
+    <string name="freshness_cd">Location status: %1$s</string>
+    <string name="motion_stationary">Not moving</string>
+    <string name="motion_walking">Walking</string>
+    <string name="motion_driving">On the move (vehicle)</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_account">Account</string>
+    <string name="settings_server">Server: %1$s</string>
+    <string name="settings_server_version">Server version: %1$s</string>
+    <string name="settings_device">This phone: %1$s</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_pause_sharing">Pause sharing</string>
+    <string name="settings_pause_sharing_desc">Hides your location from everyone until you switch this off.</string>
+    <string name="settings_share_battery">Share battery level</string>
+    <string name="settings_share_battery_desc">Family members who can see you also see your battery level.</string>
+    <string name="settings_history">Keep location history</string>
+    <plurals name="settings_history_desc">
+        <item quantity="one">Stores your past positions for %d day. When off, only your latest position is stored.</item>
+        <item quantity="other">Stores your past positions for %d days. When off, only your latest position is stored.</item>
+    </plurals>
+    <string name="settings_history_off_title">Turn off history?</string>
+    <string name="settings_history_off_body">Your stored location history will be deleted from the server. This cannot be undone.</string>
+    <string name="settings_history_off_confirm">Turn off and delete</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_change_server">Change server</string>
+    <string name="settings_change_server_confirm_title">Change server?</string>
+    <string name="settings_change_server_confirm_body">You will be signed out and all FamilyCircle data on this phone will be deleted.</string>
+    <string name="settings_logout">Sign out</string>
+    <string name="settings_logout_confirm_title">Sign out?</string>
+    <string name="settings_logout_confirm_body">Sharing stops and this phone is signed out.</string>
+    <plurals name="settings_unsent_lost">
+        <item quantity="one">%d position has not been sent yet and will be lost.</item>
+        <item quantity="other">%d positions have not been sent yet and will be lost.</item>
+    </plurals>
+    <string name="settings_app_version">App version %1$s</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_tracking">Location sharing</string>
+    <string name="notif_channel_tracking_desc">Shown while FamilyCircle shares your location.</string>
+    <string name="notif_channel_alerts">Notices</string>
+    <string name="notif_channel_alerts_desc">Important notices, e.g. when sharing could not resume after a restart.</string>
+    <string name="notif_tracking_title">Sharing your location · %1$s</string>
+    <string name="notif_tracking_last_fix">Last position at %1$s</string>
+    <string name="notif_tracking_waiting">Waiting for the first position…</string>
+    <string name="notif_action_pause">Pause</string>
+    <string name="notif_resume_title">Location sharing is paused</string>
+    <string name="notif_resume_text">Your phone restarted. Open FamilyCircle to resume sharing your location.</string>
+</resources>

@@ -36,4 +36,16 @@ OpenStreetMap-Daten (ODbL) über OpenFreeMap; die Attribution wird von MapLibre 
 nicht entfernt werden.
 
 ## Android
-Siehe Abschnitt in [apps/android/README.md](../apps/android/README.md) – wird nach Abschluss der App-Prüfung ergänzt.
+Prüfung am 2026-10-18 anhand von `./gradlew :app:dependencies --configuration releaseRuntimeClasspath`
+(135 aufgelöste Module inkl. 3 BOMs) und der `<licenses>`-Angaben in den POMs auf Google Maven bzw.
+Maven Central (bei `listenablefuture` geerbt von `guava-parent`).
+
+| Lizenz | Artefaktgruppen | Anzahl |
+|---|---|---|
+| Apache-2.0 | `androidx.*` (activity, annotation, arch.core, autofill, collection, compose.*, concurrent, core, customview, documentfile, dynamicanimation, emoji2, graphics, interpolator, legacy, lifecycle, loader, localbroadcastmanager, navigation, navigationevent, print, profileinstaller, room, savedstate, sqlite, startup, tracing, transition, versionedparcelable, window, work) | 118 |
+| Apache-2.0 | `org.jetbrains.kotlin`, `org.jetbrains.kotlinx` (coroutines, serialization), `org.jetbrains:annotations` | 11 |
+| Apache-2.0 | `com.squareup.okhttp3`, `com.squareup.okio` | 4 |
+| Apache-2.0 | `com.google.guava:listenablefuture`, `org.jspecify` | 2 |
+
+Ergebnis: Alle 135 Module stehen unter Apache-2.0 (mit AGPL-3.0-or-later kompatibel); keine Google Play Services,
+kein Firebase, keine proprietären oder lokalen JAR/AAR-Abhängigkeiten – F-Droid-tauglich.

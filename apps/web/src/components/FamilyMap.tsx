@@ -92,7 +92,10 @@ export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken
       const fresh = freshnessOf(loc.recorded_at, now, loc.freshness);
       entry.marker.setLngLat([loc.lon, loc.lat]);
       const el = entry.el;
-      el.className = `fc-marker ${fresh}${selected === m.user_id ? " selected" : ""}`;
+      // Toggle only our classes: MapLibre adds its own (maplibregl-marker …) for absolute positioning.
+      el.classList.add("fc-marker");
+      for (const f of ["live", "recent", "stale"]) el.classList.toggle(f, f === fresh);
+      el.classList.toggle("selected", selected === m.user_id);
       el.style.setProperty("--ring", m.color);
       const age = relativeTime(loc.recorded_at, now, locale, t("time.justNow"));
       el.setAttribute("aria-label", `${m.display_name}: ${fresh === "stale" ? t("map.staleHint") : age}`);
