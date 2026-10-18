@@ -26,7 +26,8 @@ Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Brow
 |---|---|
 | Go-Backend | **65/65** Tests grün mit `-race` gegen PostGIS 17-3.5; golangci-lint 0, govulncheck ohne erreichbare Schwachstelle |
 | Web | **22/22** Tests, ESLint/TypeScript sauber, API-Typen = Vertrag |
-| Android | **176/176** JVM-Unit-Tests, Lint 0 Fehler; Debug- und R8-Release-Build |
+| Android | **181/181** JVM-Unit-Tests, Lint 0 Fehler; Debug- und R8-Release-Build |
+| Android im Hintergrund (Emulator, Android 16) | 🧪 App weggewischt → Dienst läuft weiter (gleiche PID); Prozess getötet → Dienst neu gestartet; App-Update ohne „Immer erlauben“ → Hinweis + „pausiert“; mit → Teilen läuft von selbst weiter; „Beenden“ in der Benachrichtigung → aus, Watchdog entfernt. 📱 Hersteller-Taskkiller (H-03) offen |
 | Docker-Smoke-Test | **15/15** gegen Produktions-`compose.yaml` mit importiertem Image-Archiv |
 | HTTPS über Reverse Proxy | ✅ nginx wie NPM: TLS, Secure-Cookie, HSTS, `wss` durch Proxy, fremder Origin abgelehnt, gefälschtes `X-Forwarded-For` wirkungslos (Gegenprobe mit zu breitem `FC_TRUSTED_PROXIES` schlägt erwartungsgemäss fehl) |
 | Datenbank-Upgrade | ✅ 0.1.0 → 0.2.0 auf gleichem Volume: Daten identisch, Migration 0002 angewandt, Login ok, Downgrade verweigert |
@@ -56,9 +57,9 @@ sichtbar (H-02), Bildschirm aus / App weggewischt (H-03), Neustart (H-07), Akkuv
 QR-Kamera-Scan (H-13/H-14), HTTPS mit echtem Zertifikat (H-12), Hersteller-Energiesparmodi.
 
 ## Weitere offene Punkte
-* GHCR-Paket `familycircle` ist privat (Standard bei privaten Repositories): für Portainer öffentlich stellen oder in Portainer eine Registry mit Token (`read:packages`) hinterlegen.
-* Bekannte Einschränkungen: R-18 bis R-21 in [RISKS.md](RISKS.md) (Sprungbestätigung, 5-min-Ruheintervall,
-  kein Auto-Resume nach App-Update, APK-Grösse).
+* GHCR-Paket `familycircle` und Repository sind öffentlich (Portainer-Pull ohne Anmeldung bestätigt).
+* Bekannte Einschränkungen: R-18, R-19, R-21 in [RISKS.md](RISKS.md) (Sprungbestätigung, 5-min-Ruheintervall,
+  APK-Grösse). R-20 (kein Fortsetzen nach App-Update) ist behoben (Unreleased).
 * Phase 3 (Geofences, Benachrichtigungen, Check-ins/SOS, Kinderkonten) **bewusst nicht begonnen**.
 
 ## Entscheidungen

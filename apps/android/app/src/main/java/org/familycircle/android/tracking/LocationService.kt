@@ -28,7 +28,8 @@ import org.familycircle.android.util.Logger
 /**
  * Foreground service of type `location`.
  *
- * * Started only from the UI (or after boot with background permission, see [BootReceiver]).
+ * * Started from the UI, or from the background with background permission ([BackgroundResume]:
+ *   boot, app update, watchdog). Keeps running when the app is swiped away; ends only by the user.
  * * Requests updates per [TrackingPolicy], writes each accepted fix to Room first, then uploads
  *   from a coroutine inside the service (not via WorkManager – Android 16 applies job quotas even
  *   while a foreground service is running).
@@ -76,6 +77,12 @@ class LocationService : LifecycleService() {
                 shutdown()
                 return START_NOT_STICKY
             }
+            ACTION_STOP -> {
+                Logger.i(TAG, "stopped from notification")
+                container.tracking.stop()
+                shutdown()
+                return START_NOT_STICKY
+            }
         }
         // A sticky restart (intent == null) after the process was killed lands here as well.
         if (!container.prefs.current.trackingDesired || !container.auth.isLoggedIn) {
@@ -83,13 +90,19 @@ class LocationService : LifecycleService() {
             return START_NOT_STICKY
         }
         stopping = false // a new start may arrive while a previous stop is still pending
-        if (!goForeground()) return START_NOT_STICKY
+        val fromBackground = intent == null || intent.action == ACTION_RESUME
+        if (!goForeground(fromBackground)) return START_NOT_STICKY
         applyPolicy()
         uploadTrigger.trySend(Unit) // flush anything queued while we were not running
         return START_STICKY
     }
 
-    private fun goForeground(): Boolean {
+    /**
+     * @param fromBackground restarted by the system or by [BackgroundResume]: if Android refuses,
+     * sharing stays switched on ("paused") and a notice asks the user to open the app, instead of
+     * reporting it as switched off.
+     */
+    private fun goForeground(fromBackground: Boolean): Boolean {
         if (!container.tracking.hasForegroundPermission()) {
             fail(TrackingProblem.PERMISSION_MISSING)
             return false
@@ -105,9 +118,26 @@ class LocationService : LifecycleService() {
         } catch (e: Exception) {
             // SecurityException (permission revoked / location off on 14+) or
             // ForegroundServiceStartNotAllowedException (IllegalStateException) on 12+.
-            Logger.w(TAG, "startForeground failed", e)
-            fail(if (e is SecurityException) TrackingProblem.PERMISSION_MISSING else TrackingProblem.START_NOT_ALLOWED)
+            Logger.w(TAG, "startForeground failed (fromBackground=$fromBackground)", e)
+            if (fromBackground) {
+                Notifications.showResumeHint(this, ResumeReason.INTERRUPTED)
+                shutdown()
+            } else {
+                fail(if (e is SecurityException) TrackingProblem.PERMISSION_MISSING else TrackingProblem.START_NOT_ALLOWED)
+            }
             false
+        }
+    }
+
+    /**
+     * App swiped away from the recent apps. The foreground service keeps running (stopWithTask is
+     * false); some manufacturers kill the process anyway, so the watchdog checks again shortly.
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (container.prefs.current.trackingDesired) {
+            Logger.i(TAG, "task removed, sharing continues")
+            ResumeWatchdog.checkSoon(this)
         }
     }
 
@@ -293,11 +323,18 @@ class LocationService : LifecycleService() {
         private const val TAG = "LocationService"
         const val ACTION_START = "org.familycircle.android.action.START"
         const val ACTION_PAUSE = "org.familycircle.android.action.PAUSE"
+        const val ACTION_STOP = "org.familycircle.android.action.STOP"
+
+        /** Start from the background (boot, app update, watchdog). */
+        const val ACTION_RESUME = "org.familycircle.android.action.RESUME"
         private const val COALESCE_MS = 1_500L
         private const val INITIAL_BACKOFF_MS = 30_000L
         private const val MAX_BACKOFF_MS = 15 * 60_000L
 
         fun startIntent(context: Context): Intent =
             Intent(context, LocationService::class.java).setAction(ACTION_START)
+
+        fun resumeIntent(context: Context): Intent =
+            Intent(context, LocationService::class.java).setAction(ACTION_RESUME)
     }
 }
