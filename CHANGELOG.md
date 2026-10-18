@@ -5,6 +5,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefügt – Phase 3 (docs/ALERTS.md)
+- **SOS**: Gedrückt halten → Alarm mit Position an die ganze Familie, „Ich bin in Sicherheit“ beendet ihn.
+- **Orte mit Ankunft/Abfahrt**: Orte pro Familie (Radius 50–2000 m); der Server erkennt Betreten und
+  Verlassen mit Hysterese und meldet es Personen, die den Standort sehen dürfen; pro Ort stummschaltbar.
+- **Akku-Warnung und letzter Standort** bei ≤ 15 % Akku und beim Ausschalten (abschaltbar).
+- **„Standort jetzt aktualisieren“** und **„Handy klingeln lassen“** – eigene Geräte immer, andere nur mit
+  deren Einwilligung (Standard aus).
+- **Check-in „Bin angekommen“** mit optionaler Nachricht.
+- **Verlauf / Zeitstrahl**: eigener Verlauf; anderer nur, wenn die Person „darf meinen Verlauf sehen“ erteilt.
+- Zustellung ohne Google-Push: Live-Verbindung beim Teilen oder mit „Alarme immer sofort empfangen“,
+  sonst Nachholen spätestens alle 15 min (`GET /alerts`).
+- API 0.3.0, Migration `0003_alerts_places`.
+
 ### Hinzugefügt
 - Familie per Link einladen (WhatsApp, SMS, E-Mail): Web „Link teilen“ / „Per WhatsApp senden“ /
   „Nachricht kopieren“; Android „Einladungslink erstellen und teilen“ für Verwalter.

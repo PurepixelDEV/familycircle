@@ -5,6 +5,8 @@ import { useI18n } from "../i18n";
 import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
 import { inviteUrl, QrCode } from "../components/QrCode";
 import { whatsAppUrl } from "../lib/applink";
+import { MemberActions } from "../components/MemberActions";
+import { PlacesSection } from "../components/PlacesSection";
 
 const INVITE_HOURS = 72;
 
@@ -64,6 +66,7 @@ export function FamilyView() {
 
   const isAdmin = family?.role === "admin";
   const others = family?.members.filter((m) => m.user_id !== app.me.id) ?? [];
+  const self = family?.members.find((m) => m.user_id === app.me.id);
 
   return (
     <div className="page">
@@ -88,6 +91,20 @@ export function FamilyView() {
         <section className="section" aria-labelledby="members-h">
           <h2 id="members-h">{t("family.members")}</h2>
           <div className="panel">
+            {self && (
+              <div className="list-row" style={{ flexWrap: "wrap" }}>
+                <Avatar userId={self.user_id} name={self.display_name} color={self.color} hasAvatar={self.has_avatar} version={self.avatar_version} />
+                <div className="grow">
+                  <div className="name">
+                    {self.display_name} ({t("common.you")})
+                  </div>
+                  <div className="muted small">{self.role === "admin" ? t("family.admin") : t("family.member")}</div>
+                </div>
+                <div style={{ flexBasis: "100%" }}>
+                  <MemberActions userId={self.user_id} name={self.display_name} isSelf />
+                </div>
+              </div>
+            )}
             {others.map((m) => (
               <div key={m.user_id} className="list-row" style={{ flexWrap: "wrap" }}>
                 <Avatar userId={m.user_id} name={m.display_name} color={m.color} hasAvatar={m.has_avatar} version={m.avatar_version} />
@@ -105,6 +122,7 @@ export function FamilyView() {
                     disabled={busy === "share:" + m.user_id}
                     onChange={(on) => void toggleShare(m, on)}
                   />
+                  <MemberActions userId={m.user_id} name={m.display_name} isSelf={false} />
                   {isAdmin && (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", paddingBottom: 6 }}>
                       <button
@@ -132,6 +150,8 @@ export function FamilyView() {
             {family && others.length === 0 && <p className="muted" style={{ padding: "14px 0" }}>{t("map.empty")}</p>}
           </div>
         </section>
+
+        {family && <PlacesSection family={family} />}
 
         {isAdmin && family && (
           <section className="section" aria-labelledby="invite-h">

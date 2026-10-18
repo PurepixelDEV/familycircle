@@ -91,8 +91,10 @@ func (s *Server) emitAlert(ctx context.Context, a store.NewAlert) (alertDTO, int
 	s.hub.SendTo(recipients, mustJSON(alertEvent{"alert", dto}))
 	switch a.Kind {
 	case store.AlertSOS, store.AlertSOSResolved, store.AlertCheckIn:
+		// The actor's copy (also the HTTP response) is marked as their own.
 		alert.Mine = true
-		s.hub.SendTo([]uuid.UUID{a.Actor}, mustJSON(alertEvent{"alert", toAlert(alert, now)}))
+		dto = toAlert(alert, now)
+		s.hub.SendTo([]uuid.UUID{a.Actor}, mustJSON(alertEvent{"alert", dto}))
 	}
 	return dto, len(recipients), nil
 }

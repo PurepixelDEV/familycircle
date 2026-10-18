@@ -1,22 +1,26 @@
-import type { Location } from "./client";
+import type { Alert, Location } from "./client";
 
 export type LiveEvent =
   | { type: "hello"; user_id: string; server_time: string }
   | { type: "location"; user_id: string; location: Location }
   | { type: "location_hidden"; user_id: string }
-  | { type: "family_changed"; family_id: string };
+  | { type: "family_changed"; family_id: string }
+  | { type: "places_changed"; family_id: string }
+  | { type: "alert"; alert: Alert };
 
 export type LiveStatus = "connecting" | "open" | "closed";
+
+type Handlers = {
+  onEvent?: (e: LiveEvent) => void;
+  onStatus?: (s: LiveStatus) => void;
+  onOpen?: () => void;
+};
 
 /**
  * Keeps a WebSocket to /api/v1/ws open with exponential backoff. `onOpen` fires on every
  * (re)connect so callers can refetch state they may have missed while disconnected.
  */
-export function connectLive(handlers: {
-  onEvent: (e: LiveEvent) => void;
-  onStatus?: (s: LiveStatus) => void;
-  onOpen?: () => void;
-}): () => void {
+export function connectLive(handlers: Handlers): () => void {
   let ws: WebSocket | undefined;
   let stopped = false;
   let retry = 0;
@@ -34,7 +38,7 @@ export function connectLive(handlers: {
     };
     ws.onmessage = (msg) => {
       try {
-        handlers.onEvent(JSON.parse(String(msg.data)) as LiveEvent);
+        handlers.onEvent?.(JSON.parse(String(msg.data)) as LiveEvent);
       } catch {
         // ignore malformed messages
       }
@@ -63,5 +67,43 @@ export function connectLive(handlers: {
     clearTimeout(timer);
     document.removeEventListener("visibilitychange", onVisible);
     ws?.close();
+  };
+}
+
+// One shared connection for the whole app: the map, the places and the alerts all subscribe to it.
+const subscribers = new Set<Handlers>();
+let stopShared: (() => void) | undefined;
+let closeTimer: ReturnType<typeof setTimeout> | undefined;
+let sharedStatus: LiveStatus = "closed";
+
+/**
+ * Subscribes to the shared live connection (opened on the first subscriber, closed shortly after
+ * the last one leaves – the delay avoids a reconnect when a view is merely remounted).
+ */
+export function subscribeLive(handlers: Handlers): () => void {
+  subscribers.add(handlers);
+  clearTimeout(closeTimer);
+  if (stopShared) {
+    handlers.onStatus?.(sharedStatus);
+  } else {
+    stopShared = connectLive({
+      onEvent: (e) => subscribers.forEach((s) => s.onEvent?.(e)),
+      onStatus: (st) => {
+        sharedStatus = st;
+        subscribers.forEach((s) => s.onStatus?.(st));
+      },
+      onOpen: () => subscribers.forEach((s) => s.onOpen?.()),
+    });
+  }
+  return () => {
+    subscribers.delete(handlers);
+    if (subscribers.size > 0) return;
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      if (subscribers.size > 0) return;
+      stopShared?.();
+      stopShared = undefined;
+      sharedStatus = "closed";
+    }, 1000);
   };
 }

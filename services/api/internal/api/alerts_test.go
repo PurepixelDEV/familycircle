@@ -80,6 +80,10 @@ func TestSOSReachesFamilyWithoutSharing(t *testing.T) {
 	if r.body["recipients"].(float64) != 1 {
 		t.Fatalf("recipients: %v", r.body)
 	}
+	// Regression: the response is the caller's own copy.
+	if own := r.body["alert"].(map[string]any); own["mine"] != true || own["active"] != true {
+		t.Fatalf("POST /sos must return the own copy (mine): %v", own)
+	}
 	a := annaWS.expectAlert("sos")
 	if a["actor"].(map[string]any)["display_name"] != "Bob" || a["active"] != true || a["location"].(map[string]any)["lat"] != 47.1 {
 		t.Fatalf("unexpected alert %v", a)

@@ -7,20 +7,16 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { avatarUrl, type MapMember } from "../api/client";
 import { useI18n } from "../i18n";
+import { circlePolygon } from "../lib/geo";
 import { freshnessOf, relativeTime } from "../lib/time";
 import { initials } from "./ui";
 
-/** Polygon approximating a circle of radius `m` metres (for accuracy rings). */
-export function circlePolygon(lon: number, lat: number, m: number, steps = 48): [number, number][] {
-  const coords: [number, number][] = [];
-  const dLat = m / 111_320;
-  const dLon = m / (111_320 * Math.cos((lat * Math.PI) / 180));
-  for (let i = 0; i <= steps; i++) {
-    const a = (i / steps) * 2 * Math.PI;
-    coords.push([lon + dLon * Math.cos(a), lat + dLat * Math.sin(a)]);
-  }
-  return coords;
-}
+/** A family place drawn as a circle with a label (names of the people inside). */
+export type PlaceOverlay = { id: string; name: string; lat: number; lon: number; radius_m: number; present: string[] };
+/** An active SOS of another person, at the position the alert carries. */
+export type SosOverlay = { id: number; name: string; lat: number; lon: number; label: string };
+/** Where to fly to, with an optional pin (e.g. "show alert on map"); `token` makes repeats distinct. */
+export type FocusOverlay = { lat: number; lon: number; label: string; pin: boolean; token: number };
 
 type Props = {
   styleUrl: string;
@@ -29,17 +25,31 @@ type Props = {
   selected: string | null;
   onSelect: (userId: string) => void;
   fitToken: number; // increment to fit all members into view
+  places?: PlaceOverlay[];
+  sos?: SosOverlay[];
+  focus?: FocusOverlay | null;
 };
 
 const ACCURACY_SOURCE = "fc-accuracy";
+const PLACES_SOURCE = "fc-places";
+const PLACE_COLOR = "#1e5a52";
 
 maplibregl.setWorkerUrl(workerUrl);
 
-export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken }: Props) {
+/** Runs `fn` now if the style is ready, otherwise once it has loaded. */
+function whenLoaded(map: maplibregl.Map, source: string, fn: () => void) {
+  if (map.isStyleLoaded() && map.getSource(source)) fn();
+  else map.once("load", fn);
+}
+
+export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken, places = [], sos = [], focus = null }: Props) {
   const { t, locale } = useI18n();
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
+  const placeLabels = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLDivElement }>());
+  const sosMarkers = useRef(new Map<number, { marker: maplibregl.Marker; el: HTMLButtonElement }>());
+  const focusPin = useRef<maplibregl.Marker | null>(null);
   const fittedOnce = useRef(false);
   const select = useEffectEvent((id: string) => onSelect(id));
 
@@ -54,14 +64,27 @@ export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     map.on("load", () => {
+      map.addSource(PLACES_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "fc-places-fill", type: "fill", source: PLACES_SOURCE, paint: { "fill-color": PLACE_COLOR, "fill-opacity": 0.1 } });
+      map.addLayer({
+        id: "fc-places-line",
+        type: "line",
+        source: PLACES_SOURCE,
+        paint: { "line-color": PLACE_COLOR, "line-opacity": 0.7, "line-width": 2, "line-dasharray": [2, 1.5] },
+      });
       map.addSource(ACCURACY_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       map.addLayer({ id: "fc-accuracy-fill", type: "fill", source: ACCURACY_SOURCE, paint: { "fill-color": ["get", "color"], "fill-opacity": 0.12 } });
       map.addLayer({ id: "fc-accuracy-line", type: "line", source: ACCURACY_SOURCE, paint: { "line-color": ["get", "color"], "line-opacity": 0.45, "line-width": 1.5 } });
     });
     mapRef.current = map;
     const current = markers.current;
+    const labels = placeLabels.current;
+    const sosCurrent = sosMarkers.current;
     return () => {
       current.clear();
+      labels.clear();
+      sosCurrent.clear();
+      focusPin.current = null;
       map.remove();
       mapRef.current = null;
     };
@@ -134,7 +157,7 @@ export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken
         markers.current.delete(id);
       }
     }
-    const updateCircles = () => {
+    whenLoaded(map, ACCURACY_SOURCE, () => {
       const src = map.getSource(ACCURACY_SOURCE) as GeoJSONSource | undefined;
       src?.setData({
         type: "FeatureCollection",
@@ -143,18 +166,119 @@ export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken
           .map((m) => ({
             type: "Feature" as const,
             properties: { color: m.color },
-            geometry: { type: "Polygon" as const, coordinates: [circlePolygon(m.location!.lon, m.location!.lat, m.location!.accuracy_m)] },
+            geometry: { type: "Polygon" as const, coordinates: [circlePolygon(m.location!.lon, m.location!.lat, m.location!.accuracy_m, 48)] },
           })),
       });
-    };
-    if (map.isStyleLoaded() && map.getSource(ACCURACY_SOURCE)) updateCircles();
-    else map.once("load", updateCircles);
+    });
 
     if (!fittedOnce.current && visible.length > 0) {
       fittedOnce.current = true;
       fit(map, visible, false);
     }
   }, [members, now, selected, locale, t]);
+
+  // Places: circle polygons plus an HTML label (name and who is there).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    whenLoaded(map, PLACES_SOURCE, () => {
+      (map.getSource(PLACES_SOURCE) as GeoJSONSource | undefined)?.setData({
+        type: "FeatureCollection",
+        features: places.map((p) => ({
+          type: "Feature" as const,
+          properties: { id: p.id },
+          geometry: { type: "Polygon" as const, coordinates: [circlePolygon(p.lon, p.lat, p.radius_m)] },
+        })),
+      });
+    });
+    const seen = new Set<string>();
+    for (const p of places) {
+      seen.add(p.id);
+      let entry = placeLabels.current.get(p.id);
+      if (!entry) {
+        const el = document.createElement("div");
+        el.className = "fc-place-label";
+        // Below the circle's southern edge: member markers stand above their point and would hide it.
+        entry = { el, marker: new maplibregl.Marker({ element: el, anchor: "top", offset: [0, 6] }).setLngLat(southEdge(p)).addTo(map) };
+        placeLabels.current.set(p.id, entry);
+      }
+      entry.marker.setLngLat(southEdge(p));
+      const name = document.createElement("strong");
+      name.textContent = p.name;
+      entry.el.replaceChildren(name);
+      if (p.present.length > 0) {
+        const who = document.createElement("span");
+        who.textContent = p.present.join(", ");
+        entry.el.append(who);
+      }
+    }
+    for (const [id, entry] of placeLabels.current) {
+      if (!seen.has(id)) {
+        entry.marker.remove();
+        placeLabels.current.delete(id);
+      }
+    }
+  }, [places]);
+
+  // Active SOS of other people: a red pulsing marker with name and time; click zooms in.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const seen = new Set<number>();
+    for (const s of sos) {
+      seen.add(s.id);
+      let entry = sosMarkers.current.get(s.id);
+      if (!entry) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "fc-sos-marker";
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          map.flyTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16), padding: fitPadding(map), essential: true });
+        });
+        entry = { el, marker: new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat([s.lon, s.lat]).addTo(map) };
+        sosMarkers.current.set(s.id, entry);
+      }
+      entry.el.setAttribute("aria-label", s.label);
+      const pulse = document.createElement("span");
+      pulse.className = "pulse";
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      dot.textContent = "SOS";
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = s.label;
+      entry.el.replaceChildren(pulse, dot, label);
+    }
+    for (const [id, entry] of sosMarkers.current) {
+      if (!seen.has(id)) {
+        entry.marker.remove();
+        sosMarkers.current.delete(id);
+      }
+    }
+  }, [sos]);
+
+  // Focus requests (e.g. "show on map" from an alert or an SOS banner).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    fittedOnce.current = true; // do not fit to the members afterwards
+    map.flyTo({ center: [focus.lon, focus.lat], zoom: Math.max(map.getZoom(), 16), padding: fitPadding(map), essential: true });
+    focusPin.current?.remove();
+    focusPin.current = null;
+    if (focus.pin) {
+      const el = document.createElement("div");
+      el.className = "fc-focus-pin";
+      el.setAttribute("role", "img");
+      el.setAttribute("aria-label", focus.label);
+      const label = document.createElement("span");
+      label.textContent = focus.label;
+      el.append(label);
+      focusPin.current = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat([focus.lon, focus.lat]).addTo(map);
+    }
+    // Only when a new focus is requested.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.token]);
 
   // Fit on demand ("show everyone").
   useEffect(() => {
@@ -174,6 +298,10 @@ export function FamilyMap({ styleUrl, members, now, selected, onSelect, fitToken
   }, [selected]);
 
   return <div ref={container} className="map" role="region" aria-label={t("nav.map")} />;
+}
+
+function southEdge(p: PlaceOverlay): [number, number] {
+  return [p.lon, p.lat - p.radius_m / 111_320];
 }
 
 function fit(map: maplibregl.Map, members: MapMember[], animate: boolean) {
