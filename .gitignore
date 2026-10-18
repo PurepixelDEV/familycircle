@@ -1,0 +1,40 @@
+# Secrets / local config
+.env
+*.env.local
+*.keystore
+*.jks
+keystore.properties
+local.properties
+
+# Node / web
+node_modules/
+apps/web/dist/
+apps/web/coverage/
+*.tsbuildinfo
+
+# Go
+services/api/bin/
+# Built web app copied into the Go embed directory by the Docker build (placeholder index.html is tracked)
+services/api/internal/webui/dist/*
+!services/api/internal/webui/dist/index.html
+
+# Android / Gradle
+apps/android/.gradle/
+apps/android/build/
+apps/android/app/build/
+apps/android/.kotlin/
+apps/android/captures/
+*.apk
+*.aab
+*.iml
+.idea/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Test artefacts
+test-results/
+playwright-report/

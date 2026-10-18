@@ -1,0 +1,992 @@
+openapi: 3.1.0
+info:
+  title: FamilyCircle API
+  version: 0.1.0
+  summary: Self-hosted, privacy-first family location sharing.
+  license:
+    name: AGPL-3.0-or-later
+    identifier: AGPL-3.0-or-later
+  description: |
+    All endpoints live under `/api/v1`. Timestamps are RFC 3339 in UTC. Coordinates are WGS84.
+
+    **Authentication**
+    * Web app: session cookie `fc_session` (HttpOnly). Every non-GET request authenticated by cookie
+      must send the header `X-FC-CSRF: 1`; the server also checks the `Origin` header.
+    * Android/devices: `Authorization: Bearer <access_token>` obtained from `POST /auth/token`.
+
+    **Errors** always use the `Error` schema with a stable machine-readable `code`.
+
+    **Live updates** (`GET /ws`, WebSocket, same authentication). Server → client JSON messages:
+    * `{"type":"hello","user_id":"…","server_time":"…"}`
+    * `{"type":"location","user_id":"…","location":Location}` – sent only to users who are currently
+      allowed to see it (authorization is evaluated per message).
+    * `{"type":"location_hidden","user_id":"…"}` – a share was revoked/paused or membership ended;
+      clients must remove the marker immediately.
+    * `{"type":"family_changed","family_id":"…"}` – members changed; refetch the map.
+    Clients send nothing except WebSocket pings.
+servers:
+  - url: /api/v1
+tags:
+  - name: instance
+  - name: auth
+  - name: me
+  - name: families
+  - name: invites
+  - name: shares
+  - name: locations
+security:
+  - cookieAuth: []
+  - bearerAuth: []
+paths:
+  /instance:
+    get:
+      tags: [instance]
+      summary: Public instance information (no auth).
+      security: []
+      operationId: getInstance
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Instance" }
+  /setup:
+    post:
+      tags: [instance]
+      summary: Create the first account and family. Only possible while no user exists.
+      security: []
+      operationId: setupInstance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SetupRequest" }
+      responses:
+        "201":
+          description: Instance initialised; a web session cookie is set.
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Register a new account with an invite code (web session).
+      security: []
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Account created, family joined, web session cookie set.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/session:
+    post:
+      tags: [auth]
+      summary: Web login. Sets the session cookie.
+      security: []
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Logged in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+    delete:
+      tags: [auth]
+      summary: Logout (revokes the current session, web or device).
+      operationId: logout
+      responses:
+        "204": { description: Logged out. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/token:
+    post:
+      tags: [auth]
+      summary: Device login (password grant) or token refresh (refresh_token grant).
+      description: |
+        `password` creates a new device and a device session. `refresh_token` rotates the refresh
+        token; presenting an already rotated refresh token revokes the whole session.
+        With `invite_code` + `display_name` the password grant also registers a new account.
+      security: []
+      operationId: issueToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TokenRequest" }
+      responses:
+        "200":
+          description: Tokens issued.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /me:
+    get:
+      tags: [me]
+      operationId: getMe
+      responses:
+        "200":
+          description: Current user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [me]
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                display_name: { type: string, minLength: 1, maxLength: 64 }
+                locale: { $ref: "#/components/schemas/Locale" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Me" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [me]
+      summary: Delete the own account and all associated data. Requires the password.
+      operationId: deleteMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        "204": { description: Account deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /me/password:
+    put:
+      tags: [me]
+      summary: Change password. Revokes all other sessions.
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password: { type: string }
+                new_password: { type: string, minLength: 10, maxLength: 256 }
+      responses:
+        "204": { description: Changed. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/settings:
+    get:
+      tags: [me]
+      operationId: getSettings
+      responses:
+        "200":
+          description: Privacy settings.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [me]
+      operationId: updateSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SettingsUpdate" }
+      responses:
+        "200":
+          description: Updated settings.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/avatar:
+    put:
+      tags: [me]
+      summary: Upload a profile picture (JPEG or PNG, ≤ 2 MB). Re-encoded server side (metadata such as EXIF GPS is removed).
+      operationId: putAvatar
+      requestBody:
+        required: true
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        "204": { description: Stored. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "413": { $ref: "#/components/responses/BadRequest" }
+    delete:
+      tags: [me]
+      operationId: deleteAvatar
+      responses:
+        "204": { description: Removed. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/sessions:
+    get:
+      tags: [me]
+      operationId: listSessions
+      responses:
+        "200":
+          description: Active sessions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sessions]
+                properties:
+                  sessions:
+                    type: array
+                    items: { $ref: "#/components/schemas/Session" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/sessions/{sessionId}:
+    delete:
+      tags: [me]
+      operationId: revokeSession
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "204": { description: Revoked. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /me/devices:
+    get:
+      tags: [me]
+      operationId: listDevices
+      responses:
+        "200":
+          description: Registered devices.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [devices]
+                properties:
+                  devices:
+                    type: array
+                    items: { $ref: "#/components/schemas/Device" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/devices/{deviceId}:
+    delete:
+      tags: [me]
+      summary: Remove a device (e.g. stolen phone). Revokes its sessions immediately.
+      operationId: deleteDevice
+      parameters:
+        - $ref: "#/components/parameters/DeviceId"
+      responses:
+        "204": { description: Removed. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /me/export:
+    get:
+      tags: [me]
+      summary: Export all personal data as JSON (GDPR Art. 20).
+      operationId: exportData
+      responses:
+        "200":
+          description: Export document.
+          content:
+            application/json:
+              schema: { type: object }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/locations:
+    get:
+      tags: [locations]
+      summary: Own location history (only exists if history is enabled).
+      operationId: listOwnLocations
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 5000, default: 1000 } }
+      responses:
+        "200":
+          description: History, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [points]
+                properties:
+                  points:
+                    type: array
+                    items: { $ref: "#/components/schemas/HistoryPoint" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [locations]
+      summary: Delete all own location data (last position and history).
+      operationId: deleteOwnLocations
+      responses:
+        "204": { description: Deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /locations:
+    post:
+      tags: [locations]
+      summary: Upload a batch of location fixes from a device.
+      description: |
+        Requires a **device** session (Bearer). The owner is always the authenticated user; the body
+        cannot name another user. Each point carries a client-generated UUID `id`; re-sending the
+        same id is harmless (idempotent). Points older than 7 days or more than 5 minutes in the
+        future are rejected individually.
+      security:
+        - bearerAuth: []
+      operationId: uploadLocations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationUpload" }
+      responses:
+        "200":
+          description: Batch processed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationUploadResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /families:
+    get:
+      tags: [families]
+      operationId: listFamilies
+      responses:
+        "200":
+          description: Families of the current user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [families]
+                properties:
+                  families:
+                    type: array
+                    items: { $ref: "#/components/schemas/FamilySummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [families]
+      operationId: createFamily
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "201":
+          description: Created; caller is admin.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Family" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /families/{familyId}:
+    get:
+      tags: [families]
+      operationId: getFamily
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      responses:
+        "200":
+          description: Family with members.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Family" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [families]
+      summary: Rename (admin only).
+      operationId: updateFamily
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 64 }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Family" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /families/{familyId}/leave:
+    post:
+      tags: [families]
+      summary: Leave a family. The last admin cannot leave while other members remain.
+      operationId: leaveFamily
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      responses:
+        "204": { description: Left. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /families/{familyId}/members/{userId}:
+    patch:
+      tags: [families]
+      summary: Change a member's role (admin only).
+      operationId: updateMember
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { $ref: "#/components/schemas/Role" }
+      responses:
+        "204": { description: Updated. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [families]
+      summary: Remove a member (admin only). Does not grant any access to locations.
+      operationId: removeMember
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204": { description: Removed. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /families/{familyId}/map:
+    get:
+      tags: [locations]
+      summary: Members of a family with their last location where the caller is allowed to see it.
+      operationId: getFamilyMap
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      responses:
+        "200":
+          description: Map data.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FamilyMap" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /families/{familyId}/invites:
+    get:
+      tags: [invites]
+      summary: Active invites (admin only).
+      operationId: listInvites
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      responses:
+        "200":
+          description: Invites (codes are never shown again after creation).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [invites]
+                properties:
+                  invites:
+                    type: array
+                    items: { $ref: "#/components/schemas/Invite" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [invites]
+      summary: Create an invite code (admin only).
+      operationId: createInvite
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_in_hours: { type: integer, minimum: 1, maximum: 168, default: 72 }
+                max_uses: { type: integer, minimum: 1, maximum: 20, default: 1 }
+      responses:
+        "201":
+          description: Created. `code` is only returned once.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InviteCreated" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /families/{familyId}/invites/{inviteId}:
+    delete:
+      tags: [invites]
+      summary: Revoke an invite (admin only).
+      operationId: revokeInvite
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+        - { name: inviteId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Revoked. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /invites/accept:
+    post:
+      tags: [invites]
+      summary: Join a family with an invite code (logged-in user).
+      operationId: acceptInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "200":
+          description: Joined.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FamilySummary" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /shares:
+    get:
+      tags: [shares]
+      summary: Outgoing and incoming location shares.
+      operationId: listShares
+      responses:
+        "200":
+          description: Shares.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Shares" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /shares/{userId}:
+    put:
+      tags: [shares]
+      summary: Share the caller's own location with another member of a common family.
+      operationId: grantShare
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204": { description: Granted (idempotent). }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [shares]
+      summary: Stop sharing with this user. Takes effect immediately, including live connections.
+      operationId: revokeShare
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204": { description: Revoked (idempotent). }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /users/{userId}/avatar:
+    get:
+      tags: [families]
+      summary: Profile picture of a user who shares a family with the caller (or the caller).
+      operationId: getAvatar
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: JPEG image.
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /ws:
+    get:
+      tags: [locations]
+      summary: WebSocket for live updates (see API description for message types).
+      operationId: liveSocket
+      responses:
+        "101": { description: Switching protocols. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: fc_session
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    FamilyId: { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+    UserId: { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    SessionId: { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
+    DeviceId: { name: deviceId, in: path, required: true, schema: { type: string, format: uuid } }
+  responses:
+    BadRequest:
+      description: Invalid input.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Unauthorized:
+      description: Not authenticated or invalid credentials.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Forbidden:
+      description: Authenticated but not allowed.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    NotFound:
+      description: Not found or not visible to the caller (no distinction, to avoid ID probing).
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    Conflict:
+      description: Conflicting state.
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    TooManyRequests:
+      description: Rate limit exceeded. See `Retry-After`.
+      headers:
+        Retry-After: { schema: { type: integer } }
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              examples: [invalid_input, unauthorized, forbidden, not_found, conflict, rate_limited, internal]
+            message: { type: string }
+            fields:
+              type: object
+              additionalProperties: { type: string }
+    Locale:
+      type: string
+      enum: [de, en]
+    Role:
+      type: string
+      enum: [admin, member]
+    Freshness:
+      type: string
+      description: live < 2 min, recent < 15 min, stale otherwise (based on recorded_at).
+      enum: [live, recent, stale]
+    Motion:
+      type: string
+      enum: [unknown, stationary, walking, driving]
+    Instance:
+      type: object
+      required: [setup_required, version, map_style_url, secure_context, registration_mode]
+      properties:
+        setup_required: { type: boolean }
+        version: { type: string }
+        map_style_url: { type: string }
+        secure_context:
+          type: boolean
+          description: True when the instance is configured with an https public URL.
+        registration_mode: { type: string, enum: [invite_only, closed] }
+    SetupRequest:
+      type: object
+      required: [setup_token, email, password, display_name, family_name]
+      properties:
+        setup_token: { type: string, description: Shown in the server log on first start. }
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 10, maxLength: 256 }
+        display_name: { type: string, minLength: 1, maxLength: 64 }
+        family_name: { type: string, minLength: 1, maxLength: 64 }
+        locale: { $ref: "#/components/schemas/Locale" }
+    RegisterRequest:
+      type: object
+      required: [invite_code, email, password, display_name]
+      properties:
+        invite_code: { type: string }
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 10, maxLength: 256 }
+        display_name: { type: string, minLength: 1, maxLength: 64 }
+        locale: { $ref: "#/components/schemas/Locale" }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+    TokenRequest:
+      type: object
+      required: [grant_type]
+      properties:
+        grant_type: { type: string, enum: [password, refresh_token] }
+        email: { type: string }
+        password: { type: string }
+        device_name: { type: string, minLength: 1, maxLength: 64 }
+        app_version: { type: string, maxLength: 32 }
+        refresh_token: { type: string }
+        invite_code: { type: string, description: Registers a new account when set (password grant). }
+        display_name: { type: string, minLength: 1, maxLength: 64 }
+    TokenResponse:
+      type: object
+      required: [access_token, refresh_token, token_type, expires_in, device_id, user]
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        token_type: { type: string, const: Bearer }
+        expires_in: { type: integer, description: Seconds until the access token expires. }
+        device_id: { type: string, format: uuid }
+        user: { $ref: "#/components/schemas/Me" }
+    Me:
+      type: object
+      required: [id, email, display_name, locale, is_instance_admin, has_avatar, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        display_name: { type: string }
+        locale: { $ref: "#/components/schemas/Locale" }
+        is_instance_admin: { type: boolean }
+        has_avatar: { type: boolean }
+        avatar_version: { type: [integer, "null"], description: Changes whenever the avatar changes (cache busting). }
+        created_at: { type: string, format: date-time }
+    Settings:
+      type: object
+      required: [sharing_paused, history_enabled, history_retention_days, share_battery]
+      properties:
+        sharing_paused: { type: boolean, description: Hides the own location from everyone while true. }
+        history_enabled: { type: boolean, description: Opt-in. When false only the last position is stored. }
+        history_retention_days: { type: integer, minimum: 1, maximum: 365 }
+        share_battery: { type: boolean }
+    SettingsUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        sharing_paused: { type: boolean }
+        history_enabled: { type: boolean, description: Disabling deletes the stored history. }
+        history_retention_days: { type: integer, minimum: 1, maximum: 365 }
+        share_battery: { type: boolean }
+    Session:
+      type: object
+      required: [id, kind, created_at, last_used_at, current]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [web, device] }
+        device_id: { type: [string, "null"], format: uuid }
+        device_name: { type: [string, "null"] }
+        user_agent: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time }
+        current: { type: boolean }
+    Device:
+      type: object
+      required: [id, name, platform, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        platform: { type: string, enum: [android, other] }
+        app_version: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        last_seen_at: { type: [string, "null"], format: date-time }
+    FamilySummary:
+      type: object
+      required: [id, name, role, member_count]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        member_count: { type: integer }
+    Member:
+      type: object
+      required: [user_id, display_name, role, color, has_avatar, joined_at, shares_with_me, i_share_with]
+      properties:
+        user_id: { type: string, format: uuid }
+        display_name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        color: { type: string, pattern: "^#[0-9a-f]{6}$" }
+        has_avatar: { type: boolean }
+        avatar_version: { type: [integer, "null"] }
+        joined_at: { type: string, format: date-time }
+        shares_with_me: { type: boolean, description: Effective visibility of this member's location for the caller. }
+        i_share_with: { type: boolean, description: Whether the caller shares with this member. }
+    Family:
+      type: object
+      required: [id, name, role, members]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/Member" }
+    Invite:
+      type: object
+      required: [id, code_hint, max_uses, use_count, expires_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        code_hint: { type: string, description: Last characters of the code. }
+        max_uses: { type: integer }
+        use_count: { type: integer }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    InviteCreated:
+      allOf:
+        - $ref: "#/components/schemas/Invite"
+        - type: object
+          required: [code]
+          properties:
+            code: { type: string, examples: [K7QF-2M9X-HD4R] }
+    Shares:
+      type: object
+      required: [outgoing, incoming]
+      properties:
+        outgoing:
+          type: array
+          items: { $ref: "#/components/schemas/ShareEntry" }
+        incoming:
+          type: array
+          items: { $ref: "#/components/schemas/ShareEntry" }
+    ShareEntry:
+      type: object
+      required: [user_id, display_name, since]
+      properties:
+        user_id: { type: string, format: uuid }
+        display_name: { type: string }
+        since: { type: string, format: date-time }
+    LocationPoint:
+      type: object
+      required: [id, recorded_at, lat, lon, accuracy_m]
+      additionalProperties: false
+      properties:
+        id: { type: string, format: uuid, description: Client-generated idempotency key. }
+        recorded_at: { type: string, format: date-time }
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lon: { type: number, minimum: -180, maximum: 180 }
+        accuracy_m: { type: number, exclusiveMinimum: 0, maximum: 100000 }
+        altitude_m: { type: [number, "null"] }
+        speed_mps: { type: [number, "null"], minimum: 0, maximum: 400 }
+        bearing_deg: { type: [number, "null"], minimum: 0, exclusiveMaximum: 360 }
+        battery_pct: { type: [integer, "null"], minimum: 0, maximum: 100 }
+        battery_charging: { type: [boolean, "null"] }
+        motion: { $ref: "#/components/schemas/Motion" }
+    LocationUpload:
+      type: object
+      required: [points]
+      properties:
+        points:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: "#/components/schemas/LocationPoint" }
+    LocationUploadResult:
+      type: object
+      required: [accepted, rejected]
+      properties:
+        accepted:
+          type: array
+          description: IDs that were stored or were already known (safe to delete on the device).
+          items: { type: string, format: uuid }
+        rejected:
+          type: array
+          description: IDs that will never be accepted (also safe to delete on the device).
+          items:
+            type: object
+            required: [id, reason]
+            properties:
+              id: { type: string }
+              reason: { type: string, enum: [invalid, too_old, in_future] }
+    Location:
+      type: object
+      required: [lat, lon, accuracy_m, motion, recorded_at, received_at, freshness]
+      properties:
+        lat: { type: number }
+        lon: { type: number }
+        accuracy_m: { type: number }
+        altitude_m: { type: [number, "null"] }
+        speed_mps: { type: [number, "null"] }
+        bearing_deg: { type: [number, "null"] }
+        battery_pct: { type: [integer, "null"], description: Only present if the owner shares battery. }
+        battery_charging: { type: [boolean, "null"] }
+        motion: { $ref: "#/components/schemas/Motion" }
+        recorded_at: { type: string, format: date-time }
+        received_at: { type: string, format: date-time }
+        freshness: { $ref: "#/components/schemas/Freshness" }
+    HistoryPoint:
+      allOf:
+        - $ref: "#/components/schemas/Location"
+        - type: object
+          required: [id, suspect]
+          properties:
+            id: { type: string, format: uuid }
+            suspect: { type: boolean, description: Flagged as implausible GPS jump. }
+    MapMember:
+      type: object
+      required: [user_id, display_name, color, has_avatar, is_self, location]
+      properties:
+        user_id: { type: string, format: uuid }
+        display_name: { type: string }
+        color: { type: string }
+        has_avatar: { type: boolean }
+        avatar_version: { type: [integer, "null"] }
+        is_self: { type: boolean }
+        location:
+          description: null if the member does not share with the caller (or has no position yet).
+          oneOf:
+            - $ref: "#/components/schemas/Location"
+            - type: "null"
+    FamilyMap:
+      type: object
+      required: [family_id, server_time, members]
+      properties:
+        family_id: { type: string, format: uuid }
+        server_time: { type: string, format: date-time }
+        members:
+          type: array
+          items: { $ref: "#/components/schemas/MapMember" }
