@@ -154,6 +154,9 @@ func (s *Store) LeaveFamily(ctx context.Context, familyID, userID uuid.UUID) ([]
 		if _, err := tx.Exec(ctx, "DELETE FROM family_members WHERE family_id = $1 AND user_id = $2", familyID, userID); err != nil {
 			return err
 		}
+		if err := forgetFamilyPlaces(ctx, tx, familyID, userID); err != nil {
+			return err
+		}
 		if err := afterMemberLeft(ctx, tx, familyID); err != nil {
 			return err
 		}
@@ -180,6 +183,9 @@ func (s *Store) RemoveMember(ctx context.Context, familyID, actor, target uuid.U
 		}
 		if tag.RowsAffected() == 0 {
 			return ErrNotFound
+		}
+		if err := forgetFamilyPlaces(ctx, tx, familyID, target); err != nil {
+			return err
 		}
 		ended, err = pruneOrphanedShares(ctx, tx, target)
 		return err

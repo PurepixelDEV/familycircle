@@ -38,6 +38,7 @@ type limiters struct {
 	sensitive *ratelimit.Limiter // per client IP: setup, register, invite accept, refresh
 	upload    *ratelimit.Limiter // per user: location uploads
 	avatar    *ratelimit.Limiter // per user: avatar uploads (expensive image decoding)
+	alerts    *ratelimit.Limiter // per user: SOS, check-ins, ring/locate requests
 }
 
 type Server struct {
@@ -79,6 +80,7 @@ func New(o Options) *Server {
 			sensitive: ratelimit.New(10, 2),
 			upload:    ratelimit.New(60, 60),
 			avatar:    ratelimit.New(5, 1),
+			alerts:    ratelimit.New(10, 6),
 		},
 	}
 }
@@ -88,7 +90,7 @@ func (s *Server) SetClock(now func() time.Time) { s.now = now }
 
 // Limiters exposes the rate limiters for periodic sweeping.
 func (s *Server) Limiters() []*ratelimit.Limiter {
-	return []*ratelimit.Limiter{s.lim.general, s.lim.login, s.lim.failPair, s.lim.failAcct, s.lim.sensitive, s.lim.upload, s.lim.avatar}
+	return []*ratelimit.Limiter{s.lim.general, s.lim.login, s.lim.failPair, s.lim.failAcct, s.lim.sensitive, s.lim.upload, s.lim.avatar, s.lim.alerts}
 }
 
 func (s *Server) checkSetupToken(given string) bool {
@@ -139,8 +141,25 @@ func (s *Server) Routes() []Route {
 		{"DELETE", "/families/{familyId}/invites/{inviteId}", userAuth, s.handleRevokeInvite},
 		{"POST", "/invites/accept", userAuth, s.handleAcceptInvite},
 
+		{"GET", "/families/{familyId}/places", userAuth, s.handleListPlaces},
+		{"POST", "/families/{familyId}/places", userAuth, s.handleCreatePlace},
+		{"PATCH", "/places/{placeId}", userAuth, s.handleUpdatePlace},
+		{"DELETE", "/places/{placeId}", userAuth, s.handleDeletePlace},
+		{"PUT", "/places/{placeId}/mute", userAuth, s.handlePlaceMute(true)},
+		{"DELETE", "/places/{placeId}/mute", userAuth, s.handlePlaceMute(false)},
+
+		{"GET", "/alerts", userAuth, s.handleListAlerts},
+		{"POST", "/sos", userAuth, s.handleSOS},
+		{"POST", "/sos/resolve", userAuth, s.handleResolveSOS},
+		{"POST", "/check-ins", userAuth, s.handleCheckIn},
+		{"POST", "/battery-alerts", deviceAuth, s.handleBatteryAlert},
+		{"POST", "/users/{userId}/ring", userAuth, s.handleRemoteRequest(store.AlertRing, ringTTL)},
+		{"POST", "/users/{userId}/locate", userAuth, s.handleRemoteRequest(store.AlertLocate, locateTTL)},
+		{"GET", "/users/{userId}/locations", userAuth, s.handleUserHistory},
+
 		{"GET", "/shares", userAuth, s.handleListShares},
 		{"PUT", "/shares/{userId}", userAuth, s.handleGrantShare},
+		{"PATCH", "/shares/{userId}", userAuth, s.handleUpdateShare},
 		{"DELETE", "/shares/{userId}", userAuth, s.handleRevokeShare},
 
 		{"GET", "/users/{userId}/avatar", userAuth, s.handleGetAvatar},

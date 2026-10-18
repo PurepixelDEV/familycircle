@@ -160,6 +160,9 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 		HistoryEnabled       *bool `json:"history_enabled"`
 		HistoryRetentionDays *int  `json:"history_retention_days"`
 		ShareBattery         *bool `json:"share_battery"`
+		AllowRing            *bool `json:"allow_ring"`
+		AllowLocateRequest   *bool `json:"allow_locate_request"`
+		BatteryAlerts        *bool `json:"battery_alerts"`
 	}
 	if !decode(w, r, &in, 0) {
 		return
@@ -177,6 +180,7 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 	before, after, err := s.store.UpdateSettings(r.Context(), uid, store.SettingsUpdate{
 		SharingPaused: in.SharingPaused, HistoryEnabled: in.HistoryEnabled,
 		HistoryRetentionDays: in.HistoryRetentionDays, ShareBattery: in.ShareBattery,
+		AllowRing: in.AllowRing, AllowLocateRequest: in.AllowLocateRequest, BatteryAlerts: in.BatteryAlerts,
 	})
 	if err != nil {
 		s.fail(w, r, err)
@@ -360,7 +364,8 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	sessions, err5 := s.store.ListSessions(ctx, uid)
 	latest, err6 := s.store.LatestFor(ctx, uid, uid)
 	history, err7 := s.store.History(ctx, uid, time.Unix(0, 0), now.Add(24*time.Hour), 10_000_000)
-	if err := errors.Join(err1, err2, err3, err4, err5, err6, err7); err != nil {
+	sent, err8 := s.store.SentAlerts(ctx, uid)
+	if err := errors.Join(err1, err2, err3, err4, err5, err6, err7, err8); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -381,6 +386,10 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		l := toLocation(*latest, now)
 		latestDTO = &l
 	}
+	alerts := make([]alertDTO, 0, len(sent))
+	for _, a := range sent {
+		alerts = append(alerts, toAlert(a, now))
+	}
 	hist := make([]historyPointDTO, 0, len(history))
 	for _, h := range history {
 		hist = append(hist, historyPointDTO{h.ID, h.Suspect, toLocation(h.Location, now)})
@@ -396,14 +405,28 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		"shares_incoming":  toShareEntries(in),
 		"devices":          devs,
 		"sessions":         sess,
+		"alerts_sent":      alerts,
 		"latest_location":  latestDTO,
 		"location_history": hist,
 	})
 }
 
 func (s *Server) handleOwnHistory(w http.ResponseWriter, r *http.Request) {
-	now := s.now()
-	from, to, limit := now.Add(-7*24*time.Hour), now.Add(time.Minute), 1000
+	from, to, limit, ok := historyParams(w, r, s.now())
+	if !ok {
+		return
+	}
+	points, err := s.store.History(r.Context(), principalFrom(r).user.ID, from, to, limit)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeHistory(w, points, s.now())
+}
+
+// historyParams parses from/to/limit (default: the last 7 days, 1000 points).
+func historyParams(w http.ResponseWriter, r *http.Request, now time.Time) (from, to time.Time, limit int, ok bool) {
+	from, to, limit = now.Add(-7*24*time.Hour), now.Add(time.Minute), 1000
 	q := r.URL.Query()
 	f := fieldErrors{}
 	if v := q.Get("from"); v != "" {
@@ -422,13 +445,12 @@ func (s *Server) handleOwnHistory(w http.ResponseWriter, r *http.Request) {
 		limit = n
 	}
 	if f.write(w) {
-		return
+		return from, to, limit, false
 	}
-	points, err := s.store.History(r.Context(), principalFrom(r).user.ID, from, to, limit)
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
+	return from, to, limit, true
+}
+
+func writeHistory(w http.ResponseWriter, points []store.HistoryPoint, now time.Time) {
 	out := make([]historyPointDTO, 0, len(points))
 	for _, h := range points {
 		out = append(out, historyPointDTO{h.ID, h.Suspect, toLocation(h.Location, now)})

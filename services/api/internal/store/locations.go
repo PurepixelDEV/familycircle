@@ -51,6 +51,7 @@ type IngestResult struct {
 	LatestChanged bool
 	Latest        Location
 	ShareBattery  bool
+	Presence      []PresenceChange // arrivals/departures caused by the new latest fix
 }
 
 // Ingest stores a batch of fixes for userID/deviceID. Identity comes from the authenticated
@@ -136,6 +137,9 @@ func (s *Store) Ingest(ctx context.Context, userID, deviceID uuid.UUID, points [
 				return err
 			}
 			candChanged = cand != nil
+			if res.Presence, err = updatePresence(ctx, tx, userID, newest.Lat, newest.Lon, newest.AccuracyM, newest.RecordedAt); err != nil {
+				return err
+			}
 		}
 		if candChanged {
 			if cand == nil {
@@ -258,10 +262,43 @@ func (s *Store) History(ctx context.Context, userID uuid.UUID, from, to time.Tim
 	})
 }
 
+// HistoryFor returns owner's history for viewer. Others need all of: the location is visible
+// (visibleSQL), the owner granted history on the share, and the owner has history enabled.
+// Otherwise ErrNotFound – the reader cannot tell "not allowed" from "no such user".
+func (s *Store) HistoryFor(ctx context.Context, viewer, owner uuid.UUID, from, to time.Time, limit int) ([]HistoryPoint, error) {
+	if viewer != owner {
+		var ok, battery bool
+		err := s.pool.QueryRow(ctx, `SELECT `+visibleSQL("$1", "$2")+`
+			AND EXISTS (SELECT 1 FROM location_shares hs WHERE hs.owner_id = $1 AND hs.viewer_id = $2 AND hs.history)
+			AND hu.history_enabled, hu.share_battery FROM user_settings hu WHERE hu.user_id = $1`, owner, viewer).Scan(&ok, &battery)
+		if err != nil {
+			return nil, notFound(err)
+		}
+		if !ok {
+			return nil, ErrNotFound
+		}
+		points, err := s.History(ctx, owner, from, to, limit)
+		if !battery {
+			for i := range points {
+				points[i].Location = points[i].WithoutBattery()
+			}
+		}
+		return points, err
+	}
+	return s.History(ctx, owner, from, to, limit)
+}
+
 // DeleteAllLocations removes every stored position of the user (latest and history).
 func (s *Store) DeleteAllLocations(ctx context.Context, userID uuid.UUID) error {
 	return s.tx(ctx, func(tx pgx.Tx) error {
 		if _, err := tx.Exec(ctx, "DELETE FROM location_history WHERE user_id = $1", userID); err != nil {
+			return err
+		}
+		// Positions in sent alerts and presence at places are location data as well.
+		if _, err := tx.Exec(ctx, "UPDATE alerts SET position = NULL, accuracy_m = NULL WHERE actor_id = $1 AND position IS NOT NULL", userID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, "DELETE FROM place_presence WHERE user_id = $1", userID); err != nil {
 			return err
 		}
 		_, err := tx.Exec(ctx, "DELETE FROM locations_latest WHERE user_id = $1", userID)

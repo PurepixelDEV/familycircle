@@ -120,6 +120,7 @@ func (s *Server) handleUploadLocations(w http.ResponseWriter, r *http.Request) {
 		if res.LatestChanged {
 			s.publishLocation(r.Context(), p.user.ID, res.Latest, res.ShareBattery)
 		}
+		s.publishPresence(r.Context(), p.user.ID, res.Presence)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"accepted": accepted, "rejected": rejected})
 }

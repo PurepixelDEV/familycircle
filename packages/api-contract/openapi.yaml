@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FamilyCircle API
-  version: 0.2.0
+  version: 0.3.0
   summary: Self-hosted, privacy-first family location sharing.
   license:
     name: AGPL-3.0-or-later
@@ -23,6 +23,9 @@ info:
     * `{"type":"location_hidden","user_id":"…"}` – a share was revoked/paused or membership ended;
       clients must remove the marker immediately.
     * `{"type":"family_changed","family_id":"…"}` – members changed; refetch the map.
+    * `{"type":"places_changed","family_id":"…"}` – places of the family changed; refetch them.
+    * `{"type":"alert","alert":Alert}` – SOS, check-in, arrival/departure, battery, ring/locate request
+      (recipients: docs/ALERTS.md). After (re)connecting, clients catch up with `GET /alerts?after=<last id>`.
     Clients send nothing except WebSocket pings.
 servers:
   - url: /api/v1
@@ -34,6 +37,8 @@ tags:
   - name: invites
   - name: shares
   - name: locations
+  - name: alerts
+  - name: places
 security:
   - cookieAuth: []
   - bearerAuth: []
@@ -658,6 +663,288 @@ paths:
       responses:
         "204": { description: Revoked (idempotent). }
         "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [shares]
+      summary: Let this viewer also see the caller's history (only while the location is shared and history is enabled).
+      operationId: updateShare
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [history]
+              additionalProperties: false
+              properties:
+                history: { type: boolean }
+      responses:
+        "204": { description: Updated. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{userId}/locations:
+    get:
+      tags: [locations]
+      summary: History of a person – the caller's own, or another person's who granted it (share with history).
+      description: Anything not allowed (no share, no history grant, history disabled, paused) is a plain 404.
+      operationId: listUserLocations
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 5000, default: 1000 } }
+      responses:
+        "200":
+          description: History, newest first. Battery values only if the owner shares them.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [points]
+                properties:
+                  points:
+                    type: array
+                    items: { $ref: "#/components/schemas/HistoryPoint" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /users/{userId}/ring:
+    post:
+      tags: [alerts]
+      summary: Let the person's phones ring loudly for up to 2 minutes (own account always; others only with their opt-in `allow_ring`).
+      operationId: ringUser
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "202": { $ref: "#/components/responses/RemoteRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /users/{userId}/locate:
+    post:
+      tags: [alerts]
+      summary: Ask the person's phone for a fresh position (own account always; others need `allow_locate_request` and a visible location).
+      operationId: locateUser
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "202": { $ref: "#/components/responses/RemoteRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /alerts:
+    get:
+      tags: [alerts]
+      summary: Alerts for the caller with id > after (oldest first), plus the caller's own SOS/check-ins (`mine`).
+      description: Received alerts are re-checked at read time – a revoked share or a left family also hides older ones. Window 30 days.
+      operationId: listAlerts
+      parameters:
+        - { name: after, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+      responses:
+        "200":
+          description: Alerts.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [alerts, server_time]
+                properties:
+                  alerts:
+                    type: array
+                    items: { $ref: "#/components/schemas/Alert" }
+                  server_time: { type: string, format: date-time }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /sos:
+    post:
+      tags: [alerts]
+      summary: SOS to everyone in the caller's families (no share needed – explicit action). Without a position the last known one is used.
+      operationId: sendSos
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Position" }
+      responses:
+        "201": { $ref: "#/components/responses/AlertCreated" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /sos/resolve:
+    post:
+      tags: [alerts]
+      summary: '"I am safe" – resolves the caller''s open SOS and notifies the family. Idempotent.'
+      operationId: resolveSos
+      responses:
+        "200":
+          description: Number of resolved SOS alerts.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [resolved]
+                properties:
+                  resolved: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /check-ins:
+    post:
+      tags: [alerts]
+      summary: '"Arrived safely" with position and optional message to the caller''s families; a place containing the position is attached.'
+      operationId: checkIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/Position"
+                - type: object
+                  required: [lat, lon]
+                  properties:
+                    message: { type: string, maxLength: 140 }
+      responses:
+        "201": { $ref: "#/components/responses/AlertCreated" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /battery-alerts:
+    post:
+      tags: [alerts]
+      summary: Device reports low battery or shutdown with the last position (only to people who can see the location; deduplicated; off if `battery_alerts` is false).
+      operationId: batteryAlert
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/Position"
+                - type: object
+                  required: [reason, battery_pct]
+                  properties:
+                    reason: { type: string, enum: [low, shutdown] }
+                    battery_pct: { type: integer, minimum: 0, maximum: 100 }
+      responses:
+        "200":
+          description: Not sent (disabled or already sent recently).
+          content:
+            application/json:
+              schema: { type: object, required: [sent], properties: { sent: { type: boolean } } }
+        "201":
+          description: Sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sent, recipients]
+                properties:
+                  sent: { type: boolean }
+                  recipients: { type: integer }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /families/{familyId}/places:
+    get:
+      tags: [places]
+      summary: Places of the family. `present` lists only members whose location the caller may see.
+      operationId: listPlaces
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      responses:
+        "200":
+          description: Places.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [places]
+                properties:
+                  places:
+                    type: array
+                    items: { $ref: "#/components/schemas/Place" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [places]
+      summary: Add a place (any member, at most 50 per family). Arrivals/departures are detected by the server.
+      operationId: createPlace
+      parameters:
+        - $ref: "#/components/parameters/FamilyId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/PlaceInput"
+                - required: [name, lat, lon, radius_m]
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { type: object, required: [id], properties: { id: { type: string, format: uuid } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /places/{placeId}:
+    patch:
+      tags: [places]
+      summary: Change a place (creator or family admin). Moving it resets presence silently.
+      operationId: updatePlace
+      parameters:
+        - $ref: "#/components/parameters/PlaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlaceInput" }
+      responses:
+        "204": { description: Updated. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [places]
+      summary: Delete a place (creator or family admin).
+      operationId: deletePlace
+      parameters:
+        - $ref: "#/components/parameters/PlaceId"
+      responses:
+        "204": { description: Deleted. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /places/{placeId}/mute:
+    put:
+      tags: [places]
+      summary: Stop arrival/departure alerts of this place for the caller.
+      operationId: mutePlace
+      parameters:
+        - $ref: "#/components/parameters/PlaceId"
+      responses:
+        "204": { description: Muted (idempotent). }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [places]
+      summary: Receive arrival/departure alerts of this place again.
+      operationId: unmutePlace
+      parameters:
+        - $ref: "#/components/parameters/PlaceId"
+      responses:
+        "204": { description: Unmuted (idempotent). }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /users/{userId}/avatar:
     get:
       tags: [families]
@@ -692,9 +979,31 @@ components:
   parameters:
     FamilyId: { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
     UserId: { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    PlaceId: { name: placeId, in: path, required: true, schema: { type: string, format: uuid } }
     SessionId: { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } }
     DeviceId: { name: deviceId, in: path, required: true, schema: { type: string, format: uuid } }
   responses:
+    AlertCreated:
+      description: Alert created and delivered to the live connections of its recipients.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [alert, recipients]
+            properties:
+              alert: { $ref: "#/components/schemas/Alert" }
+              recipients: { type: integer }
+    RemoteRequest:
+      description: Request stored; phones that connect before `expires_at` receive it as well.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [alert_id, expires_at, online]
+            properties:
+              alert_id: { type: integer }
+              expires_at: { type: string, format: date-time }
+              online: { type: boolean, description: At least one live connection of the person right now. }
     BadRequest:
       description: Invalid input.
       content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
@@ -823,12 +1132,15 @@ components:
         expires_at: { type: string, format: date-time }
     Settings:
       type: object
-      required: [sharing_paused, history_enabled, history_retention_days, share_battery]
+      required: [sharing_paused, history_enabled, history_retention_days, share_battery, allow_ring, allow_locate_request, battery_alerts]
       properties:
         sharing_paused: { type: boolean, description: Hides the own location from everyone while true. }
         history_enabled: { type: boolean, description: Opt-in. When false only the last position is stored. }
         history_retention_days: { type: integer, minimum: 1, maximum: 365 }
         share_battery: { type: boolean }
+        allow_ring: { type: boolean, description: Family members may let my phones ring (default false). }
+        allow_locate_request: { type: boolean, description: People who see my location may request a fresh position (default false). }
+        battery_alerts: { type: boolean, description: Send low-battery / shutdown notices to people who see my location (default true). }
     SettingsUpdate:
       type: object
       additionalProperties: false
@@ -837,6 +1149,9 @@ components:
         history_enabled: { type: boolean, description: Disabling deletes the stored history. }
         history_retention_days: { type: integer, minimum: 1, maximum: 365 }
         share_battery: { type: boolean }
+        allow_ring: { type: boolean }
+        allow_locate_request: { type: boolean }
+        battery_alerts: { type: boolean }
     Session:
       type: object
       required: [id, kind, created_at, last_used_at, current]
@@ -919,11 +1234,77 @@ components:
           items: { $ref: "#/components/schemas/ShareEntry" }
     ShareEntry:
       type: object
-      required: [user_id, display_name, since]
+      required: [user_id, display_name, since, history]
       properties:
         user_id: { type: string, format: uuid }
         display_name: { type: string }
         since: { type: string, format: date-time }
+        history: { type: boolean, description: "Outgoing: history granted. Incoming: the owner's history is readable now." }
+    Position:
+      type: object
+      additionalProperties: true
+      properties:
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lon: { type: number, minimum: -180, maximum: 180 }
+        accuracy_m: { type: number, exclusiveMinimum: 0, maximum: 100000 }
+    Alert:
+      type: object
+      required: [id, kind, actor, from_device_id, place, location, battery_pct, message, created_at, expires_at, resolved_at, active, mine]
+      properties:
+        id: { type: integer, description: "Increasing; use as cursor for GET /alerts?after=." }
+        kind: { type: string, enum: [sos, sos_resolved, check_in, arrival, departure, battery_low, last_location, ring, locate] }
+        actor:
+          type: object
+          required: [user_id, display_name]
+          properties:
+            user_id: { type: string, format: uuid }
+            display_name: { type: string }
+        from_device_id: { type: [string, "null"], format: uuid, description: Device that sent it (a phone ignores its own ring request). }
+        place:
+          type: [object, "null"]
+          required: [id, name]
+          properties:
+            id: { type: [string, "null"], format: uuid }
+            name: { type: string }
+        location:
+          type: [object, "null"]
+          required: [lat, lon, accuracy_m]
+          properties:
+            lat: { type: number }
+            lon: { type: number }
+            accuracy_m: { type: [number, "null"] }
+        battery_pct: { type: [integer, "null"] }
+        message: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: [string, "null"], format: date-time }
+        resolved_at: { type: [string, "null"], format: date-time }
+        active: { type: boolean, description: "SOS: unresolved and younger than 24 h. Ring/locate: not expired." }
+        mine: { type: boolean, description: Sent by the caller (own SOS / check-in). }
+    Place:
+      type: object
+      required: [id, family_id, name, lat, lon, radius_m, created_by, created_at, muted, present]
+      properties:
+        id: { type: string, format: uuid }
+        family_id: { type: string, format: uuid }
+        name: { type: string }
+        lat: { type: number }
+        lon: { type: number }
+        radius_m: { type: integer, minimum: 50, maximum: 2000 }
+        created_by: { type: [string, "null"], format: uuid }
+        created_at: { type: string, format: date-time }
+        muted: { type: boolean }
+        present:
+          type: array
+          description: Members inside right now whose location the caller may see (and the caller).
+          items: { type: string, format: uuid }
+    PlaceInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1, maxLength: 64 }
+        lat: { type: number, minimum: -90, maximum: 90 }
+        lon: { type: number, minimum: -180, maximum: 180 }
+        radius_m: { type: integer, minimum: 50, maximum: 2000 }
     LocationPoint:
       type: object
       required: [id, recorded_at, lat, lon, accuracy_m]
