@@ -63,6 +63,25 @@ export function PrivacyView() {
           </section>
         )}
 
+        {s && <HistorySharesSection historyEnabled={s.history_enabled} />}
+
+        {s && (
+          <section className="section" aria-labelledby="remote-h">
+            <h2 id="remote-h">{t("privacy.remote")}</h2>
+            <div className="panel">
+              <Switch title={t("privacy.allowRing")} help={t("privacy.allowRingHelp")} checked={s.allow_ring} onChange={(v) => void update({ allow_ring: v })} />
+              <Switch
+                title={t("privacy.allowLocate")}
+                help={t("privacy.allowLocateHelp")}
+                checked={s.allow_locate_request}
+                onChange={(v) => void update({ allow_locate_request: v })}
+              />
+              <Switch title={t("privacy.batteryAlerts")} help={t("privacy.batteryAlertsHelp")} checked={s.battery_alerts} onChange={(v) => void update({ battery_alerts: v })} />
+              <NotificationPermission />
+            </div>
+          </section>
+        )}
+
         <ConnectPhone />
         <ProfileSection />
         <SessionsSection ask={ask} />
@@ -362,4 +381,81 @@ function DeleteAccountSection() {
 function UsernameHint() {
   const { me } = useApp();
   return <input type="email" name="username" autoComplete="username" value={me.email} readOnly hidden />;
+}
+
+/** Per viewer: may this person (who already sees my location) also see my history? */
+function HistorySharesSection({ historyEnabled }: { historyEnabled: boolean }) {
+  const { t } = useI18n();
+  const app = useApp();
+  const errorText = useErrorText();
+  const [busy, setBusy] = useState<string | null>(null);
+  const outgoing = app.shares?.outgoing ?? [];
+
+  const toggle = async (userId: string, on: boolean) => {
+    setBusy(userId);
+    try {
+      await api.updateShare(userId, on);
+    } catch (e) {
+      toast(errorText(e));
+    } finally {
+      setBusy(null);
+      app.reloadShares();
+    }
+  };
+
+  return (
+    <section className="section" aria-labelledby="hshare-h">
+      <h2 id="hshare-h">{t("privacy.historyShares")}</h2>
+      <p className="small muted">{historyEnabled ? t("privacy.historySharesHelp") : t("privacy.historySharesOff")}</p>
+      <div className="panel">
+        {outgoing.length === 0 && (
+          <p className="muted" style={{ padding: "14px 0" }}>
+            {t("privacy.historySharesNone")}
+          </p>
+        )}
+        {outgoing.map((sh) => (
+          <Switch
+            key={sh.user_id}
+            title={t("privacy.historyShareToggle", { name: sh.display_name })}
+            checked={historyEnabled && sh.history}
+            disabled={!historyEnabled || busy === sh.user_id}
+            onChange={(v) => void toggle(sh.user_id, v)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** Asks for notification permission only on an explicit click – never automatically. */
+function NotificationPermission() {
+  const { t } = useI18n();
+  const supported = typeof Notification !== "undefined";
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(supported ? Notification.permission : "unsupported");
+  return (
+    <div className="switch-row">
+      <span className="title">{t("privacy.notifications")}</span>
+      <span className="help">
+        {perm === "granted"
+          ? t("privacy.notificationsOn")
+          : perm === "denied"
+            ? t("privacy.notificationsDenied")
+            : perm === "unsupported"
+              ? t("privacy.notificationsUnsupported")
+              : t("privacy.notificationsHelp")}
+      </span>
+      {perm === "default" && (
+        <button
+          className="btn small secondary"
+          type="button"
+          style={{ gridColumn: 1, justifySelf: "start", marginTop: 6 }}
+          onClick={() => {
+            void Notification.requestPermission().then(setPerm, () => undefined);
+          }}
+        >
+          {t("privacy.notificationsAllow")}
+        </button>
+      )}
+    </div>
+  );
 }

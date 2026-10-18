@@ -61,5 +61,10 @@ func (s *Store) Purge(ctx context.Context) (PurgeResult, error) {
 	if _, err = s.pool.Exec(ctx, `DELETE FROM pairing_codes WHERE expires_at < $1::timestamptz - interval '1 day'`, now); err != nil {
 		return r, err
 	}
+	// Alerts are kept 30 days (GET /alerts window); ring/locate requests only 1 day.
+	if _, err = s.pool.Exec(ctx, `DELETE FROM alerts WHERE created_at < $1::timestamptz - interval '30 days'
+		OR (kind IN ('ring', 'locate') AND created_at < $1::timestamptz - interval '1 day')`, now); err != nil {
+		return r, err
+	}
 	return r, nil
 }

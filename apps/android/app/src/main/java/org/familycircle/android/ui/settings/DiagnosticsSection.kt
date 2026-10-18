@@ -67,13 +67,14 @@ fun DiagnosticsSection() {
     val effective by TrackingRuntime.effectiveMode.collectAsStateWithLifecycle()
     val providers by TrackingRuntime.providers.collectAsStateWithLifecycle()
     val liveState by container.live.state.collectAsStateWithLifecycle()
+    val liveHolders by container.liveHub.holderNames.collectAsStateWithLifecycle()
     val now by rememberNow(15_000)
     var tick by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    val snapshot = remember(prefs, queue, running, effective, providers, liveState, tick, now) {
-        DiagnosticsSnapshot.collect(context, prefs, queue, running, effective, providers, liveState, container.live.lastConnectedAtMs)
+    val snapshot = remember(prefs, queue, running, effective, providers, liveState, liveHolders, tick, now) {
+        DiagnosticsSnapshot.collect(context, prefs, queue, running, effective, providers, liveState, container.live.lastConnectedAtMs, liveHolders)
     }
     val copied = stringResource(R.string.diag_copied)
 

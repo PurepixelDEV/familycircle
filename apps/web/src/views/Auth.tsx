@@ -3,6 +3,8 @@ import { api, ApiError, type Instance, type Me } from "../api/client";
 import { useI18n } from "../i18n";
 import { navigate, queryParam } from "../lib/router";
 import { Field, Logo, PasswordInput, useErrorText } from "../components/ui";
+import { AppHandoff } from "../components/AppHandoff";
+import { inviteUrl } from "../components/QrCode";
 
 function AuthFrame(props: { title: string; intro: string; insecure: boolean; children: React.ReactNode }) {
   const { t } = useI18n();
@@ -111,7 +113,8 @@ export function LoginView({ instance, onDone }: { instance: Instance; onDone: (m
 export function RegisterView({ instance, onDone }: { instance: Instance; onDone: (me: Me) => void }) {
   const { t, locale } = useI18n();
   const { busy, error, fields, run } = useSubmit(onDone);
-  const [v, setV] = useState({ invite_code: queryParam("code") ?? "", display_name: "", email: "", password: "" });
+  const linkCode = queryParam("code");
+  const [v, setV] = useState({ invite_code: linkCode ?? "", display_name: "", email: "", password: "" });
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) => setV({ ...v, [k]: e.target.value });
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +122,12 @@ export function RegisterView({ instance, onDone }: { instance: Instance; onDone:
   };
   return (
     <AuthFrame title={t("auth.registerTitle")} intro={t("auth.registerIntro")} insecure={!instance.secure_context && location.protocol !== "https:"}>
+      {linkCode && (
+        <>
+          <AppHandoff url={inviteUrl(location.origin, linkCode)} version={instance.version} />
+          <p className="muted">{t("applink.web")}</p>
+        </>
+      )}
       <form onSubmit={submit} noValidate>
         <Field label={t("auth.inviteCode")} error={fields.invite_code}>
           {(id, d) => <input id={id} aria-describedby={d} className="input code" autoComplete="off" required value={v.invite_code} onChange={set("invite_code")} />}

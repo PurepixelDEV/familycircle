@@ -5,6 +5,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-18
+
+Phase 3: Sicherheitsfunktionen für die Familie und Einladen per Link. Update über 0.2.x ohne
+Neuanmeldung (gleicher Signaturschlüssel); der Server erweitert die Datenbank automatisch
+(Migration 0003). Hardwaretests der neuen Funktionen (H-26 bis H-33) stehen noch aus.
+
+### Hinzugefügt – Phase 3 (docs/ALERTS.md)
+- **SOS**: Gedrückt halten → Alarm mit Position an die ganze Familie, „Ich bin in Sicherheit“ beendet ihn.
+- **Orte mit Ankunft/Abfahrt**: Orte pro Familie (Radius 50–2000 m); der Server erkennt Betreten und
+  Verlassen mit Hysterese und meldet es Personen, die den Standort sehen dürfen; pro Ort stummschaltbar.
+- **Akku-Warnung und letzter Standort** bei ≤ 15 % Akku und beim Ausschalten (abschaltbar).
+- **„Standort jetzt aktualisieren“** und **„Handy klingeln lassen“** – eigene Geräte immer, andere nur mit
+  deren Einwilligung (Standard aus).
+- **Check-in „Bin angekommen“** mit optionaler Nachricht.
+- **Verlauf / Zeitstrahl**: eigener Verlauf; anderer nur, wenn die Person „darf meinen Verlauf sehen“ erteilt.
+- Zustellung ohne Google-Push: Live-Verbindung beim Teilen oder mit „Alarme immer sofort empfangen“,
+  sonst Nachholen spätestens alle 15 min (`GET /alerts`).
+- API 0.3.0, Migration `0003_alerts_places`.
+
+### Hinzugefügt
+- Familie per Link einladen (WhatsApp, SMS, E-Mail): Web „Link teilen“ / „Per WhatsApp senden“ /
+  „Nachricht kopieren“; Android „Einladungslink erstellen und teilen“ für Verwalter.
+- Einladungs- und Kopplungsseite im Browser bieten auf Android „App herunterladen“ (APK passend zur
+  Serverversion) und „In der App öffnen“ (`familycircle://link`, docs/QR_FORMAT.md). Angemeldete Nutzer
+  treten mit einem Einladungslink nach Rückfrage einer weiteren Familie bei.
+
+### Behoben
+- Web: Ein Einladungslink, der in einem Browser ohne Sitzung geöffnet wurde, leitete auf `/login` um und
+  verlor den Code (Sitzungsprüfung beim Start löste die Abmelde-Weiterleitung aus).
+
 ## [0.2.1] - 2026-10-18
 
 Teilen läuft weiter, wenn die App weggewischt wird; neues Logo. Update über 0.2.0 ohne Neuanmeldung

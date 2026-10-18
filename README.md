@@ -10,7 +10,7 @@
 **Private Standortfreigabe für Familien – selbst gehostet, quelloffen, ohne Tracker.**
 *Self-hosted, privacy-first family location sharing – an open-source alternative to Life360 (AGPL-3.0-or-later).*
 
-> **Status: 0.2.1 – Pre-Release zum Testen (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
+> **Status: 0.3.0 – Pre-Release zum Testen (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
 > [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Offene Risiken: [docs/RISKS.md](docs/RISKS.md).
 
 ## Was FamilyCircle kann
@@ -18,6 +18,9 @@
   Standort im Hintergrund mit sichtbarem Status, vier Tracking-Modi, Offline-Warteschlange, Pause per Fingertipp.
 * **Web-App / PWA**: Familienkarte mit Profilbildern, Live-Aktualisierung, deutlich markierten veralteten Positionen,
   Familien und Einladungen verwalten, Privatsphäre-Einstellungen, Geräte und Sitzungen, Datenexport.
+* **Sicherheit für die Familie** (ab 0.3): SOS-Knopf, Orte mit Ankunfts-/Abfahrtsmeldungen, Akku-Warnung mit
+  letztem Standort, „Standort jetzt aktualisieren“, Handy klingeln lassen, Check-in „Bin angekommen“,
+  Verlauf – alles nach den Regeln in [docs/ALERTS.md](docs/ALERTS.md).
 * **Privatsphäre zuerst**: Jede Person entscheidet selbst, mit wem sie ihren Standort teilt. Familien-Admins sehen
   nichts ohne Freigabe. Widerruf wirkt sofort, auch auf offene Live-Verbindungen. Verlauf nur nach Opt-in.
   Keine Telemetrie, keine Werbung, keine Tracker.

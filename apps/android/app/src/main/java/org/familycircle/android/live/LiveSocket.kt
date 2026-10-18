@@ -33,11 +33,11 @@ sealed interface LiveSignal {
 /**
  * Live updates over `GET /api/v1/ws` with `Authorization: Bearer`.
  *
- * [signals] is a cold flow: the socket only exists while it is collected (the map screen collects it
- * only while visible). Reconnects use [ReconnectBackoff]; after a connection that was open the
- * attempt counter starts over. A 401 during the handshake refreshes the token once through the
- * serialised [AuthSession] and reconnects; a rejected refresh ends the flow (the app returns to
- * sign-in).
+ * [signals] is a cold flow: the socket only exists while it is collected – only [LiveHub] does that,
+ * so the whole app shares one connection. Reconnects use [ReconnectBackoff]; after a connection
+ * that was open the attempt counter starts over. A 401 during the handshake refreshes the token once
+ * through the serialised [AuthSession] and reconnects; a rejected refresh ends the flow (the app
+ * returns to sign-in).
  *
  * @param requestFor builds the handshake request for an access token (null: no server configured).
  */

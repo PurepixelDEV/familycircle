@@ -15,6 +15,8 @@ import org.familycircle.android.AppContainer
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.api.FamilySummary
 import org.familycircle.android.api.MapMember
+import org.familycircle.android.api.Place
+import org.familycircle.android.api.PlaceInput
 import org.familycircle.android.live.LiveConnectionState
 import org.familycircle.android.live.LiveEffect
 import org.familycircle.android.live.LiveEvent
@@ -24,6 +26,7 @@ import org.familycircle.android.live.LiveSignal
 import org.familycircle.android.map.LocalFix
 import org.familycircle.android.ui.components.UiError
 import org.familycircle.android.ui.components.toUiError
+import org.familycircle.android.util.Logger
 
 data class MapUiState(
     val families: List<FamilySummary> = emptyList(),
@@ -37,6 +40,8 @@ data class MapUiState(
     val selectedUserId: String? = null,
     /** Decoded profile pictures by "userId:version". */
     val avatars: Map<String, Bitmap> = emptyMap(),
+    /** Places (geofences) of the shown family. */
+    val places: List<Place> = emptyList(),
 ) {
     val selectedFamily: FamilySummary? get() = families.firstOrNull { it.id == familyId }
 
@@ -76,10 +81,16 @@ class MapViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    /** Runs while the map is visible: live socket + 60 s polling. Cancelled when the screen stops. */
+    /**
+     * Runs while the map is visible: keeps the shared live connection open (it may already be open
+     * for sharing or alerts) + 60 s polling. Cancelled when the screen stops.
+     */
     suspend fun runWhileVisible() = coroutineScope {
         requestRefresh()
-        launch { container.live.signals().collect(::onSignal) }
+        launch { container.liveHub.connect(LIVE_HOLDER).collect(::onSignal) }
+        launch {
+            container.alerts.placesChanged.collect { familyId -> if (familyId == _state.value.familyId) loadPlaces(familyId) }
+        }
         launch {
             while (true) {
                 delay(POLL_MS)
@@ -102,7 +113,7 @@ class MapViewModel(private val container: AppContainer) : ViewModel() {
     fun selectFamily(id: String) {
         if (id == _state.value.familyId) return
         prefs.setSelectedFamily(id)
-        _state.update { it.copy(familyId = id, live = LiveMapState.EMPTY, selectedUserId = null, loaded = false) }
+        _state.update { it.copy(familyId = id, live = LiveMapState.EMPTY, places = emptyList(), selectedUserId = null, loaded = false) }
         requestRefresh()
     }
 
@@ -138,11 +149,13 @@ class MapViewModel(private val container: AppContainer) : ViewModel() {
                 return
             }
             val map = api.familyMap(familyId)
+            val places = fetchPlaces(familyId)
             val live = LiveMapReducer.replay(LiveMapState.from(map), events)
             _state.update { s ->
                 s.copy(
                     families = families,
                     familyId = familyId,
+                    places = places ?: s.places.takeIf { s.familyId == familyId }.orEmpty(),
                     live = live,
                     loading = false,
                     loaded = true,
@@ -156,6 +169,31 @@ class MapViewModel(private val container: AppContainer) : ViewModel() {
             _state.update { it.copy(loading = false, error = e.toUiError()) }
         } finally {
             if (buffered === events) buffered = null
+        }
+    }
+
+    /** Places are optional (older servers have none): failures only leave the list as it was. */
+    private suspend fun loadPlaces(familyId: String) {
+        val places = fetchPlaces(familyId) ?: return
+        _state.update { if (it.familyId == familyId) it.copy(places = places) else it }
+    }
+
+    private suspend fun fetchPlaces(familyId: String): List<Place>? = try {
+        api.places(familyId)
+    } catch (e: ApiException) {
+        Logger.w(TAG, "places not loaded", e)
+        null
+    }
+
+    /** Long-press on the map → "add place here". */
+    suspend fun createPlace(name: String, radiusM: Int, lat: Double, lon: Double): UiError? {
+        val familyId = _state.value.familyId ?: return UiError.UNEXPECTED
+        return try {
+            api.createPlace(familyId, PlaceInput(name.trim(), lat, lon, radiusM))
+            loadPlaces(familyId)
+            null
+        } catch (e: ApiException) {
+            e.toUiError()
         }
     }
 
@@ -174,6 +212,8 @@ class MapViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private companion object {
+        const val TAG = "Map"
+        const val LIVE_HOLDER = "map"
         const val POLL_MS = 60_000L
     }
 }

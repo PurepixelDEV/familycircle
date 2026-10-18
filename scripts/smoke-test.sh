@@ -75,6 +75,15 @@ expect 204 "Bob revokes the share"
 [[ "$(req anna - GET "/families/$FAM/map" | json "[m for m in d['members'] if m['user_id']=='$BOB_ID'][0]['location']")" == "None" ]] \
   && pass "revocation is effective immediately" || fail "still visible after revoke"
 
+req - "$BOB_TOKEN" POST /sos '{"lat":47.3769,"lon":8.5417,"accuracy_m":9}' >/dev/null
+expect 201 "Bob sends an SOS"
+[[ "$(req anna - GET /alerts | json "[a['kind'] for a in d['alerts']]")" == "['sos']" ]] \
+  && pass "Anna receives the SOS (family, no share needed)" || fail "SOS not delivered"
+req anna - POST "/users/$BOB_ID/ring" >/dev/null
+expect 403 "ringing Bob's phone needs his opt-in"
+req anna - POST "/families/$FAM/places" '{"name":"Zuhause","lat":47.3769,"lon":8.5417,"radius_m":150}' >/dev/null
+expect 201 "member creates a place"
+
 req anna - GET /me/export >/dev/null
 expect 200 "data export"
 echo "All smoke tests passed."

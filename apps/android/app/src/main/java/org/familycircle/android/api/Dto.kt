@@ -84,6 +84,12 @@ data class PrivacySettings(
     @SerialName("history_enabled") val historyEnabled: Boolean,
     @SerialName("history_retention_days") val historyRetentionDays: Int,
     @SerialName("share_battery") val shareBattery: Boolean,
+    /** Family members may let my phones ring (opt-in; defaults for servers older than 0.3). */
+    @SerialName("allow_ring") val allowRing: Boolean = false,
+    /** People who see my location may ask for a fresh position (opt-in). */
+    @SerialName("allow_locate_request") val allowLocateRequest: Boolean = false,
+    /** Low-battery / shutdown notices to people who see my location (default on). */
+    @SerialName("battery_alerts") val batteryAlerts: Boolean = true,
 )
 
 @Serializable
@@ -92,6 +98,9 @@ data class PrivacySettingsUpdate(
     @SerialName("history_enabled") val historyEnabled: Boolean? = null,
     @SerialName("history_retention_days") val historyRetentionDays: Int? = null,
     @SerialName("share_battery") val shareBattery: Boolean? = null,
+    @SerialName("allow_ring") val allowRing: Boolean? = null,
+    @SerialName("allow_locate_request") val allowLocateRequest: Boolean? = null,
+    @SerialName("battery_alerts") val batteryAlerts: Boolean? = null,
 )
 
 @Serializable
@@ -104,6 +113,28 @@ data class FamilySummary(
 
 @Serializable
 data class FamiliesResponse(val families: List<FamilySummary>)
+
+@Serializable
+data class InviteCreate(
+    @SerialName("expires_in_hours") val expiresInHours: Int,
+    @SerialName("max_uses") val maxUses: Int,
+)
+
+/** A freshly created invite; [code] is shown only once and never persisted or logged. */
+@Serializable
+data class InviteCreated(
+    val id: String,
+    val code: String,
+    @SerialName("expires_at") val expiresAt: String,
+    @SerialName("max_uses") val maxUses: Int,
+) {
+    override fun toString(): String = "InviteCreated($id, <code>, $expiresAt)"
+}
+
+@Serializable
+data class InviteAccept(val code: String) {
+    override fun toString(): String = "InviteAccept(<code>)"
+}
 
 @Serializable
 data class Member(
@@ -165,6 +196,8 @@ data class ShareEntry(
     @SerialName("user_id") val userId: String,
     @SerialName("display_name") val displayName: String,
     val since: String,
+    /** Outgoing: I let this person see my history. Incoming: I can open this person's history now. */
+    val history: Boolean = false,
 )
 
 @Serializable

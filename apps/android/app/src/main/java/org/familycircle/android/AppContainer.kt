@@ -7,10 +7,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import org.familycircle.android.alerts.AlertEffectRunner
+import org.familycircle.android.alerts.AlertHub
+import org.familycircle.android.alerts.AlertNotifier
+import org.familycircle.android.alerts.AlertService
+import org.familycircle.android.alerts.AlertSync
+import org.familycircle.android.alerts.PrefsAlertStateStore
+import org.familycircle.android.alerts.Ringer
 import org.familycircle.android.api.ApiClient
 import org.familycircle.android.api.AuthSession
 import org.familycircle.android.data.AccountRepository
+import org.familycircle.android.data.MapFocusHandoff
 import org.familycircle.android.data.OnboardingHandoff
+import org.familycircle.android.live.LiveHub
 import org.familycircle.android.live.LiveSocket
 import org.familycircle.android.map.AvatarRepository
 import java.io.File
@@ -35,12 +44,18 @@ class AppContainer(private val app: Application) {
     private val http = ApiClient.defaultHttpClient()
     val api = ApiClient(http, auth, { prefs.current.serverUrl }, BuildConfig.VERSION_NAME)
 
-    /** Live updates for the map; only connected while the map is visible. */
+    /** The live WebSocket (state + diagnostics); opened only through [liveHub]. */
     val live = LiveSocket(http, auth, api::liveSocketRequest)
+
+    /** One shared connection: open while the map is visible, sharing runs or the alert service runs. */
+    val liveHub = LiveHub(live, auth, scope)
     val avatars = AvatarRepository(api, File(app.cacheDir, "avatars"))
 
     /** In-memory hand-over of a scanned invite code to the registration form (never persisted). */
     val onboarding = OnboardingHandoff()
+
+    /** "Show on map" requests from notifications. */
+    val mapFocus = MapFocusHandoff()
 
     private val db = Room.databaseBuilder(app, AppDatabase::class.java, "familycircle.db").build()
     val dao = db.pendingLocations()
@@ -49,9 +64,23 @@ class AppContainer(private val app: Application) {
 
     val recorder = LocationRecorder(app, dao, prefs)
     val tracking = TrackingController(app, prefs, recorder, sync)
+
+    val ringer = Ringer(app, scope)
+    val alertEffects = AlertEffectRunner(app, ringer, tracking, { prefs.current.userId }, scope)
+
+    /** Alerts (docs/ALERTS.md): live delivery, catch-up, SOS state for the UI. */
+    val alerts = AlertHub(
+        fetch = { after, limit -> api.alerts(after, limit) },
+        store = PrefsAlertStateStore(app),
+        handler = alertEffects,
+        ownDeviceId = { prefs.current.deviceId },
+    )
+
     val account = AccountRepository(app, api, auth, prefs, dao, recorder, tracking, avatars, BuildConfig.VERSION_NAME)
 
     init {
+        AlertNotifier.ensureChannels(app)
+        alerts.listen(scope, liveHub.signals)
         // If the server ends the session (refresh token rejected), stop sharing: without tokens no
         // point can be uploaded, and the user has to sign in again anyway.
         scope.launch {
@@ -59,6 +88,21 @@ class AppContainer(private val app: Application) {
                 if (state == AuthSession.State.LoggedOut && auth.lastEnd.value == AuthSession.EndReason.EXPIRED) {
                     Logger.i("Session", "session expired, stopping tracking")
                     if (prefs.current.trackingDesired) tracking.stop(TrackingProblem.SIGNED_OUT)
+                }
+            }
+        }
+        // Alerts follow the session: catch-up worker while signed in, everything forgotten after.
+        scope.launch {
+            auth.state.collect { state ->
+                if (state == AuthSession.State.LoggedIn) {
+                    AlertSync.schedule(app)
+                    alerts.catchUp()
+                } else {
+                    AlertSync.cancel(app)
+                    AlertService.stop(app)
+                    ringer.stop()
+                    alerts.reset()
+                    AlertNotifier.cancelAll(app)
                 }
             }
         }

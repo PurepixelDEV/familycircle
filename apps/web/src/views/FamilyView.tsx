@@ -4,6 +4,9 @@ import { useApp } from "../state";
 import { useI18n } from "../i18n";
 import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
 import { inviteUrl, QrCode } from "../components/QrCode";
+import { whatsAppUrl } from "../lib/applink";
+import { MemberActions } from "../components/MemberActions";
+import { PlacesSection } from "../components/PlacesSection";
 
 const INVITE_HOURS = 72;
 
@@ -63,6 +66,7 @@ export function FamilyView() {
 
   const isAdmin = family?.role === "admin";
   const others = family?.members.filter((m) => m.user_id !== app.me.id) ?? [];
+  const self = family?.members.find((m) => m.user_id === app.me.id);
 
   return (
     <div className="page">
@@ -87,6 +91,20 @@ export function FamilyView() {
         <section className="section" aria-labelledby="members-h">
           <h2 id="members-h">{t("family.members")}</h2>
           <div className="panel">
+            {self && (
+              <div className="list-row" style={{ flexWrap: "wrap" }}>
+                <Avatar userId={self.user_id} name={self.display_name} color={self.color} hasAvatar={self.has_avatar} version={self.avatar_version} />
+                <div className="grow">
+                  <div className="name">
+                    {self.display_name} ({t("common.you")})
+                  </div>
+                  <div className="muted small">{self.role === "admin" ? t("family.admin") : t("family.member")}</div>
+                </div>
+                <div style={{ flexBasis: "100%" }}>
+                  <MemberActions userId={self.user_id} name={self.display_name} isSelf />
+                </div>
+              </div>
+            )}
             {others.map((m) => (
               <div key={m.user_id} className="list-row" style={{ flexWrap: "wrap" }}>
                 <Avatar userId={m.user_id} name={m.display_name} color={m.color} hasAvatar={m.has_avatar} version={m.avatar_version} />
@@ -104,6 +122,7 @@ export function FamilyView() {
                     disabled={busy === "share:" + m.user_id}
                     onChange={(on) => void toggleShare(m, on)}
                   />
+                  <MemberActions userId={m.user_id} name={m.display_name} isSelf={false} />
                   {isAdmin && (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", paddingBottom: 6 }}>
                       <button
@@ -132,6 +151,8 @@ export function FamilyView() {
           </div>
         </section>
 
+        {family && <PlacesSection family={family} />}
+
         {isAdmin && family && (
           <section className="section" aria-labelledby="invite-h">
             <h2 id="invite-h">{t("family.invite")}</h2>
@@ -147,16 +168,7 @@ export function FamilyView() {
                     {newInvite.code}
                   </div>
                   <p className="small muted">{t("family.inviteShown")}</p>
-                  <button
-                    className="btn secondary"
-                    type="button"
-                    onClick={() => {
-                      const link = `${location.origin}/register?code=${encodeURIComponent(newInvite.code)}`;
-                      navigator.clipboard?.writeText(`${newInvite.code}\n${link}`).then(() => toast(t("common.copied")), () => undefined);
-                    }}
-                  >
-                    {t("common.copy")}
-                  </button>
+                  <InviteShare familyName={family.name} invite={newInvite} />
                 </div>
               )}
               <button
@@ -212,6 +224,46 @@ export function FamilyView() {
         )}
       </div>
       {confirmDialog}
+    </div>
+  );
+}
+
+/** Hands a fresh invite to the system share sheet, WhatsApp or the clipboard as a ready-to-send message. */
+function InviteShare({ familyName, invite }: { familyName: string; invite: InviteCreated }) {
+  const { t, locale } = useI18n();
+  const link = inviteUrl(location.origin, invite.code);
+  const text = t("invite.message", {
+    family: familyName,
+    link,
+    date: new Date(invite.expires_at).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" }),
+  });
+  const canShare = typeof navigator.share === "function";
+  return (
+    <div className="share-row">
+      {canShare && (
+        <button
+          className="btn"
+          type="button"
+          onClick={() => {
+            // AbortError = the user closed the share sheet; nothing to report.
+            navigator.share({ title: t("family.invite"), text }).catch(() => undefined);
+          }}
+        >
+          {t("invite.share")}
+        </button>
+      )}
+      <a className="btn secondary" href={whatsAppUrl(text)} target="_blank" rel="noopener noreferrer">
+        {t("invite.whatsapp")}
+      </a>
+      <button
+        className="btn secondary"
+        type="button"
+        onClick={() => {
+          navigator.clipboard?.writeText(text).then(() => toast(t("common.copied")), () => undefined);
+        }}
+      >
+        {t("invite.copyText")}
+      </button>
     </div>
   );
 }

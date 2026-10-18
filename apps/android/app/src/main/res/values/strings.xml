@@ -191,6 +191,22 @@
     <string name="family_no_location">No location yet.</string>
     <string name="family_self_no_location">The server has no location of you yet.</string>
     <string name="family_share_with">Share my location with %1$s</string>
+    <string name="family_invite_title">Invite someone</string>
+    <string name="family_invite_body">Creates a link for one person, valid for 72 hours. Send it with WhatsApp, SMS or e-mail. On an Android phone the link leads to the app download and opens the invitation in the app.</string>
+    <string name="family_invite_create">Create and share invite link</string>
+    <string name="family_invite_create_another">Create another link</string>
+    <string name="family_invite_share_again">Share this link again</string>
+    <string name="family_invite_code">Code %1$s · valid until %2$s</string>
+    <string name="family_invite_chooser">Send invitation</string>
+    <string name="invite_message">Hi! I\'m inviting you to our family “%1$s” on FamilyCircle. There we can see where the others are right now – you decide who can see you.\n\nOpen this link on your phone:\n%2$s\n\nThe link is valid until %3$s and for one person only.</string>
+    <string name="link_join_title">Join the family?</string>
+    <string name="link_join_body">You opened an invitation. Join this family with your account? You decide afterwards who can see your location.</string>
+    <string name="link_join_confirm">Join</string>
+    <string name="link_joined">You are now a member of “%1$s”.</string>
+    <string name="link_already_member">You are already a member of this family.</string>
+    <string name="link_invite_invalid">This invitation is invalid, expired or already used. Ask for a new one.</string>
+    <string name="link_already_connected">This phone is already connected to FamilyCircle.</string>
+    <string name="link_other_server">This link belongs to another FamilyCircle server (%1$s). To switch, sign out in the settings first.</string>
     <string name="freshness_live">Live</string>
     <string name="freshness_recent">Recent</string>
     <string name="freshness_stale">Outdated</string>
@@ -342,8 +358,158 @@
     <string name="diag_live">Live updates</string>
     <string name="diag_live_connected">connected</string>
     <string name="diag_live_connecting">connecting</string>
-    <string name="diag_live_idle">off (only while the map is open)</string>
+    <string name="diag_live_idle">off (connected while the map is open, sharing is on or alarms are received instantly)</string>
     <string name="diag_copy">Copy diagnostics</string>
     <string name="diag_copy_note">The report is in English so developers can read it.</string>
     <string name="diag_copied">Diagnostics copied</string>
+
+    <!-- Alerts (docs/ALERTS.md): notification channels and notifications -->
+    <string name="alert_channel_sos">SOS</string>
+    <string name="alert_channel_sos_desc">Alarm when someone in your family triggers SOS. Loud, also in silent mode.</string>
+    <string name="alert_channel_ring">Let my phone ring</string>
+    <string name="alert_channel_ring_desc">Shown while your phone rings because you or a family member asked for it.</string>
+    <string name="alert_channel_checkins">Check-ins</string>
+    <string name="alert_channel_checkins_desc">When someone in your family says they arrived safely.</string>
+    <string name="alert_channel_places">Places</string>
+    <string name="alert_channel_places_desc">When someone arrives at or leaves a place of your family.</string>
+    <string name="alert_channel_battery">Battery</string>
+    <string name="alert_channel_battery_desc">When a family member\'s battery is low or their phone was switched off.</string>
+    <string name="alert_channel_service">Receive alarms instantly</string>
+    <string name="alert_channel_service_desc">Shown while FamilyCircle keeps the connection for alarms open.</string>
+    <string name="alert_sos_title">SOS from %1$s</string>
+    <string name="alert_sos_text">%1$s triggered an SOS alarm</string>
+    <string name="alert_sos_hint">Tap to see the position on the map.</string>
+    <string name="alert_action_open_map">Open map</string>
+    <string name="alert_sos_resolved">%1$s is safe</string>
+    <string name="alert_checkin">%1$s arrived</string>
+    <string name="alert_checkin_at">%1$s arrived – %2$s</string>
+    <string name="alert_arrival">%1$s arrived at %2$s</string>
+    <string name="alert_departure">%1$s left %2$s</string>
+    <string name="alert_battery_low">%1$s: battery %2$d %%</string>
+    <string name="alert_last_location">%1$s\'s phone was switched off – last location saved</string>
+    <string name="alert_ring">%1$s is letting your phone ring</string>
+    <string name="alert_ring_self">Your phone is ringing</string>
+    <string name="alert_ring_text">Tap \"Stop\" to end the sound.</string>
+    <string name="alert_action_stop">Stop</string>
+    <string name="alert_service_title">Alarms are received instantly</string>
+    <string name="alert_service_text">SOS and ring requests of your family arrive right away. You can switch this off in the settings.</string>
+
+    <!-- SOS and check-in -->
+    <string name="safety_title">Emergency and arrival</string>
+    <string name="safety_sos_body">Hold the button for 3 seconds. Everyone in your family is alarmed right away with your position – also people who do not see your location otherwise.</string>
+    <string name="safety_checkin_body">Arrived somewhere? Let your family know with one tap (with your current position).</string>
+    <string name="sos_label">SOS</string>
+    <string name="sos_button_cd">SOS. Hold for 3 seconds to alarm your family.</string>
+    <string name="sos_button_action">Send SOS</string>
+    <string name="sos_hold_hint">Hold for 3 seconds</string>
+    <string name="sos_keep_holding">Keep holding…</string>
+    <string name="sos_sending">Sending SOS…</string>
+    <string name="sos_confirm_title">Send SOS?</string>
+    <string name="sos_confirm_body">Everyone in your family is alarmed right away with your position.</string>
+    <string name="sos_active_title">SOS active</string>
+    <string name="sos_active_body">Your family has been alarmed. When you are safe, let them know.</string>
+    <string name="sos_resolve">I am safe</string>
+    <string name="sos_resolved_msg">Your family now knows that you are safe.</string>
+    <string name="sos_other_title">%1$s needs help (SOS)</string>
+    <string name="sos_no_position">no position known</string>
+    <string name="sos_show_on_map">Show on map</string>
+    <plurals name="sos_sent">
+        <item quantity="one">SOS sent to %1$d person.</item>
+        <item quantity="other">SOS sent to %1$d people.</item>
+    </plurals>
+    <string name="checkin_button">I have arrived</string>
+    <string name="checkin_sending">Sending…</string>
+    <string name="checkin_title">I have arrived</string>
+    <string name="checkin_body">Your family gets a message with your current position.</string>
+    <string name="checkin_message">Message (optional)</string>
+    <string name="checkin_send">Send</string>
+    <string name="checkin_no_fix">Your position could not be determined. Check that location is switched on and try again outdoors or near a window.</string>
+    <plurals name="checkin_sent">
+        <item quantity="one">Sent to %1$d person.</item>
+        <item quantity="other">Sent to %1$d people.</item>
+    </plurals>
+    <string name="ringing_banner">Your phone is ringing</string>
+
+    <!-- Family: remote actions, history, places -->
+    <string name="member_locate">Update location</string>
+    <string name="member_ring">Let phone ring</string>
+    <string name="member_ring_self">Let my other devices ring</string>
+    <string name="member_history">History</string>
+    <string name="member_history_self">My history</string>
+    <string name="member_history_grant">%1$s may see my history</string>
+    <string name="member_history_grant_desc">Shows where you were on earlier days.</string>
+    <string name="member_history_grant_off">Your history is switched off (Settings), so there is nothing to share.</string>
+    <string name="ring_confirm_title">Let %1$s\'s phone ring?</string>
+    <string name="ring_confirm_body">The phone of %1$s rings loudly for up to a minute, even in silent mode.</string>
+    <string name="ring_self_confirm_title">Let your other devices ring?</string>
+    <string name="ring_self_confirm_body">Your other phones with FamilyCircle ring loudly for up to a minute, even in silent mode. This phone does not ring.</string>
+    <string name="ring_confirm_action">Ring</string>
+    <string name="ring_sent">The phone of %1$s is ringing now.</string>
+    <string name="ring_sent_offline">The phone of %1$s is not connected right now. It rings if it connects within 2 minutes.</string>
+    <string name="ring_sent_self">Your other devices are ringing now.</string>
+    <string name="ring_sent_self_offline">None of your other devices is connected right now. They ring if they connect within 2 minutes.</string>
+    <string name="locate_sent">%1$s\'s phone was asked for a fresh position.</string>
+    <string name="locate_sent_offline">The phone of %1$s is not connected right now. It sends a position if it connects within 5 minutes.</string>
+    <string name="remote_not_allowed">The person has not allowed this.</string>
+    <string name="places_title">Places</string>
+    <string name="places_intro">Get a message when someone arrives at or leaves a place – only for people whose location you see.</string>
+    <string name="places_none">No places yet.</string>
+    <string name="place_add">Add place</string>
+    <string name="place_add_here">New place here</string>
+    <string name="place_edit">Edit</string>
+    <string name="place_edit_title">Edit place</string>
+    <string name="place_delete">Delete</string>
+    <string name="place_delete_title">Delete \"%1$s\"?</string>
+    <string name="place_delete_body">Nobody in your family gets arrival messages for this place any more.</string>
+    <string name="place_name">Name</string>
+    <string name="place_name_hint">e.g. Home, School</string>
+    <string name="place_radius">Radius: %1$d m</string>
+    <string name="place_radius_value">%1$d m radius</string>
+    <string name="place_radius_hint">Choose at least 100–150 m for reliable messages.</string>
+    <string name="place_position_me">The centre is your current position.</string>
+    <string name="place_position_pressed">The centre is where you pressed on the map.</string>
+    <string name="place_move_to_me">Move centre to my current position</string>
+    <string name="place_save">Save</string>
+    <string name="place_saved">Place saved.</string>
+    <string name="place_added">Place added.</string>
+    <string name="place_deleted">Place deleted.</string>
+    <string name="place_no_fix">Your position could not be determined. Switch on location and try again.</string>
+    <string name="place_too_many">This family already has the maximum of 50 places.</string>
+    <string name="place_nobody_there">Nobody there right now</string>
+    <plurals name="place_there">
+        <item quantity="one">There now: %1$s</item>
+        <item quantity="other">There now: %1$s</item>
+    </plurals>
+    <string name="place_alerts">Messages</string>
+    <string name="place_alerts_desc">Notify me when someone arrives or leaves.</string>
+
+    <!-- History -->
+    <string name="history_title">History of %1$s</string>
+    <string name="history_title_self">My history</string>
+    <string name="history_today">Today</string>
+    <string name="history_yesterday">Yesterday</string>
+    <string name="history_pick_day">Choose date</string>
+    <string name="history_show_day">Show</string>
+    <string name="history_empty">There are no positions for this day.</string>
+    <string name="history_not_available">This history is not available (any more): it was not shared with you, sharing is paused, or the history is switched off.</string>
+    <plurals name="history_count">
+        <item quantity="one">%1$d position</item>
+        <item quantity="other">%1$d positions</item>
+    </plurals>
+    <plurals name="history_map_cd">
+        <item quantity="one">Map with the route of the day, %1$d position</item>
+        <item quantity="other">Map with the route of the day, %1$d positions</item>
+    </plurals>
+
+    <!-- Settings: alarms and remote actions -->
+    <string name="settings_history_open">Show my history</string>
+    <string name="settings_alerts">Alarms and remote access</string>
+    <string name="settings_alerts_always">Receive alarms instantly</string>
+    <string name="settings_alerts_always_desc">SOS and \"let my phone ring\" arrive within seconds, even when you do not share your location. Uses a little more battery and shows a permanent notification. Without it, alarms arrive while sharing is on, otherwise within about 15 minutes.</string>
+    <string name="settings_allow_ring">Family may let my phone ring</string>
+    <string name="settings_allow_ring_desc">Helps to find a lost phone: it rings loudly, even in silent mode. You can always let your own devices ring.</string>
+    <string name="settings_allow_locate">Family may update my location</string>
+    <string name="settings_allow_locate_desc">People who see your location may ask your phone for a fresh position.</string>
+    <string name="settings_battery_alerts">Battery messages</string>
+    <string name="settings_battery_alerts_desc">Tell people who see your location when your battery is low or your phone is switched off.</string>
 </resources>

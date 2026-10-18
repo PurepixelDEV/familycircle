@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { api, type FamilyMap } from "../api/client";
-import { connectLive, type LiveStatus } from "../api/live";
+import { subscribeLive, type LiveStatus } from "../api/live";
 import { applyLiveEvent } from "../lib/mapState";
 import { useNow } from "../lib/useNow";
 
@@ -39,7 +39,7 @@ export function useFamilyMap(familyId: string | null, onFamilyChanged?: () => vo
 
   useEffect(() => {
     if (!familyId) return;
-    return connectLive({
+    return subscribeLive({
       onStatus: setStatus,
       onOpen: reload, // refetch whatever we missed while disconnected
       onEvent: (ev) => {

@@ -474,6 +474,203 @@ export interface paths {
         delete: operations["revokeShare"];
         options?: never;
         head?: never;
+        /** Let this viewer also see the caller's history (only while the location is shared and history is enabled). */
+        patch: operations["updateShare"];
+        trace?: never;
+    };
+    "/users/{userId}/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * History of a person – the caller's own, or another person's who granted it (share with history).
+         * @description Anything not allowed (no share, no history grant, history disabled, paused) is a plain 404.
+         */
+        get: operations["listUserLocations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/ring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Let the person's phones ring loudly for up to 2 minutes (own account always; others only with their opt-in `allow_ring`). */
+        post: operations["ringUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/locate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the person's phone for a fresh position (own account always; others need `allow_locate_request` and a visible location). */
+        post: operations["locateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Alerts for the caller with id > after (oldest first), plus the caller's own SOS/check-ins (`mine`).
+         * @description Received alerts are re-checked at read time – a revoked share or a left family also hides older ones. Window 30 days.
+         */
+        get: operations["listAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SOS to everyone in the caller's families (no share needed – explicit action). Without a position the last known one is used. */
+        post: operations["sendSos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sos/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "I am safe" – resolves the caller's open SOS and notifies the family. Idempotent. */
+        post: operations["resolveSos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/check-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** "Arrived safely" with position and optional message to the caller's families; a place containing the position is attached. */
+        post: operations["checkIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/battery-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Device reports low battery or shutdown with the last position (only to people who can see the location; deduplicated; off if `battery_alerts` is false). */
+        post: operations["batteryAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/families/{familyId}/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Places of the family. `present` lists only members whose location the caller may see. */
+        get: operations["listPlaces"];
+        put?: never;
+        /** Add a place (any member, at most 50 per family). Arrivals/departures are detected by the server. */
+        post: operations["createPlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/places/{placeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a place (creator or family admin). */
+        delete: operations["deletePlace"];
+        options?: never;
+        head?: never;
+        /** Change a place (creator or family admin). Moving it resets presence silently. */
+        patch: operations["updatePlace"];
+        trace?: never;
+    };
+    "/places/{placeId}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Stop arrival/departure alerts of this place for the caller. */
+        put: operations["mutePlace"];
+        post?: never;
+        /** Receive arrival/departure alerts of this place again. */
+        delete: operations["unmutePlace"];
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -626,6 +823,12 @@ export interface components {
             history_enabled: boolean;
             history_retention_days: number;
             share_battery: boolean;
+            /** @description Family members may let my phones ring (default false). */
+            allow_ring: boolean;
+            /** @description People who see my location may request a fresh position (default false). */
+            allow_locate_request: boolean;
+            /** @description Send low-battery / shutdown notices to people who see my location (default true). */
+            battery_alerts: boolean;
         };
         SettingsUpdate: {
             sharing_paused?: boolean;
@@ -633,6 +836,9 @@ export interface components {
             history_enabled?: boolean;
             history_retention_days?: number;
             share_battery?: boolean;
+            allow_ring?: boolean;
+            allow_locate_request?: boolean;
+            battery_alerts?: boolean;
         };
         Session: {
             /** Format: uuid */
@@ -716,6 +922,76 @@ export interface components {
             display_name: string;
             /** Format: date-time */
             since: string;
+            /** @description Outgoing: history granted. Incoming: the owner's history is readable now. */
+            history: boolean;
+        };
+        Position: {
+            lat?: number;
+            lon?: number;
+            accuracy_m?: number;
+        } & {
+            [key: string]: unknown;
+        };
+        Alert: {
+            /** @description Increasing; use as cursor for GET /alerts?after=. */
+            id: number;
+            /** @enum {string} */
+            kind: "sos" | "sos_resolved" | "check_in" | "arrival" | "departure" | "battery_low" | "last_location" | "ring" | "locate";
+            actor: {
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+            };
+            /**
+             * Format: uuid
+             * @description Device that sent it (a phone ignores its own ring request).
+             */
+            from_device_id: string | null;
+            place: {
+                /** Format: uuid */
+                id: string | null;
+                name: string;
+            } | null;
+            location: {
+                lat: number;
+                lon: number;
+                accuracy_m: number | null;
+            } | null;
+            battery_pct: number | null;
+            message: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string | null;
+            /** Format: date-time */
+            resolved_at: string | null;
+            /** @description SOS: unresolved and younger than 24 h. Ring/locate: not expired. */
+            active: boolean;
+            /** @description Sent by the caller (own SOS / check-in). */
+            mine: boolean;
+        };
+        Place: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            family_id: string;
+            name: string;
+            lat: number;
+            lon: number;
+            radius_m: number;
+            /** Format: uuid */
+            created_by: string | null;
+            /** Format: date-time */
+            created_at: string;
+            muted: boolean;
+            /** @description Members inside right now whose location the caller may see (and the caller). */
+            present: string[];
+        };
+        PlaceInput: {
+            name?: string;
+            lat?: number;
+            lon?: number;
+            radius_m?: number;
         };
         LocationPoint: {
             /**
@@ -791,6 +1067,33 @@ export interface components {
         };
     };
     responses: {
+        /** @description Alert created and delivered to the live connections of its recipients. */
+        AlertCreated: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    alert: components["schemas"]["Alert"];
+                    recipients: number;
+                };
+            };
+        };
+        /** @description Request stored; phones that connect before `expires_at` receive it as well. */
+        RemoteRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    alert_id: number;
+                    /** Format: date-time */
+                    expires_at: string;
+                    /** @description At least one live connection of the person right now. */
+                    online: boolean;
+                };
+            };
+        };
         /** @description Invalid input. */
         BadRequest: {
             headers: {
@@ -850,6 +1153,7 @@ export interface components {
     parameters: {
         FamilyId: string;
         UserId: string;
+        PlaceId: string;
         SessionId: string;
         DeviceId: string;
     };
@@ -1802,6 +2106,393 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    updateShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    history: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listUserLocations: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description History, newest first. Battery values only if the owner shares them. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        points: components["schemas"]["HistoryPoint"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    ringUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: components["responses"]["RemoteRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    locateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: components["responses"]["RemoteRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listAlerts: {
+        parameters: {
+            query?: {
+                after?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alerts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        alerts: components["schemas"]["Alert"][];
+                        /** Format: date-time */
+                        server_time: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    sendSos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Position"];
+            };
+        };
+        responses: {
+            201: components["responses"]["AlertCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    resolveSos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Number of resolved SOS alerts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        resolved: number;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    checkIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Position"] & {
+                    message?: string;
+                };
+            };
+        };
+        responses: {
+            201: components["responses"]["AlertCreated"];
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    batteryAlert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Position"] & {
+                    /** @enum {string} */
+                    reason: "low" | "shutdown";
+                    battery_pct: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Not sent (disabled or already sent recently). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent: boolean;
+                    };
+                };
+            };
+            /** @description Sent. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent: boolean;
+                        recipients: number;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                familyId: components["parameters"]["FamilyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Places. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        places: components["schemas"]["Place"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                familyId: components["parameters"]["FamilyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceInput"] & unknown;
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    deletePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: components["parameters"]["PlaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updatePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: components["parameters"]["PlaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceInput"];
+            };
+        };
+        responses: {
+            /** @description Updated. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    mutePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: components["parameters"]["PlaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Muted (idempotent). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    unmutePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                placeId: components["parameters"]["PlaceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unmuted (idempotent). */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     getAvatar: {

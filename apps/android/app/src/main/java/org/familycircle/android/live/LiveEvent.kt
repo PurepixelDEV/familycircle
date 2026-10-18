@@ -3,6 +3,7 @@ package org.familycircle.android.live
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import org.familycircle.android.api.Alert
 import org.familycircle.android.api.ApiJson
 import org.familycircle.android.api.MemberLocation
 
@@ -21,6 +22,12 @@ sealed interface LiveEvent {
 
     /** Members of [familyId] changed: refetch the map. */
     data class FamilyChanged(val familyId: String) : LiveEvent
+
+    /** Places of [familyId] changed: refetch them. */
+    data class PlacesChanged(val familyId: String) : LiveEvent
+
+    /** SOS, check-in, arrival/departure, battery notice, ring/locate request (docs/ALERTS.md). */
+    data class AlertReceived(val alert: Alert) : LiveEvent
 
     /** A message type this app version does not know (forward compatible, ignored). */
     data class Unknown(val type: String) : LiveEvent
@@ -48,6 +55,15 @@ sealed interface LiveEvent {
                 }
                 "location_hidden" -> obj.string("user_id")?.let(::LocationHidden)
                 "family_changed" -> obj.string("family_id")?.let(::FamilyChanged)
+                "places_changed" -> obj.string("family_id")?.let(::PlacesChanged)
+                "alert" -> {
+                    val alert = obj["alert"] as? JsonObject ?: return null
+                    try {
+                        AlertReceived(ApiJson.decodeFromJsonElement(Alert.serializer(), alert))
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
                 else -> Unknown(type)
             }
         }

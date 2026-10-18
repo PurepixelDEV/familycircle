@@ -57,6 +57,15 @@ und ersetzen keinen Hardwaretest. Kurzanleitung für Testerinnen und Tester: [TE
 | H-22 | Mehr als 1 h angemeldet lassen (Access-Token läuft ab) | Keine erneute Anmeldung nötig, Uploads gehen weiter (Token-Rotation) |
 | H-23 | App-Update: neuere APK über die alte installieren | Konto bleibt angemeldet. Mit „Immer erlauben“: Teilen läuft von selbst weiter. Ohne: Hinweis „FamilyCircle wurde aktualisiert“, App zeigt „pausiert“ |
 | H-24 | Server-Wechsel (Einstellungen → anderer Server) | Lokale Daten werden nach Rückfrage gelöscht, Neuanmeldung möglich |
+| H-25 | Einladung per WhatsApp: Verwalter teilt den Link aus der App, Empfänger (Android, App noch nicht installiert) tippt ihn in WhatsApp an | Registrierungsseite mit „App herunterladen“; nach Installation öffnet „In der App öffnen“ die Registrierung mit Code, Server ist vorausgefüllt |
+| H-26 | SOS: A hält den SOS-Knopf 3 s, B hat das Handy gesperrt und lautlos | B: Alarmton und Vollbild-/Heads-up-Hinweis innerhalb weniger Sekunden, Tippen öffnet die Karte an A’s Position; „Ich bin in Sicherheit“ bei A beendet den Alarm bei B |
+| H-27 | SOS an B, der **nicht** teilt und „Alarme immer sofort empfangen“ aus hat | Meldung spätestens nach 15 min (Nachholen); mit dem Schalter an: sofort |
+| H-28 | Ort „Zuhause“ (150 m): A verlässt das Haus zu Fuss und kommt zurück | B (sieht A) bekommt „hat Zuhause verlassen“ und „ist bei Zuhause angekommen“, keine Mehrfachmeldungen am Rand |
+| H-29 | Akku von A unter 15 % entladen; danach A ausschalten | B: „Akku 15 %“ einmal; nach dem Ausschalten „Handy wurde ausgeschaltet – letzter Standort gespeichert“ |
+| H-30 | B erlaubt „Klingeln lassen“; A tippt bei B auf „Klingeln lassen“ (B lautlos) | B klingelt laut bis „Stopp“ oder 60 s; ohne Erlaubnis: A sieht „nicht erlaubt“ |
+| H-31 | B erlaubt „Standort aktualisieren“; A tippt darauf, B ruhend | Neue Position von B erscheint bei A innerhalb von ~30 s |
+| H-32 | Check-in von A mit Nachricht | B: „A ist angekommen – {Ort}“ mit Nachricht |
+| H-33 | Verlauf: A schaltet Verlauf ein und gibt ihn für B frei; B öffnet A’s Verlauf | Linie des Tages sichtbar; nach Widerruf sofort nicht mehr abrufbar |
 
 ## Ergebnisse (physische Geräte)
 | Datum | Test | Gerät / Android | Ergebnis | Notizen / Diagnose |

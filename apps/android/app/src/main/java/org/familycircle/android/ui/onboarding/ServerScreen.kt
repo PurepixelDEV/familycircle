@@ -53,6 +53,7 @@ import org.familycircle.android.data.OnboardingHandoff
 import org.familycircle.android.ui.auth.defaultDeviceName
 import org.familycircle.android.ui.components.AppLogo
 import org.familycircle.android.ui.components.WarningCard
+import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.containerViewModel
 
 enum class ServerError { EMPTY, INVALID, SCHEME, CREDENTIALS, QUERY, NETWORK, REDIRECT, NOT_FAMILYCIRCLE, UNEXPECTED }
@@ -211,6 +212,13 @@ class ServerViewModel(private val account: AccountRepository, private val handof
 fun ServerScreen() {
     val vm = containerViewModel { ServerViewModel(it.account, it.onboarding) }
     val state by vm.state.collectAsStateWithLifecycle()
+    // Invite/pairing link opened from the browser: same as a scanned QR code.
+    val handoff = LocalAppContainer.current.onboarding
+    val incoming by handoff.link.collectAsStateWithLifecycle()
+    LaunchedEffect(incoming) {
+        val link = incoming ?: return@LaunchedEffect
+        if (handoff.takeLink(link)) vm.onScanned(link)
+    }
 
     if (state.showScanner) {
         BackHandler(onBack = vm::closeScanner)

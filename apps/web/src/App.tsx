@@ -7,11 +7,15 @@ import { LoginView, RegisterView, SetupView } from "./views/Auth";
 import { FamilyView } from "./views/FamilyView";
 import { PrivacyView } from "./views/PrivacyView";
 import { PairInfo } from "./views/PairInfo";
-import { FamilyIcon, MapIcon, ShieldIcon } from "./components/icons";
+import { AlertsView } from "./views/AlertsView";
+import { BellIcon, FamilyIcon, MapIcon, ShieldIcon } from "./components/icons";
+import { SosBanners } from "./components/Sos";
 import { ToastHost, useErrorText } from "./components/ui";
+import { AlertsProvider, useAlerts } from "./hooks/useAlerts";
 
 // MapLibre is large; load it only once the user is signed in.
 const MapView = lazy(() => import("./views/MapView").then((m) => ({ default: m.MapView })));
+const HistoryView = lazy(() => import("./views/HistoryView").then((m) => ({ default: m.HistoryView })));
 
 type Boot = { state: "loading" } | { state: "error"; error: unknown } | { state: "ready"; instance: Instance; me: Me | null };
 
@@ -32,7 +36,7 @@ export function App() {
     api
       .instance()
       .then(async (instance) => {
-        const me = instance.setup_required ? null : await api.me().catch(() => null);
+        const me = instance.setup_required ? null : await api.probeSession().catch(() => null);
         if (cancelled) return;
         if (me) setLocale(me.locale);
         setBoot({ state: "ready", instance, me });
@@ -85,7 +89,9 @@ export function App() {
 
   return (
     <AppProvider instance={instance} me={me} setMe={(m) => setBoot({ ...boot, me: m })} onSignedOut={signedOut}>
-      <Shell path={path} />
+      <AlertsProvider>
+        <Shell path={path} />
+      </AlertsProvider>
       <ToastHost />
     </AppProvider>
   );
@@ -93,30 +99,55 @@ export function App() {
 
 function Shell({ path }: { path: string }) {
   const { t } = useI18n();
+  const { unread } = useAlerts();
   const tabs = [
     { href: "/", label: t("nav.map"), icon: <MapIcon /> },
+    { href: "/alerts", label: t("nav.alerts"), icon: <BellIcon />, badge: unread },
     { href: "/family", label: t("nav.family"), icon: <FamilyIcon /> },
     { href: "/privacy", label: t("nav.privacy"), icon: <ShieldIcon /> },
   ];
-  const view = path === "/family" ? <FamilyView /> : path === "/privacy" ? <PrivacyView /> : <MapView />;
+  const historyOf = /^\/history\/([0-9a-fA-F-]{36})$/.exec(path)?.[1];
+  const view = historyOf ? (
+    <HistoryView key={historyOf} userId={historyOf} />
+  ) : path === "/family" ? (
+    <FamilyView />
+  ) : path === "/privacy" ? (
+    <PrivacyView />
+  ) : path === "/alerts" ? (
+    <AlertsView />
+  ) : (
+    <MapView />
+  );
+  const known = ["/family", "/privacy", "/alerts"];
   return (
     <div className="shell">
-      <main>
-        <Suspense fallback={<p className="page muted">{t("common.loading")}</p>}>{view}</Suspense>
-      </main>
+      <div className="content">
+        <SosBanners />
+        <main>
+          <Suspense fallback={<p className="page muted">{t("common.loading")}</p>}>{view}</Suspense>
+        </main>
+      </div>
       <nav className="tabbar" aria-label="FamilyCircle">
         {tabs.map((tab) => (
           <a
             key={tab.href}
             href={tab.href}
-            aria-current={(tab.href === "/" ? !["/family", "/privacy"].includes(path) : path === tab.href) ? "page" : undefined}
+            aria-current={(tab.href === "/" ? !historyOf && !known.includes(path) : path === tab.href) ? "page" : undefined}
             onClick={(e) => {
               e.preventDefault();
               navigate(tab.href);
             }}
           >
-            {tab.icon}
+            <span className="tab-icon">
+              {tab.icon}
+              {tab.badge ? (
+                <span className="badge" aria-hidden="true">
+                  {tab.badge > 99 ? "99+" : tab.badge}
+                </span>
+              ) : null}
+            </span>
             {tab.label}
+            {tab.badge ? <span className="visually-hidden">, {t("alerts.unread", { n: tab.badge })}</span> : null}
           </a>
         ))}
       </nav>

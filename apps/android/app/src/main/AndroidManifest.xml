@@ -11,6 +11,13 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Optional "Alarme immer sofort empfangen" (alerts/AlertService.kt): keeps the connection for
+         family emergency alerts (SOS, "let my phone ring") open without Google push. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- SOS of a family member may show full screen on the lock screen (only if the user allows it). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Keeps the CPU awake while the phone rings for "let my phone ring" (alerts/Ringer.kt). -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Only for scanning the QR code that connects the app to the server (nothing is recorded). -->
@@ -58,6 +65,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- "In der App öffnen" on the web page of an invite/pairing link (docs/QR_FORMAT.md).
+                 Custom scheme: the server's host is not known at build time, so no App Links. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="familycircle" android:host="link" />
+            </intent-filter>
         </activity>
 
         <service
@@ -65,6 +80,20 @@
             android:exported="false"
             android:foregroundServiceType="location"
             android:stopWithTask="false" />
+
+        <service
+            android:name=".alerts.AlertService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Family emergency alerts: keeps the connection to the self-hosted family server open so that SOS alarms and requests to let this phone ring arrive immediately, without Google push. Switched on by the user (Settings: Alarme immer sofort empfangen)." />
+        </service>
+
+        <receiver
+            android:name=".alerts.AlertActionReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".tracking.BootReceiver"

@@ -1,4 +1,4 @@
-import type { components } from "./schema";
+import type { components, operations } from "./schema";
 
 export type Schemas = components["schemas"];
 export type Me = Schemas["Me"];
@@ -16,6 +16,16 @@ export type Shares = Schemas["Shares"];
 export type Session = Schemas["Session"];
 export type Device = Schemas["Device"];
 export type PairingCode = Schemas["PairingCode"];
+export type Alert = Schemas["Alert"];
+export type AlertKind = Alert["kind"];
+export type Place = Schemas["Place"];
+export type PlaceInput = Schemas["PlaceInput"];
+export type Position = Schemas["Position"];
+export type HistoryPoint = Schemas["HistoryPoint"];
+export type ShareEntry = Schemas["ShareEntry"];
+export type AlertCreated = components["responses"]["AlertCreated"]["content"]["application/json"];
+export type RemoteRequest = components["responses"]["RemoteRequest"]["content"]["application/json"];
+export type CheckInRequest = operations["checkIn"]["requestBody"]["content"]["application/json"];
 
 /** Error returned by the API, with the stable machine-readable code from the Error schema. */
 export class ApiError extends Error {
@@ -83,6 +93,9 @@ export const api = {
   logout: () => request<void>("DELETE", "/auth/session"),
 
   me: () => request<Me>("GET", "/me"),
+  /** Session probe at start-up: 401 just means "not signed in" and must not redirect to /login
+   *  (that would drop the code of an invite link opened in a fresh browser). */
+  probeSession: () => request<Me>("GET", "/me", undefined, { auth: false }),
   updateMe: (b: { display_name?: string; locale?: "de" | "en" }) => request<Me>("PATCH", "/me", b),
   deleteMe: (password: string) => request<void>("DELETE", "/me", { password }),
   changePassword: (current_password: string, new_password: string) =>
@@ -116,7 +129,33 @@ export const api = {
   shares: () => request<Shares>("GET", "/shares"),
   grantShare: (userId: string) => request<void>("PUT", `/shares/${userId}`),
   revokeShare: (userId: string) => request<void>("DELETE", `/shares/${userId}`),
+  /** Lets a viewer who already sees my location also see my history (needs history enabled). */
+  updateShare: (userId: string, history: boolean) => request<void>("PATCH", `/shares/${userId}`, { history }),
+
+  /** History of a person: my own, or someone who granted it (anything else is a 404). Newest first. */
+  userLocations: (userId: string, q: { from: string; to: string; limit?: number }) =>
+    request<{ points: HistoryPoint[] }>("GET", `/users/${userId}/locations?${query({ from: q.from, to: q.to, limit: q.limit ?? 5000 })}`),
+
+  alerts: (after = 0, limit = 500) =>
+    request<{ alerts: Alert[]; server_time: string }>("GET", `/alerts?${query({ after, limit })}`),
+  /** Without a position the server uses the last known one. */
+  sos: (pos?: Position) => request<AlertCreated>("POST", "/sos", pos),
+  resolveSos: () => request<{ resolved: number }>("POST", "/sos/resolve"),
+  checkIn: (b: CheckInRequest) => request<AlertCreated>("POST", "/check-ins", b),
+  ring: (userId: string) => request<RemoteRequest>("POST", `/users/${userId}/ring`),
+  locate: (userId: string) => request<RemoteRequest>("POST", `/users/${userId}/locate`),
+
+  places: (familyId: string) => request<{ places: Place[] }>("GET", `/families/${familyId}/places`),
+  createPlace: (familyId: string, b: Required<PlaceInput>) => request<{ id: string }>("POST", `/families/${familyId}/places`, b),
+  /** Send only changed fields: a new centre or radius resets presence (silently). */
+  updatePlace: (placeId: string, b: PlaceInput) => request<void>("PATCH", `/places/${placeId}`, b),
+  deletePlace: (placeId: string) => request<void>("DELETE", `/places/${placeId}`),
+  setPlaceMuted: (placeId: string, muted: boolean) => request<void>(muted ? "PUT" : "DELETE", `/places/${placeId}/mute`),
 };
+
+function query(params: Record<string, string | number>): string {
+  return new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString();
+}
 
 /** URL of a user's avatar; the version busts the browser cache when the picture changes. */
 export function avatarUrl(userId: string, version?: number | null): string {

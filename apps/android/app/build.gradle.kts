@@ -19,8 +19,8 @@ android {
         //  connections (self-hosted servers on 192.168.x.x etc.). Add the permission + runtime flow
         //  before raising targetSdk. See docs/research/android-platform-2026-10.md.
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.1"
+        versionCode = 4
+        versionName = "0.3.0"
     }
 
     // Release signing only when the CI provides a keystore (see RELEASE.md). Local release builds stay

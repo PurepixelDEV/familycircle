@@ -12,15 +12,16 @@ type ShareEntry struct {
 	UserID      uuid.UUID
 	DisplayName string
 	Since       time.Time
+	History     bool // outgoing: history granted; incoming: history currently readable
 }
 
 func (s *Store) ListShares(ctx context.Context, userID uuid.UUID) (outgoing, incoming []ShareEntry, err error) {
 	scan := func(r pgx.CollectableRow) (ShareEntry, error) {
 		var e ShareEntry
-		err := r.Scan(&e.UserID, &e.DisplayName, &e.Since)
+		err := r.Scan(&e.UserID, &e.DisplayName, &e.Since, &e.History)
 		return e, err
 	}
-	rows, err := s.pool.Query(ctx, `SELECT u.id, u.display_name, s.created_at FROM location_shares s
+	rows, err := s.pool.Query(ctx, `SELECT u.id, u.display_name, s.created_at, s.history FROM location_shares s
 		JOIN users u ON u.id = s.viewer_id WHERE s.owner_id = $1 ORDER BY u.display_name`, userID)
 	if err != nil {
 		return nil, nil, err
@@ -29,7 +30,9 @@ func (s *Store) ListShares(ctx context.Context, userID uuid.UUID) (outgoing, inc
 		return nil, nil, err
 	}
 	// Incoming lists only shares that are currently effective (not paused, common family).
-	rows, err = s.pool.Query(ctx, `SELECT u.id, u.display_name, s.created_at FROM location_shares s
+	rows, err = s.pool.Query(ctx, `SELECT u.id, u.display_name, s.created_at,
+			s.history AND EXISTS (SELECT 1 FROM user_settings hu WHERE hu.user_id = s.owner_id AND hu.history_enabled)
+		FROM location_shares s
 		JOIN users u ON u.id = s.owner_id WHERE s.viewer_id = $1 AND `+visibleSQL("s.owner_id", "s.viewer_id")+`
 		ORDER BY u.display_name`, userID)
 	if err != nil {
@@ -70,4 +73,16 @@ func (s *Store) GrantShare(ctx context.Context, owner, viewer uuid.UUID) error {
 func (s *Store) RevokeShare(ctx context.Context, owner, viewer uuid.UUID) error {
 	_, err := s.pool.Exec(ctx, "DELETE FROM location_shares WHERE owner_id = $1 AND viewer_id = $2", owner, viewer)
 	return err
+}
+
+// SetShareHistory lets owner grant or withdraw viewing their history. The share must exist.
+func (s *Store) SetShareHistory(ctx context.Context, owner, viewer uuid.UUID, history bool) error {
+	tag, err := s.pool.Exec(ctx, "UPDATE location_shares SET history = $3 WHERE owner_id = $1 AND viewer_id = $2", owner, viewer, history)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import org.familycircle.android.BuildConfig
+import org.familycircle.android.alerts.AlertNotifier
+import org.familycircle.android.alerts.AlertService
 import org.familycircle.android.data.prefs.AppPrefs
 import org.familycircle.android.live.LiveConnectionState
 import org.familycircle.android.tracking.TrackingController
@@ -55,6 +57,11 @@ data class DiagnosticsSnapshot(
     val liveState: LiveConnectionState,
     val liveLastConnectedAtMs: Long?,
     val createdAtMs: Long,
+    /** Who keeps the shared live connection open (map, location, alerts). */
+    val liveHolders: List<String> = emptyList(),
+    val alertsAlwaysOn: Boolean = false,
+    val alertServiceRunning: Boolean = false,
+    val fullScreenAlerts: Boolean = true,
 ) {
     companion object {
         fun collect(
@@ -66,6 +73,7 @@ data class DiagnosticsSnapshot(
             providersInUse: List<String>,
             liveState: LiveConnectionState,
             liveLastConnectedAtMs: Long?,
+            liveHolders: Collection<String> = emptyList(),
             nowMs: Long = System.currentTimeMillis(),
         ): DiagnosticsSnapshot {
             fun has(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
@@ -107,6 +115,10 @@ data class DiagnosticsSnapshot(
                 liveState = liveState,
                 liveLastConnectedAtMs = liveLastConnectedAtMs,
                 createdAtMs = nowMs,
+                liveHolders = liveHolders.sorted(),
+                alertsAlwaysOn = prefs.alertsAlwaysOn,
+                alertServiceRunning = AlertService.running,
+                fullScreenAlerts = AlertNotifier.canUseFullScreen(context),
             )
         }
     }
@@ -160,5 +172,7 @@ object DiagnosticsReport {
             },
         )
         line("Live updates (WebSocket)", "${s.liveState.name.lowercase()}, last connected ${time(s.liveLastConnectedAtMs)}")
+        line("Live connection held by", s.liveHolders.joinToString().ifEmpty { "-" })
+        line("Alarms instantly", "${yn(s.alertsAlwaysOn)}, service running ${yn(s.alertServiceRunning)}, full-screen allowed ${yn(s.fullScreenAlerts)}")
     }
 }

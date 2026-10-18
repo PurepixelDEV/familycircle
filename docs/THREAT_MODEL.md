@@ -61,6 +61,23 @@ Status der Massnahmen: ✅ umgesetzt und automatisiert getestet · 🟡 umgesetz
 * Restrisiko A7: Wer kurz das entsperrte Telefon hat, kann eine Freigabe erteilen. ⏳ periodische Erinnerung
   („Du teilst seit 30 Tagen mit X“) und Benachrichtigung bei neuen ausgehenden Freigaben.
 
+### Meldungen, Orte, Fernaktionen und Verlauf (Phase 3, docs/ALERTS.md)
+* Empfänger jeder Meldung berechnet der Server in SQL (`store/alerts.go`, `audience`), nie der Client. ✅
+* Automatische Meldungen (Ankunft/Abfahrt, Akku, letzter Standort) nur an Personen, die den Standort
+  ohnehin sehen dürfen; beim Lesen erneut geprüft – ein Widerruf verbirgt auch ältere Meldungen. ✅
+  (`TestBatteryAlertOnlyForViewersAndDeduplicated`, `TestPlacesArrivalDepartureWithHysteresis`)
+* SOS/Check-in gehen bewusst an die ganze Familie (ausdrückliche Handlung der Person). ✅
+* „Klingeln lassen“ und „Standort aktualisieren“ bei anderen nur mit deren Einwilligung (Standard aus);
+  „Standort aktualisieren“ zusätzlich nur, wenn der Standort sichtbar ist; Rate-Limit pro Person. ✅
+  (`TestRingAndLocateNeedOptIn`). Restrisiko: Belästigung durch wiederholtes Klingeln innerhalb einer
+  Familie – Einwilligung jederzeit widerrufbar, Limit 10 Anfragen/Burst, 6/min.
+* Anwesenheit an Orten (`present`) nur für sichtbare Personen. Orte kann jedes Mitglied anlegen – ein
+  Ort verrät nichts, solange niemand teilt. ✅
+* Verlauf anderer nur mit Freigabe + gegenseitiger Sichtbarkeit + eingeschaltetem Verlauf; jede
+  fehlende Bedingung ist ein einfaches 404. ✅ (`TestHistorySharing`)
+* Standortdaten löschen entfernt auch Positionen in eigenen Meldungen und die Anwesenheit an Orten;
+  der Datenexport enthält gesendete Meldungen. ✅
+
 ### Netzwerk (A5)
 * Produktion: HTTPS über Reverse-Proxy; `Secure`-Cookies und HSTS bei `https://`-`FC_PUBLIC_URL`. 🟡
 * HTTP nur für LAN-Tests: Warnung im Log, in der Web-App und (mit Bestätigung) in der Android-App. 🟡

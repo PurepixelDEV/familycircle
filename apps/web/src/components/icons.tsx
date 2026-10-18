@@ -23,3 +23,32 @@ export const ShieldIcon = () => (
     <path d="m9 12 2 2 4-4" />
   </svg>
 );
+
+export const BellIcon = () => (
+  <svg {...base}>
+    <path d="M6 9.5a6 6 0 0 1 12 0c0 4.5 1.8 6.5 2.5 7.5h-17C4.2 16 6 14 6 9.5Z" />
+    <path d="M10 20a2.2 2.2 0 0 0 4 0" />
+  </svg>
+);
+
+export const PinIcon = () => (
+  <svg {...base}>
+    <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" />
+    <circle cx="12" cy="9.5" r="2.5" />
+  </svg>
+);
+
+export const CheckPinIcon = () => (
+  <svg {...base}>
+    <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" />
+    <path d="m9 10 2 2 4-4" />
+  </svg>
+);
+
+export const BatteryIcon = () => (
+  <svg {...base}>
+    <rect x="3" y="7" width="16" height="10" rx="2" />
+    <path d="M22 11v2M6.5 10v4" />
+  </svg>
+);
+

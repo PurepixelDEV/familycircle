@@ -32,10 +32,14 @@ type settingsDTO struct {
 	HistoryEnabled       bool `json:"history_enabled"`
 	HistoryRetentionDays int  `json:"history_retention_days"`
 	ShareBattery         bool `json:"share_battery"`
+	AllowRing            bool `json:"allow_ring"`
+	AllowLocateRequest   bool `json:"allow_locate_request"`
+	BatteryAlerts        bool `json:"battery_alerts"`
 }
 
 func toSettings(s store.Settings) settingsDTO {
-	return settingsDTO{s.SharingPaused, s.HistoryEnabled, s.HistoryRetentionDays, s.ShareBattery}
+	return settingsDTO{s.SharingPaused, s.HistoryEnabled, s.HistoryRetentionDays, s.ShareBattery,
+		s.AllowRing, s.AllowLocateRequest, s.BatteryAlerts}
 }
 
 type sessionDTO struct {
@@ -115,12 +119,13 @@ type shareEntryDTO struct {
 	UserID      uuid.UUID `json:"user_id"`
 	DisplayName string    `json:"display_name"`
 	Since       time.Time `json:"since"`
+	History     bool      `json:"history"`
 }
 
 func toShareEntries(in []store.ShareEntry) []shareEntryDTO {
 	out := make([]shareEntryDTO, 0, len(in))
 	for _, e := range in {
-		out = append(out, shareEntryDTO{e.UserID, e.DisplayName, e.Since})
+		out = append(out, shareEntryDTO{e.UserID, e.DisplayName, e.Since, e.History})
 	}
 	return out
 }

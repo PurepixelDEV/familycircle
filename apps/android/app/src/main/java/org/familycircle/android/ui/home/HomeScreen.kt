@@ -33,6 +33,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +57,13 @@ import org.familycircle.android.tracking.BatteryOptimization
 import org.familycircle.android.tracking.Notifications
 import org.familycircle.android.tracking.TrackingMode
 import org.familycircle.android.tracking.TrackingPolicy
+import org.familycircle.android.ui.alerts.CheckInDialog
+import org.familycircle.android.ui.alerts.OthersSosBanner
+import org.familycircle.android.ui.alerts.OwnSosBanner
+import org.familycircle.android.ui.alerts.SafetyViewModel
+import org.familycircle.android.ui.alerts.SosHoldButton
+import org.familycircle.android.ui.alerts.safetyMessageText
+import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.SectionTitle
 import org.familycircle.android.ui.components.WarningCard
 import org.familycircle.android.ui.components.containerViewModel
@@ -70,7 +79,13 @@ import java.util.Date
 
 @Composable
 fun HomeScreen(snackbar: SnackbarHostState) {
+    val container = LocalAppContainer.current
     val vm = containerViewModel { HomeViewModel(it) }
+    val safety = containerViewModel { SafetyViewModel(it) }
+    val sos by safety.sos.collectAsStateWithLifecycle()
+    val safetyState by safety.state.collectAsStateWithLifecycle()
+    val safetyMessage by safety.message.collectAsStateWithLifecycle()
+    var checkInOpen by rememberSaveable { mutableStateOf(false) }
     val state by vm.state.collectAsStateWithLifecycle()
     val message by vm.message.collectAsStateWithLifecycle()
     val now by rememberNow()
@@ -92,6 +107,14 @@ fun HomeScreen(snackbar: SnackbarHostState) {
         }
     }
 
+    val safetyText = safetyMessage?.let { safetyMessageText(it) }
+    LaunchedEffect(safetyMessage) {
+        if (safetyText != null) {
+            safety.messageShown()
+            snackbar.showSnackbar(safetyText)
+        }
+    }
+
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
@@ -99,6 +122,9 @@ fun HomeScreen(snackbar: SnackbarHostState) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineSmall)
+
+        if (sos.own != null) OwnSosBanner(safetyState.resolving, safety::resolveSos)
+        OthersSosBanner(sos.others, now, onShow = { container.mapFocus.offer(it.actor.userId, sos = true) })
 
         if (state.prefs.serverCleartext) {
             WarningCard(stringResource(R.string.cleartext_banner_title), stringResource(R.string.cleartext_banner_body))
@@ -155,6 +181,13 @@ fun HomeScreen(snackbar: SnackbarHostState) {
             }
         }
 
+        SafetyCard(
+            sendingSos = safetyState.sendingSos,
+            checkingIn = safetyState.checkingIn,
+            onSos = safety::sendSos,
+            onCheckIn = { checkInOpen = true },
+        )
+
         ModeSelector(
             selected = if (state.status == TrackingStatus.OFF) TrackingMode.OFF else state.prefs.trackingMode,
             onSelect = { mode ->
@@ -168,6 +201,17 @@ fun HomeScreen(snackbar: SnackbarHostState) {
                     }
                 }
             },
+        )
+    }
+
+    if (checkInOpen) {
+        CheckInDialog(
+            sending = safetyState.checkingIn,
+            onSend = { text ->
+                checkInOpen = false
+                safety.checkIn(text)
+            },
+            onDismiss = { checkInOpen = false },
         )
     }
 }
@@ -265,6 +309,32 @@ private fun StatusCard(state: HomeUiState, now: Long) {
                         stringResource(R.string.status_upload_failed, age, uploadErrorText(error)),
                         color = MaterialTheme.colorScheme.error,
                     )
+                }
+            }
+        }
+    }
+}
+
+/** SOS (hold 3 s) and "Bin angekommen". */
+@Composable
+private fun SafetyCard(sendingSos: Boolean, checkingIn: Boolean, onSos: () -> Unit, onCheckIn: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(16.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            SectionTitle(stringResource(R.string.safety_title), Modifier.fillMaxWidth())
+            Text(stringResource(R.string.safety_sos_body), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth())
+            SosHoldButton(onTriggered = onSos, sending = sendingSos)
+            HorizontalDivider()
+            Text(stringResource(R.string.safety_checkin_body), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth())
+            OutlinedButton(onClick = onCheckIn, enabled = !checkingIn, modifier = Modifier.fillMaxWidth()) {
+                if (checkingIn) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Text("  " + stringResource(R.string.checkin_sending))
+                } else {
+                    Text(stringResource(R.string.checkin_button))
                 }
             }
         }
