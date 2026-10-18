@@ -12,7 +12,6 @@ Stand: 2026-10-18. Bewertung: Eintritt × Auswirkung (H/M/N). Erledigte Risiken 
 | R-06 | Klartext-HTTP im LAN-Test erlaubt (Passwort/Standorte im WLAN lesbar) | M × H | Warnungen in Log, Web und App; Produktion nur über HTTPS (INSTALL_PORTAINER Schritt 6) |
 | R-07 | Kein 2FA, kein Passwort-Reset per E-Mail, kein Audit-Log | M × M | ⏳ TOTP/WebAuthn, Admin-gestützter Reset, Audit-Log (THREAT_MODEL) |
 | R-08 | Kartenkachel-Anbieter (OpenFreeMap) sieht IP und Ausschnitt; Verfügbarkeit nicht garantiert | M × N | Konfigurierbar; Self-Hosting (PMTiles) dokumentieren ⏳ |
-| R-09 | GitHub-Workflows nie auf GitHub ausgeführt | M × M | actionlint-geprüft, SHAs verifiziert; erster Lauf nach Repository-Erstellung |
 | R-10 | Refresh-Token-Kulanzfenster (2 min) ermöglicht bei gestohlenem Token eine Abmeldung des echten Geräts | N × N | Bewusst akzeptiert (ADR-0004), Diebstahl wird spätestens beim nächsten Refresh erkannt |
 | R-11 | F-Droid: AGP 9/compileSdk 36 auf dem Buildserver und reproduzierbare Builds (Baseline-Profile) ungeklärt | M × N | Vor Einreichung prüfen; Abhängigkeiten sind vollständig FLOSS (docs/LICENSES.md) |
 | R-18 | Nach einem physikalisch unmöglichen Sprung (z. B. falsche/zwischengespeicherte Position) bestätigt der Server die neue Position erst mit dem nächsten Fix – im Ruhezustand „Ausgewogen“ bis ~10 min | N × M | Alte Position bleibt mit echtem Alter markiert (nie „live“). Verbesserung: App sendet bei grossem Positionswechsel sofort einen zweiten Fix |
@@ -37,3 +36,4 @@ Stand: 2026-10-18. Bewertung: Eintritt × Auswirkung (H/M/N). Erledigte Risiken 
 | E-07 | Wechselnde Provider erzeugten falsche GPS-Sprünge (fused lieferte alte Position mit neuem Zeitstempel) | GPS-Vorrang im FixFilter, Regressionstest |
 | E-08 | Gemeldete Geschwindigkeit 0 trotz Bewegung → als „ruhend“ eingestuft | Verschiebung schlägt Provider-Geschwindigkeit, Regressionstest |
 | E-09 | R-13 Android ohne Live-Verbindung | WebSocket in der App (0.2.0) |
+| E-10 | R-09 Workflows nie auf GitHub gelaufen | CI, CodeQL und Release laufen grün (2026-10-18); dabei behoben: Ausführungsrechte, CodeQL im privaten Repo, AGP-9-Testaufgabe, Log-Injection-Befund |

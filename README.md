@@ -19,6 +19,17 @@
 
 Repository: https://github.com/PurepixelDEV/familycircle · Image: `ghcr.io/purepixeldev/familycircle` (ab dem ersten Release)
 
+### Android-App prüfen
+Releases: https://github.com/PurepixelDEV/familycircle/releases – Prüfsumme mit `sha256sum -c SHA256SUMS.txt`.
+Die offizielle APK (`org.familycircle.android`) ist mit diesem Zertifikat signiert
+(`apksigner verify --print-certs familycircle-<version>.apk`):
+
+```
+CN=FamilyCircle, O=PurePixel, C=CH
+SHA-256: 6b62aaf9dd78df8cb5329edf9027afc6df73854aab28ea9822a5a0392014845c
+```
+Eine APK mit anderem Fingerabdruck stammt nicht aus diesem Projekt.
+
 ## Installation
 → **[INSTALL_PORTAINER.md](INSTALL_PORTAINER.md)** (Portainer-Stack, HTTPS mit Nginx Proxy Manager)
 → [BACKUP_RESTORE.md](BACKUP_RESTORE.md) · [SECURITY.md](SECURITY.md) · [RELEASE.md](RELEASE.md)

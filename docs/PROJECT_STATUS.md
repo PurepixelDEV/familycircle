@@ -17,7 +17,8 @@ Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Brow
 | Familienkarte in der App | ✅ 🧪 | MapLibre Native, Profilbild-Marker, Genauigkeitskreise, eigener Standort, Akkustand (falls freigegeben), veraltet = grau/gestrichelt/Alter, WebSocket-Live-Updates, Bottom-Sheet bzw. Seitenleiste ab 600 dp |
 | QR-Verbindungsassistent | ✅ 🧪 | Kopplungscode (10 min, einmalig, API + Migration 0002), Einladungs-QR, Scanner mit CameraX + ZXing; Kopplung im Emulator per Link getestet, **Kamera-Scan nur mit generierten Bildern unit-getestet** |
 | Portainer-Deployment | ✅ 🧪 | Zwei Container, `compose.yaml` + `.env.example`, Image-Archiv-Import (ohne Build) getestet: Smoke 15/15 |
-| GitHub Actions | ✅ | CI, CodeQL, Release (GHCR `ghcr.io/purepixeldev/familycircle`, APK); actionlint sauber; **noch nie auf GitHub gelaufen** |
+| GitHub Actions | ✅ | Auf GitHub grün: CI (Go, Web, Android, Docker + Trivy + Smoke-Test), CodeQL (0 Befunde), Release `v0.2.0` |
+| Release v0.2.0 | ✅ | Pre-Release https://github.com/PurepixelDEV/familycircle/releases/tag/v0.2.0: signierte APK (v2, Fingerabdruck im README), `ghcr.io/purepixeldev/familycircle:0.2.0` und `:0.2` für amd64 + arm64 |
 | Dokumentation | ✅ | README, INSTALL_PORTAINER, BACKUP_RESTORE, SECURITY, RELEASE, QR_FORMAT, HARDWARE_TESTS, TESTING_ANDROID, RISKS |
 
 ## Testergebnisse (letzter Lauf 2026-10-18)
@@ -55,7 +56,7 @@ sichtbar (H-02), Bildschirm aus / App weggewischt (H-03), Neustart (H-07), Akkuv
 QR-Kamera-Scan (H-13/H-14), HTTPS mit echtem Zertifikat (H-12), Hersteller-Energiesparmodi.
 
 ## Weitere offene Punkte
-* GitHub: erster Push (wartet auf Freigabe/Authentifizierung), erster CI-Lauf, erster Release `v0.2.0`.
+* GHCR-Paket `familycircle` ist privat (Standard bei privaten Repositories): für Portainer öffentlich stellen oder in Portainer eine Registry mit Token (`read:packages`) hinterlegen.
 * Bekannte Einschränkungen: R-18 bis R-21 in [RISKS.md](RISKS.md) (Sprungbestätigung, 5-min-Ruheintervall,
   kein Auto-Resume nach App-Update, APK-Grösse).
 * Phase 3 (Geofences, Benachrichtigungen, Check-ins/SOS, Kinderkonten) **bewusst nicht begonnen**.
