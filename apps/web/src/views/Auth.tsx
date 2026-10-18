@@ -10,7 +10,7 @@ function AuthFrame(props: { title: string; intro: string; insecure: boolean; chi
     <div className="auth">
       <div className="auth-card">
         <div className="auth-mark">
-          <Logo /> {t("app.name")}
+          <Logo size={44} /> {t("app.name")}
         </div>
         <h1>{props.title}</h1>
         <p className="muted">{props.intro}</p>

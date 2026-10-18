@@ -12,7 +12,7 @@ export function PairInfo() {
     <div className="auth">
       <div className="auth-card">
         <div className="auth-mark">
-          <Logo /> {t("app.name")}
+          <Logo size={44} /> {t("app.name")}
         </div>
         <h1>{t("pair.title")}</h1>
         <p>{t("pair.body")}</p>

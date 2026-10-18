@@ -51,6 +51,7 @@ import org.familycircle.android.api.ServerUrl
 import org.familycircle.android.data.AccountRepository
 import org.familycircle.android.data.OnboardingHandoff
 import org.familycircle.android.ui.auth.defaultDeviceName
+import org.familycircle.android.ui.components.AppLogo
 import org.familycircle.android.ui.components.WarningCard
 import org.familycircle.android.ui.components.containerViewModel
 
@@ -235,6 +236,7 @@ fun ServerScreen() {
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            AppLogo()
             Text(stringResource(R.string.server_title), style = MaterialTheme.typography.headlineMedium)
             Text(stringResource(R.string.server_intro_qr), style = MaterialTheme.typography.bodyLarge)
             Button(onClick = vm::openScanner, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
