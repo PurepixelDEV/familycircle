@@ -148,7 +148,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, fsys fs.FS, log *slog.Logg
 		if err != nil {
 			return fmt.Errorf("migration %s failed (rolled back, database unchanged): %w", m.name, err)
 		}
-		log.Info("applied migration", "migration", m.name, "duration", time.Since(start).Round(time.Millisecond))
+		log.Info("applied migration", "migration", m.name, "duration_ms", time.Since(start).Milliseconds())
 	}
 	return nil
 }

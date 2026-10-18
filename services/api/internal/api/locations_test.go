@@ -152,3 +152,31 @@ func TestDeleteAllOwnLocationsAndExport(t *testing.T) {
 		t.Fatal("history not deleted")
 	}
 }
+
+func TestRetentionPurge(t *testing.T) {
+	e, anna, _, annaDev, _, _ := family(t)
+	anna.must(200, "PATCH", "/me/settings", map[string]any{"history_enabled": true, "history_retention_days": 1})
+	annaDev.upload(point(47.0, 8.0, time.Now().Add(-3*24*time.Hour)), point(47.0001, 8.0, time.Now()))
+	e.webClient().do("POST", "/auth/session", map[string]any{"email": "anna@example.org", "password": password})
+	anna.must(204, "DELETE", "/auth/session", nil) // a revoked web session
+
+	res, err := e.store.Purge(t.Context())
+	if err != nil {
+		t.Fatalf("purge: %v", err)
+	}
+	if res.History != 1 {
+		t.Fatalf("expected 1 expired history point removed, got %d", res.History)
+	}
+	if n := len(e.webClient().must(200, "GET", "/instance", nil).body); n == 0 {
+		t.Fatal("server unhealthy after purge")
+	}
+	// Eight days later the revoked session is removed as well.
+	shiftStoreClock(e, 8*24*3600)
+	res, err = e.store.Purge(t.Context())
+	if err != nil {
+		t.Fatalf("purge later: %v", err)
+	}
+	if res.Sessions == 0 {
+		t.Fatal("revoked sessions older than 7 days must be purged")
+	}
+}

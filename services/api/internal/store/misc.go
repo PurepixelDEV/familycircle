@@ -39,19 +39,21 @@ func (s *Store) Purge(ctx context.Context) (PurgeResult, error) {
 	var r PurgeResult
 	now := s.now()
 	tag, err := s.pool.Exec(ctx, `DELETE FROM location_history h USING user_settings us
-		WHERE h.user_id = us.user_id AND h.recorded_at < $1 - make_interval(days => us.history_retention_days)`, now)
+		WHERE h.user_id = us.user_id AND h.recorded_at < $1::timestamptz - make_interval(days => us.history_retention_days)`, now)
 	if err != nil {
 		return r, err
 	}
 	r.History = tag.RowsAffected()
-	tag, err = s.pool.Exec(ctx, `DELETE FROM sessions WHERE revoked_at < $1 - interval '7 days'
-		OR (kind = 'web' AND access_expires_at < $1 - interval '7 days')
-		OR (kind = 'device' AND refresh_expires_at < $1 - interval '7 days')`, now)
+	// Explicit casts: without them PostgreSQL infers "$1 - interval" as interval arithmetic.
+	tag, err = s.pool.Exec(ctx, `DELETE FROM sessions WHERE revoked_at < $1::timestamptz - interval '7 days'
+		OR (kind = 'web' AND access_expires_at < $1::timestamptz - interval '7 days')
+		OR (kind = 'device' AND refresh_expires_at < $1::timestamptz - interval '7 days')`, now)
 	if err != nil {
 		return r, err
 	}
 	r.Sessions = tag.RowsAffected()
-	tag, err = s.pool.Exec(ctx, `DELETE FROM invites WHERE expires_at < $1 - interval '30 days' OR revoked_at < $1 - interval '30 days'`, now)
+	tag, err = s.pool.Exec(ctx, `DELETE FROM invites WHERE expires_at < $1::timestamptz - interval '30 days'
+		OR revoked_at < $1::timestamptz - interval '30 days'`, now)
 	if err != nil {
 		return r, err
 	}

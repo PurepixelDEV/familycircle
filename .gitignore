@@ -38,3 +38,6 @@ Thumbs.db
 # Test artefacts
 test-results/
 playwright-report/
+
+# Local browser test artefacts (Playwright MCP)
+.playwright-mcp/
