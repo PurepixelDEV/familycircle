@@ -1,0 +1,45 @@
+# Local development environment. NOT for production (see compose.yaml).
+#
+#   docker compose -f compose.dev.yaml up -d db          # database only (for go tests / vite dev)
+#   docker compose -f compose.dev.yaml up -d --build      # database + app built from source
+#
+# The app is then reachable at http://localhost:9092. Dev credentials below are intentionally weak
+# and only bound to localhost.
+name: familycircle-dev
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: familycircle
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: familycircle
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - dev-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U familycircle -d familycircle"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        VERSION: dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FC_DATABASE_URL: postgres://familycircle:devpassword@db:5432/familycircle?sslmode=disable
+      FC_PUBLIC_URL: http://localhost:9092
+      FC_SETUP_TOKEN: DEV-SETUP
+      FC_LOG_LEVEL: debug
+    ports:
+      - "9092:8080"
+
+volumes:
+  dev-db:
