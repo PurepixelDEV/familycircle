@@ -5,6 +5,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-18
+
+Phase 3: Sicherheitsfunktionen für die Familie und Einladen per Link. Update über 0.2.x ohne
+Neuanmeldung (gleicher Signaturschlüssel); der Server erweitert die Datenbank automatisch
+(Migration 0003). Hardwaretests der neuen Funktionen (H-26 bis H-33) stehen noch aus.
+
 ### Hinzugefügt – Phase 3 (docs/ALERTS.md)
 - **SOS**: Gedrückt halten → Alarm mit Position an die ganze Familie, „Ich bin in Sicherheit“ beendet ihn.
 - **Orte mit Ankunft/Abfahrt**: Orte pro Familie (Radius 50–2000 m); der Server erkennt Betreten und

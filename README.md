@@ -10,7 +10,7 @@
 **Private Standortfreigabe für Familien – selbst gehostet, quelloffen, ohne Tracker.**
 *Self-hosted, privacy-first family location sharing – an open-source alternative to Life360 (AGPL-3.0-or-later).*
 
-> **Status: 0.2.1 – Pre-Release zum Testen (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
+> **Status: 0.3.0 – Pre-Release zum Testen (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
 > [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Offene Risiken: [docs/RISKS.md](docs/RISKS.md).
 
 ## Was FamilyCircle kann

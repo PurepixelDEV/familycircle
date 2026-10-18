@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: **2026-10-18** · Version **0.2.1** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
+Stand: **2026-10-18** · Version **0.3.0** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
 
 Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Browser/Docker) · 📱 **Hardwaretest offen** · ⏳ offen
 
@@ -52,7 +52,7 @@ Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Brow
 
 Jeweils mit Regressionstest; erneuter Emulator-Lauf bestätigt: Updates alle ~2 min in Bewegung, keine Fehlsprünge.
 
-## Phase 3 (in Arbeit, Branch `feat/phase3`)
+## Phase 3 (Release 0.3.0)
 SOS, Orte mit Ankunft/Abfahrt, Akku-Warnung + letzter Standort, „Standort aktualisieren“, Klingeln lassen,
 Check-in und Verlauf – Regeln in [ALERTS.md](ALERTS.md). Kinderkonten und iPhone bewusst nicht.
 
