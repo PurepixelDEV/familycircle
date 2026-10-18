@@ -1,0 +1,46 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Security problems must not be reported here** – see SECURITY.md.
+        Please never paste real coordinates, tokens, invite codes or passwords.
+  - type: input
+    id: version
+    attributes:
+      label: FamilyCircle version
+      description: Server image tag and/or Android app version
+      placeholder: "server 0.1.0, android 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [Server / API, Web app, Android app, Installation / Portainer, Documentation]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. …\n2. …"
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Host OS/architecture, Docker/Portainer version, reverse proxy, Android version and device model
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Server logs contain no coordinates or tokens; still check before posting.
+      render: text

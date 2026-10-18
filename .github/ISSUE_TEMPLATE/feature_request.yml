@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Which problem would this solve?
+      description: Describe the situation in your family/household, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy considerations
+      description: Who could see what? Could this be misused (e.g. for stalking or covert tracking)?
+    validations:
+      required: true

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -81,7 +82,7 @@ func consumeInvite(ctx context.Context, tx pgx.Tx, codeHash []byte, now time.Tim
 		WHERE code_hash = $1 AND revoked_at IS NULL AND expires_at > $2 AND use_count < max_uses FOR UPDATE`,
 		codeHash, now).Scan(&id, &familyID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return uuid.Nil, ErrInviteInvalid
 		}
 		return uuid.Nil, err

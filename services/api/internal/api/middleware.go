@@ -98,7 +98,7 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if v := recover(); v != nil {
-				if v == http.ErrAbortHandler {
+				if err, ok := v.(error); ok && errors.Is(err, http.ErrAbortHandler) {
 					panic(v)
 				}
 				s.log.Error("panic in handler", "path", r.URL.Path, "panic", fmt.Sprint(v))
@@ -288,15 +288,17 @@ func (s *Server) requireAuth(next http.Handler, deviceOnly bool) http.Handler {
 	})
 }
 
+// Secure is tied to an https FC_PUBLIC_URL on purpose: a LAN test over plain http must still
+// work (the server logs a warning in that case). HttpOnly and SameSite are always set.
 func (s *Server) setCookie(w http.ResponseWriter, token string, expires time.Time) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // G124: Secure depends on deployment, see above
 		Name: cookieName, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, Secure: s.cfg.SecureContext(), SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func (s *Server) clearCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ //nolint:gosec // G124: see setCookie
 		Name: cookieName, Value: "", Path: "/", MaxAge: -1,
 		HttpOnly: true, Secure: s.cfg.SecureContext(), SameSite: http.SameSiteLaxMode,
 	})
