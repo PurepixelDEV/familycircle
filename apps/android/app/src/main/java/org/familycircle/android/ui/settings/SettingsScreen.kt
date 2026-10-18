@@ -177,6 +177,8 @@ fun SettingsScreen(onOpenPermissions: () -> Unit) {
             }
         }
 
+        ConnectPhoneCard()
+
         OutlinedButton(onClick = onOpenPermissions, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.settings_permissions))
         }
@@ -186,6 +188,7 @@ fun SettingsScreen(onOpenPermissions: () -> Unit) {
         OutlinedButton(onClick = { confirm = Confirm.LOGOUT }, enabled = !state.signingOut, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.settings_logout))
         }
+        DiagnosticsSection()
         Text(
             stringResource(R.string.settings_app_version, BuildConfig.VERSION_NAME),
             style = MaterialTheme.typography.bodySmall,

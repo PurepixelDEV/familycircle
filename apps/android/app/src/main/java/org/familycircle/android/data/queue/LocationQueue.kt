@@ -32,6 +32,9 @@ interface PendingLocationDao {
     @Query("SELECT COUNT(*) FROM pending_locations")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM pending_locations ORDER BY recorded_at_ms DESC LIMIT 1")
+    suspend fun newest(): PendingLocation?
+
     @Query("SELECT COUNT(*) FROM pending_locations")
     fun countFlow(): Flow<Int>
 

@@ -28,6 +28,9 @@ object TrackingRuntime {
 
     /** Mode actually in effect (after LIVE timeout / low-battery step-down), null when not running. */
     val effectiveMode = MutableStateFlow<TrackingMode?>(null)
+
+    /** Location providers the service currently listens to (diagnostics), empty when not running. */
+    val providers = MutableStateFlow<List<String>>(emptyList())
 }
 
 /**

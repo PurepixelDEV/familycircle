@@ -181,10 +181,18 @@ class PendingLocationFactoryTest {
 
 class ProviderSelectorTest {
     @Test
-    fun `fused wins when available`() {
+    fun `fused alone only for low power`() {
         val all = setOf("fused", "gps", "network", "passive")
-        assertEquals(listOf("fused"), ProviderSelector.select(all, LocationQuality.HIGH_ACCURACY))
         assertEquals(listOf("fused"), ProviderSelector.select(all, LocationQuality.LOW_POWER))
+    }
+
+    @Test
+    fun `balanced and high accuracy add gps to fused so positions never stop when network location is unavailable`() {
+        val all = setOf("fused", "gps", "network", "passive")
+        assertEquals(listOf("fused", "gps"), ProviderSelector.select(all, LocationQuality.BALANCED))
+        assertEquals(listOf("fused", "gps"), ProviderSelector.select(all, LocationQuality.HIGH_ACCURACY))
+        // Device without a GPS chip: fused only.
+        assertEquals(listOf("fused"), ProviderSelector.select(setOf("fused", "network"), LocationQuality.BALANCED))
     }
 
     @Test
@@ -204,5 +212,61 @@ class ProviderSelectorTest {
         assertTrue(ProviderSelector.select(emptySet(), LocationQuality.BALANCED).isEmpty())
         assertNull(ProviderSelector.selectOneShot(setOf("passive")))
         assertEquals("gps", ProviderSelector.selectOneShot(setOf("gps", "network")))
+    }
+}
+
+/**
+ * Regression found in the two-emulator test: with fused + GPS requested together, the fused provider
+ * re-delivered an old position with a fresh timestamp between fresh GPS fixes, which made the real GPS
+ * fix look like an impossible jump on the server.
+ */
+class ProviderPriorityTest {
+    private val balanced = LocationParams(TrackingMode.BALANCED, 120_000, 30_000, 0f, 300_000, LocationQuality.BALANCED)
+
+    private fun fix(t: Long, lat: Double, provider: String) =
+        Fix(timeMs = t, lat = lat, lon = 8.54, accuracyM = 5f, provider = provider)
+
+    @Test
+    fun `non-gps fixes are dropped while gps is delivering`() {
+        val p = FixProcessor()
+        assertTrue(p.process(fix(1_000, 47.3834, "gps"), balanced) is FixProcessor.Result.Record)
+        val stale = p.process(fix(3_000, 47.3797, "fused"), balanced)
+        assertEquals(FixProcessor.Result.Drop("filter:SUPERSEDED_BY_GPS"), stale)
+    }
+
+    @Test
+    fun `fused takes over when gps has been silent for two intervals`() {
+        val p = FixProcessor()
+        p.process(fix(1_000, 47.3834, "gps"), balanced)
+        val later = 1_000 + 2 * balanced.intervalMs + 1
+        assertTrue(p.process(fix(later, 47.3840, "fused"), balanced) is FixProcessor.Result.Record)
+    }
+
+    @Test
+    fun `without any gps fix other providers are used normally`() {
+        val p = FixProcessor()
+        assertTrue(p.process(fix(1_000, 47.0, "fused"), balanced) is FixProcessor.Result.Record)
+        assertTrue(p.process(fix(200_000, 47.01, "network"), balanced) is FixProcessor.Result.Record)
+    }
+}
+
+/** Regression from the emulator test: the provider reported speed 0 while the device kept moving. */
+class MotionSpeedConsistencyTest {
+    private val c = MotionClassifier()
+
+    @Test
+    fun `displacement wins over a zero provider speed when the move exceeds the accuracy`() {
+        val prev = MotionClassifier.Sample(0, 47.3728, 8.542, 5f, 0f)
+        val cur = MotionClassifier.Sample(10_000, 47.3726, 8.542, 5f, 0f) // ~22 m in 10 s
+        assertEquals(Motion.WALKING, c.classify(cur, prev))
+    }
+
+    @Test
+    fun `provider speed is kept when the displacement is within the accuracy`() {
+        val prev = MotionClassifier.Sample(0, 47.3728, 8.542, 30f, null)
+        val cur = MotionClassifier.Sample(10_000, 47.37281, 8.542, 30f, 1.5f)
+        assertEquals(Motion.WALKING, c.classify(cur, prev))
+        val still = MotionClassifier.Sample(10_000, 47.37281, 8.542, 30f, 0f)
+        assertEquals(Motion.STATIONARY, c.classify(still, prev))
     }
 }

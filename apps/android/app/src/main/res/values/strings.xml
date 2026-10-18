@@ -236,4 +236,105 @@
     <string name="notif_action_pause">Pause</string>
     <string name="notif_resume_title">Location sharing is paused</string>
     <string name="notif_resume_text">Your phone restarted. Open FamilyCircle to resume sharing your location.</string>
+
+    <!-- Navigation / short ages (v0.2) -->
+    <string name="nav_map">Map</string>
+    <string name="age_short_now">now</string>
+    <string name="age_short_minutes">%d min</string>
+    <string name="age_short_hours">%d h</string>
+    <string name="age_short_days">%d d</string>
+
+    <!-- Map -->
+    <plurals name="map_cd">
+        <item quantity="one">Family map with %d person. The list shows everyone and lets you move the map to them.</item>
+        <item quantity="other">Family map with %d people. The list shows everyone and lets you move the map to them.</item>
+    </plurals>
+    <string name="map_unavailable">The map could not be loaded. The list still shows where everyone is.</string>
+    <string name="map_you">You</string>
+    <string name="map_you_age">You · %1$s</string>
+    <string name="map_chip_on">Sharing on</string>
+    <string name="map_chip_paused">Sharing paused</string>
+    <string name="map_chip_off">Sharing off</string>
+    <plurals name="map_chip_queue">
+        <item quantity="one">%1$s · %2$d waiting</item>
+        <item quantity="other">%1$s · %2$d waiting</item>
+    </plurals>
+    <string name="map_chip_action">Open My sharing</string>
+    <string name="map_show_all">Show everyone</string>
+    <string name="map_live_on">Live updates on</string>
+    <string name="map_live_connecting">Connecting for live updates…</string>
+    <string name="map_family_picker_cd">Family: %1$s. Choose another family</string>
+    <string name="map_show_on_map">Show on map</string>
+    <string name="map_accuracy">±%1$d m</string>
+    <string name="map_from_device">position from this phone</string>
+    <string name="map_not_visible">Not visible to you – not shared, paused or no position yet.</string>
+    <string name="map_nobody">Nobody shares a location with you yet. You can ask your family in the Family tab.</string>
+
+    <!-- QR code -->
+    <string name="qr_title">Scan QR code</string>
+    <string name="qr_instructions">Point the camera at the QR code. You find it in the FamilyCircle web app under \"Privacy\" → \"Connect a phone\", or in an invitation.</string>
+    <string name="qr_camera_explanation">To read the QR code, FamilyCircle needs the camera. It is only used on this screen; no pictures are saved or sent.</string>
+    <string name="qr_camera_denied">Camera access was declined. You can still enter the server address yourself.</string>
+    <string name="qr_camera_denied_settings">Camera access was declined. You can allow it in the app settings, or enter the server address yourself.</string>
+    <string name="qr_allow_camera">Allow camera</string>
+    <string name="qr_manual">Enter the address instead</string>
+    <string name="qr_preview_cd">Camera preview for the QR code</string>
+    <string name="qr_not_familycircle">This QR code is not a FamilyCircle code. Use the code from the FamilyCircle web app.</string>
+    <string name="qr_no_camera">No camera is available. Please enter the server address instead.</string>
+
+    <!-- Server screen with QR -->
+    <string name="server_intro_qr">The easiest way: open the FamilyCircle web app on a computer, choose \"Connect a phone\" and scan the QR code shown there.</string>
+    <string name="server_scan_qr">Scan QR code</string>
+    <string name="server_manual_title">Or enter the address</string>
+    <string name="server_qr_invite">The QR code contains an invite. Next you create your account.</string>
+    <string name="server_continue_register">Continue to registration</string>
+    <string name="server_scan_again">Scan a new QR code</string>
+    <string name="pair_title">Connect this phone?</string>
+    <string name="pair_body">This phone will be signed in to your account on %1$s. Only continue if you created this QR code yourself.</string>
+    <string name="pair_connect">Connect this phone</string>
+    <string name="pair_use_password">Sign in with e-mail and password instead</string>
+    <string name="pair_error_invalid">This QR code is no longer valid (it works once and for 10 minutes). Create a new one in the web app and scan again.</string>
+    <string name="pair_error_unsupported">The server did not accept the QR code. It may need an update – sign in with e-mail and password instead.</string>
+
+    <!-- Settings: connect another phone, diagnostics -->
+    <string name="settings_connect_phone">Connect another phone</string>
+    <string name="settings_connect_phone_body">Open the FamilyCircle web app, go to \"Privacy\" → \"Connect a phone\" and scan the QR code with the other phone. The code works once and for 10 minutes.</string>
+    <string name="diag_title">Diagnostics</string>
+    <string name="diag_intro">Helps when sharing does not work as expected. The copied report contains no positions, no e-mail address and no passwords.</string>
+    <string name="diag_battery_exempt">Battery optimisation: FamilyCircle may run without restrictions.</string>
+    <string name="diag_battery_restricted">Battery optimisation: Android may pause FamilyCircle in the background.</string>
+    <string name="diag_battery_explain">Optional: if your family often sees you as \"Outdated\" although sharing is on, allow FamilyCircle to run without battery restrictions. This can use a bit more battery.</string>
+    <string name="diag_battery_button">Allow running without restrictions (optional)</string>
+    <string name="diag_show">Show details</string>
+    <string name="diag_hide">Hide details</string>
+    <string name="diag_state_shown">details shown</string>
+    <string name="diag_state_hidden">details hidden</string>
+    <string name="diag_yes">yes</string>
+    <string name="diag_no">no</string>
+    <string name="diag_app">App</string>
+    <string name="diag_android">Android</string>
+    <string name="diag_service">Sharing service running</string>
+    <string name="diag_providers_in_use">Location sources in use</string>
+    <string name="diag_providers_available">Location sources on this phone</string>
+    <string name="diag_location_enabled">Location turned on</string>
+    <string name="diag_perm_fine">Precise location</string>
+    <string name="diag_perm_coarse">Approximate location</string>
+    <string name="diag_perm_background">Location all the time</string>
+    <string name="diag_perm_notifications">Notifications</string>
+    <string name="diag_perm_camera">Camera</string>
+    <string name="diag_battery_label">Exempt from battery optimisation</string>
+    <string name="diag_queue">Positions waiting to be sent</string>
+    <string name="diag_last_fix">Last position recorded</string>
+    <string name="diag_last_upload">Last upload</string>
+    <plurals name="diag_upload_ok">
+        <item quantity="one">%1$s · %2$d sent</item>
+        <item quantity="other">%1$s · %2$d sent</item>
+    </plurals>
+    <string name="diag_live">Live updates</string>
+    <string name="diag_live_connected">connected</string>
+    <string name="diag_live_connecting">connecting</string>
+    <string name="diag_live_idle">off (only while the map is open)</string>
+    <string name="diag_copy">Copy diagnostics</string>
+    <string name="diag_copy_note">The report is in English so developers can read it.</string>
+    <string name="diag_copied">Diagnostics copied</string>
 </resources>

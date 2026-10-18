@@ -3,11 +3,15 @@ package org.familycircle.android.tracking
 import android.content.Context
 import android.location.Location
 import android.os.BatteryManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.familycircle.android.data.prefs.AppPreferences
 import org.familycircle.android.data.queue.PendingLocation
 import org.familycircle.android.data.queue.PendingLocationDao
+import org.familycircle.android.map.LocalFix
 import org.familycircle.android.util.Logger
 
 /** Reads the current battery level without registering a receiver. */
@@ -27,6 +31,7 @@ fun Location.toFix(): Fix = Fix(
     altitudeM = if (hasAltitude()) altitude else null,
     speedMps = if (hasSpeed()) speed else null,
     bearingDeg = if (hasBearing()) bearing else null,
+    provider = provider,
 )
 
 /**
@@ -45,6 +50,14 @@ class LocationRecorder(
     private val mutex = Mutex()
     private var processor: FixProcessor? = null
     private var inserts = 0
+
+    private val _latest = MutableStateFlow<LocalFix?>(null)
+
+    /**
+     * Latest fix recorded on this phone in this process (for the own marker on the map). Kept in
+     * memory only; [loadLatestQueued] seeds it from the queue after a process restart.
+     */
+    val latest: StateFlow<LocalFix?> = _latest.asStateFlow()
 
     /** Last motion class seen (used by the policy to relax intervals while stationary). */
     @Volatile
@@ -69,7 +82,8 @@ class LocationRecorder(
                 val battery = if (prefs.current.shareBattery) BatteryReader.read(context) else null
                 val point = PendingLocation.from(result.fix, result.motion, battery, createdAtMs = clock())
                 dao.insert(point)
-                prefs.setLastFix(result.fix.timeMs)
+                prefs.setLastFix(result.fix.timeMs, point.accuracyM.toDouble())
+                _latest.value = point.toLocalFix()
                 if (inserts++ % PRUNE_EVERY == 0) {
                     val pruned = dao.deleteRecordedBefore(clock() - MAX_AGE_MS)
                     if (pruned > 0) Logger.i(TAG, "pruned $pruned points older than 7 days")
@@ -80,11 +94,27 @@ class LocationRecorder(
         }
     }
 
+    /** Seeds [latest] from the newest queued (not yet uploaded) point, if nothing newer is known. */
+    suspend fun loadLatestQueued() {
+        val newest = dao.newest() ?: return
+        val current = _latest.value
+        if (current == null || newest.recordedAtMs > current.recordedAtMs) _latest.value = newest.toLocalFix()
+    }
+
     /** Forget filter state (after sign-out / account change). */
     suspend fun reset() = mutex.withLock {
         processor = null
         lastMotion = Motion.UNKNOWN
+        _latest.value = null
     }
+
+    private fun PendingLocation.toLocalFix() = LocalFix(
+        recordedAtMs = recordedAtMs,
+        lat = lat,
+        lon = lon,
+        accuracyM = accuracyM.toDouble(),
+        motion = motion,
+    )
 
     private companion object {
         const val TAG = "Recorder"

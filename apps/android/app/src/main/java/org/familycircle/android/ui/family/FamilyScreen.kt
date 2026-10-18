@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -30,14 +29,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -47,7 +42,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.familycircle.android.R
 import org.familycircle.android.api.MemberLocation
+import org.familycircle.android.ui.components.FreshnessBadge
 import org.familycircle.android.ui.components.SwitchRow
+import org.familycircle.android.ui.components.motionText
+import org.familycircle.android.ui.components.parseMemberColor
 import org.familycircle.android.ui.components.containerViewModel
 import org.familycircle.android.ui.components.relativeAgeText
 import org.familycircle.android.ui.components.rememberNow
@@ -155,7 +153,7 @@ private fun MemberCard(
                 Box(
                     Modifier
                         .size(14.dp)
-                        .background(parseColor(member.color), CircleShape)
+                        .background(parseMemberColor(member.color), CircleShape)
                         .clearAndSetSemantics { },
                 )
                 Text(
@@ -163,7 +161,7 @@ private fun MemberCard(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                if (freshness != null) FreshnessChip(freshness)
+                if (freshness != null) FreshnessBadge(freshness)
             }
 
             if (loc != null) {
@@ -213,38 +211,3 @@ private fun MemberCard(
         }
     }
 }
-
-@Composable
-private fun FreshnessChip(freshness: Freshness) {
-    val status = LocalStatusColors.current
-    val (text, bg, fg) = when (freshness) {
-        Freshness.LIVE -> Triple(stringResource(R.string.freshness_live), status.ok, status.onOk)
-        Freshness.RECENT -> Triple(stringResource(R.string.freshness_recent), status.neutral, status.onNeutral)
-        Freshness.STALE -> Triple(stringResource(R.string.freshness_stale), status.warning, status.onWarning)
-    }
-    val description = stringResource(R.string.freshness_cd, text)
-    Text(
-        text,
-        color = fg,
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier
-            .background(bg, RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp)
-            .semantics { contentDescription = description },
-    )
-}
-
-@Composable
-private fun motionText(motion: String): String? = when (motion) {
-    "stationary" -> stringResource(R.string.motion_stationary)
-    "walking" -> stringResource(R.string.motion_walking)
-    "driving" -> stringResource(R.string.motion_driving)
-    else -> null
-}
-
-private fun parseColor(hex: String): Color =
-    try {
-        Color(hex.toColorInt())
-    } catch (_: IllegalArgumentException) {
-        Color.Gray
-    }

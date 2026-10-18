@@ -12,6 +12,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Only for scanning the QR code that connects the app to the server (nothing is recorded). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Optional: lets the user exempt the app from battery optimisation (Settings → Diagnostics) so
+         Android does not pause location sharing. Core function = continuous location sharing; the app
+         is not distributed via Google Play. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- TODO(targetSdk 37): declare android.permission.ACCESS_LOCAL_NETWORK and request it at runtime
          before raising targetSdk (needed for servers in the local network). -->
 
@@ -20,6 +26,9 @@
         android:required="false" />
     <uses-feature
         android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
         android:required="false" />
 
     <!-- allowBackup=false + explicit extraction rules: tokens and queued locations must never end up

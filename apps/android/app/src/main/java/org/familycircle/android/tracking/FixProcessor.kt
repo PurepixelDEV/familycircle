@@ -46,7 +46,10 @@ class FixProcessor(
      *   bypasses the [RecordGate] (but not the [FixFilter]).
      */
     fun process(fix: Fix, params: LocationParams?): Result {
-        filter.check(fix)?.let { return Result.Drop("filter:${it.name}") }
+        // GPS has priority for two request intervals (60 s for one-shot requests).
+        val gpsPriorityMs = if (params != null) 2 * params.intervalMs else 60_000L
+        filter.check(fix, gpsPriorityMs)?.let { return Result.Drop("filter:${it.name}") }
+        filter.noteValid(fix)
         val sample = MotionClassifier.Sample(fix.timeMs, fix.lat, fix.lon, fix.accuracyM!!, fix.speedMps)
         val motion = classifier.classify(sample, lastValid)
         lastValid = sample

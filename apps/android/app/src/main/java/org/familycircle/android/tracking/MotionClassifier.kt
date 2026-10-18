@@ -8,12 +8,14 @@ import kotlin.math.max
  * "driving") and for the power policy – not activity recognition (that would need Play Services
  * or sensor fusion).
  *
- * Speed source, in order:
- * 1. the provider's speed (`Location.getSpeed()`, typically from GPS Doppler), if present;
- * 2. otherwise the displacement to the previous fix divided by the elapsed time, if the fixes are
- *    5 s – 30 min apart. A displacement within the larger accuracy radius of the two fixes is
- *    treated as noise (speed 0);
- * 3. otherwise [Motion.UNKNOWN].
+ * Speed sources:
+ * * the provider's speed (`Location.getSpeed()`, typically from GPS Doppler), if present;
+ * * the displacement to the previous fix divided by the elapsed time, if the fixes are
+ *   5 s – 30 min apart. A displacement within the larger accuracy radius of the two fixes is
+ *   treated as noise (speed 0).
+ * When both exist the higher one wins: some chips (and the emulator) report 0 m/s while the
+ * position clearly changes, and treating a moving person as stationary would slow updates down.
+ * Without either estimate: [Motion.UNKNOWN].
  *
  * Thresholds: < 0.6 m/s stationary, < 2.8 m/s (≈ 10 km/h) walking, above that "driving".
  * Fast running and cycling therefore end up as "driving" – an accepted simplification.
@@ -42,7 +44,16 @@ class MotionClassifier(
     /** Estimated speed in m/s, or null when no estimate is possible. */
     fun estimateSpeed(current: Sample, previous: Sample?): Double? {
         // Via the decimal string: 2.8f.toDouble() would be 2.7999999… and fall below the threshold.
-        current.speedMps?.let { if (it.isFinite() && it >= 0f) return it.toString().toDouble() }
+        val provider = current.speedMps?.takeIf { it.isFinite() && it >= 0f }?.toString()?.toDouble()
+        val displacement = displacementSpeed(current, previous)
+        return when {
+            provider == null -> displacement
+            displacement == null -> provider
+            else -> max(provider, displacement)
+        }
+    }
+
+    private fun displacementSpeed(current: Sample, previous: Sample?): Double? {
         if (previous == null) return null
         val dtMs = current.timeMs - previous.timeMs
         if (dtMs < MIN_DT_MS || dtMs > MAX_DT_MS) return null
