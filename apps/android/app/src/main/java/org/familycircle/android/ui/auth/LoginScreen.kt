@@ -24,6 +24,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -202,6 +206,8 @@ fun LoginScreen(serverUrl: String, sessionExpired: Boolean) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, autoCorrectEnabled = false, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
+            // Show/hide toggle instead of a "repeat password" field (NIST SP 800-63B).
+            var passwordVisible by rememberSaveable { mutableStateOf(false) }
             OutlinedTextField(
                 value = state.password,
                 onValueChange = { v -> vm.update { it.copy(password = v) } },
@@ -213,7 +219,12 @@ fun LoginScreen(serverUrl: String, sessionExpired: Boolean) {
                 },
                 singleLine = true,
                 isError = "password" in state.invalidFields || state.error == LoginError.PASSWORD_TOO_SHORT,
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Text(stringResource(if (passwordVisible) R.string.login_hide_password else R.string.login_show_password))
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )

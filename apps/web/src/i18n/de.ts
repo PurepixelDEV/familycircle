@@ -26,6 +26,8 @@ export const de = {
   "auth.name": "Dein Name",
   "auth.email": "E-Mail-Adresse",
   "auth.password": "Passwort",
+  "auth.showPassword": "Passwort anzeigen",
+  "auth.hidePassword": "Passwort verbergen",
   "auth.passwordHelp": "Mindestens 10 Zeichen. Ein langer Satz ist sicher und leicht zu merken.",
   "auth.loginTitle": "Anmelden",
   "auth.loginIntro": "Melde dich an, um zu sehen, wo deine Familie gerade ist.",

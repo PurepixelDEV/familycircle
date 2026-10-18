@@ -8,6 +8,9 @@ FamilyCircle processes highly sensitive data (real-time locations of family memb
 ("Security" tab → "Report a vulnerability") of
 [PurepixelDEV/familycircle](https://github.com/PurepixelDEV/familycircle/security).
 
+If GitHub reporting is not possible, write to hello@purepixel.ch (do not include exploit details in the first
+message; we will agree on a secure channel).
+
 Please include affected version, configuration, reproduction steps and impact. We aim to acknowledge reports within
 7 days and to publish a fix and advisory as soon as possible, crediting you unless you prefer otherwise.
 

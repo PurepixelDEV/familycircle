@@ -27,6 +27,8 @@ export const en: Record<MessageKey, string> = {
   "auth.name": "Your name",
   "auth.email": "Email address",
   "auth.password": "Password",
+  "auth.showPassword": "Show password",
+  "auth.hidePassword": "Hide password",
   "auth.passwordHelp": "At least 10 characters. A long sentence is secure and easy to remember.",
   "auth.loginTitle": "Sign in",
   "auth.loginIntro": "Sign in to see where your family is right now.",

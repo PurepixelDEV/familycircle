@@ -72,6 +72,8 @@
     <string name="login_email">E-Mail</string>
     <string name="login_password">Passwort</string>
     <string name="login_password_hint">Mindestens 10 Zeichen</string>
+    <string name="login_show_password">Anzeigen</string>
+    <string name="login_hide_password">Verbergen</string>
     <string name="login_device_name">Name dieses Handys</string>
     <string name="login_device_name_hint">Damit du dieses Handy in der Liste deiner Geräte wiedererkennst</string>
     <string name="login_submit_signin">Anmelden</string>

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { api, ApiError, type Instance, type Me } from "../api/client";
 import { useI18n } from "../i18n";
 import { navigate, queryParam } from "../lib/router";
-import { Field, Logo, useErrorText } from "../components/ui";
+import { Field, Logo, PasswordInput, useErrorText } from "../components/ui";
 
 function AuthFrame(props: { title: string; intro: string; insecure: boolean; children: React.ReactNode }) {
   const { t } = useI18n();
@@ -64,7 +64,7 @@ export function SetupView({ instance, onDone }: { instance: Instance; onDone: (m
           {(id, d) => <input id={id} aria-describedby={d} className="input" type="email" autoComplete="email" required value={v.email} onChange={set("email")} />}
         </Field>
         <Field label={t("auth.password")} help={t("auth.passwordHelp")} error={fields.password}>
-          {(id, d) => <input id={id} aria-describedby={d} className="input" type="password" autoComplete="new-password" required minLength={10} value={v.password} onChange={set("password")} />}
+          {(id, d) => <PasswordInput id={id} aria-describedby={d} className="input" autoComplete="new-password" required minLength={10} value={v.password} onChange={set("password")} />}
         </Field>
         <Field label={t("setup.family")} error={fields.family_name}>
           {(id, d) => <input id={id} aria-describedby={d} className="input" placeholder={t("setup.familyPlaceholder")} required value={v.family_name} onChange={set("family_name")} />}
@@ -94,7 +94,7 @@ export function LoginView({ instance, onDone }: { instance: Instance; onDone: (m
           {(id) => <input id={id} className="input" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />}
         </Field>
         <Field label={t("auth.password")}>
-          {(id) => <input id={id} className="input" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}
+          {(id) => <PasswordInput id={id} className="input" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}
         </Field>
         {error && <p className="notice error" role="alert">{error}</p>}
         <button className="btn block" disabled={busy}>
@@ -130,7 +130,7 @@ export function RegisterView({ instance, onDone }: { instance: Instance; onDone:
           {(id, d) => <input id={id} aria-describedby={d} className="input" type="email" autoComplete="email" required value={v.email} onChange={set("email")} />}
         </Field>
         <Field label={t("auth.password")} help={t("auth.passwordHelp")} error={fields.password}>
-          {(id, d) => <input id={id} aria-describedby={d} className="input" type="password" autoComplete="new-password" required value={v.password} onChange={set("password")} />}
+          {(id, d) => <PasswordInput id={id} aria-describedby={d} className="input" autoComplete="new-password" required value={v.password} onChange={set("password")} />}
         </Field>
         {error && <p className="notice error" role="alert">{error}</p>}
         <button className="btn block" disabled={busy}>

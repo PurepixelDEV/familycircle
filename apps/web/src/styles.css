@@ -180,6 +180,24 @@ select.input {
   font: inherit;
   font-size: 16px; /* prevents iOS zoom on focus */
 }
+.pw-wrap { position: relative; }
+.pw-wrap .input { padding-right: 56px; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.pw-toggle[aria-pressed="true"] { color: var(--brand); }
 .input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
 .input.code { font-size: 1.25rem; letter-spacing: 0.12em; text-transform: uppercase; }
 

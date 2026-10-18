@@ -5,7 +5,7 @@ import { useI18n, type Locale } from "../i18n";
 import { applyTheme, loadTheme, type ThemePref } from "../lib/theme";
 import { relativeTime } from "../lib/time";
 import { useNow } from "../lib/useNow";
-import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
+import { Avatar, Field, PasswordInput, Switch, toast, useConfirm, useErrorText } from "../components/ui";
 import { ConnectPhone } from "./ConnectPhone";
 
 const RETENTION_OPTIONS = [7, 30, 90, 365];
@@ -314,10 +314,10 @@ function PasswordSection() {
       <form className="panel pad" onSubmit={submit}>
         <UsernameHint />
         <Field label={t("privacy.currentPassword")}>
-          {(id) => <input id={id} className="input" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required />}
+          {(id) => <PasswordInput id={id} className="input" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required />}
         </Field>
         <Field label={t("privacy.newPassword")} help={t("auth.passwordHelp")} error={error}>
-          {(id, d) => <input id={id} aria-describedby={d} className="input" type="password" autoComplete="new-password" minLength={10} value={next} onChange={(e) => setNext(e.target.value)} required />}
+          {(id, d) => <PasswordInput id={id} aria-describedby={d} className="input" autoComplete="new-password" minLength={10} value={next} onChange={(e) => setNext(e.target.value)} required />}
         </Field>
         <button className="btn secondary" disabled={!cur || next.length < 10}>
           {t("privacy.password")}
@@ -348,7 +348,7 @@ function DeleteAccountSection() {
         <p className="small muted">{t("privacy.deleteAccountHelp")}</p>
         <UsernameHint />
         <Field label={t("auth.password")} error={error}>
-          {(id, d) => <input id={id} aria-describedby={d} className="input" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} required />}
+          {(id, d) => <PasswordInput id={id} aria-describedby={d} className="input" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} required />}
         </Field>
         <button className="btn danger" disabled={!pw}>
           {t("privacy.deleteAccount")}

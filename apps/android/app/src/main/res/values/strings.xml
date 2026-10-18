@@ -73,6 +73,8 @@
     <string name="login_email">E-mail</string>
     <string name="login_password">Password</string>
     <string name="login_password_hint">At least 10 characters</string>
+    <string name="login_show_password">Show</string>
+    <string name="login_hide_password">Hide</string>
     <string name="login_device_name">Name of this phone</string>
     <string name="login_device_name_hint">Helps you recognise this phone in the list of your devices</string>
     <string name="login_submit_signin">Sign in</string>

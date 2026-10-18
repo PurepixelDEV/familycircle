@@ -45,6 +45,30 @@ export function Field(props: { label: string; help?: string; error?: string; chi
   );
 }
 
+/** Password field with a show/hide toggle (instead of a second "repeat password" field, NIST SP 800-63B). */
+export function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [visible, setVisible] = useState(false);
+  const { t } = useI18n();
+  return (
+    <div className="pw-wrap">
+      <input {...props} type={visible ? "text" : "password"} />
+      <button
+        type="button"
+        className="pw-toggle"
+        aria-label={visible ? t("auth.hidePassword") : t("auth.showPassword")}
+        aria-pressed={visible}
+        onClick={() => setVisible((v) => !v)}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+          {visible && <path d="M3 3l18 18" />}
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 export function Switch(props: { title: string; help?: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   const id = useId();
   return (
