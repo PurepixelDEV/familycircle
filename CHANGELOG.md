@@ -18,8 +18,18 @@ Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Dep
   (`scripts/https-proxy-test.sh`), Entwicklungs-Testdaten (`scripts/seed-dev-data.py`),
   Image-Archiv für Portainer-Import (`scripts/build-image-archive.sh`).
 
+- Android: Familienkarte (MapLibre Native) mit Profilbildern, Genauigkeitskreisen, eigenem Standort,
+  Aktualität (live/kürzlich/veraltet) und Live-Updates per WebSocket; Navigation Karte/Teilen/Familie/
+  Einstellungen (Seitenleiste ab 600 dp); QR-Onboarding (CameraX + ZXing) für Kopplung und Einladung;
+  Diagnose-Bericht ohne personenbezogene Daten; Debug-Build `org.familycircle.android.debug`.
+- Hardware-Testprotokoll mit 24 Fällen und Tester-Anleitung (`docs/TESTING_ANDROID.md`).
+
 ### Geändert
 - Repository `PurepixelDEV/familycircle`, Image `ghcr.io/purepixeldev/familycircle`.
+
+### Behoben
+- Android „Ausgewogen“: keine Positionen ohne Netzwerk-Ortung; falsche GPS-Sprünge durch wechselnde
+  Provider; Bewegung trotz gemeldeter Geschwindigkeit 0 als „ruhend“ erkannt (gefunden im Zwei-Geräte-Test).
 
 ## [0.1.0] - unveröffentlicht
 
