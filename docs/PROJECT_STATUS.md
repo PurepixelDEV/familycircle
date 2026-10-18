@@ -52,6 +52,18 @@ Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Brow
 
 Jeweils mit Regressionstest; erneuter Emulator-Lauf bestätigt: Updates alle ~2 min in Bewegung, keine Fehlsprünge.
 
+## Phase 3 (in Arbeit, Branch `feat/phase3`)
+SOS, Orte mit Ankunft/Abfahrt, Akku-Warnung + letzter Standort, „Standort aktualisieren“, Klingeln lassen,
+Check-in und Verlauf – Regeln in [ALERTS.md](ALERTS.md). Kinderkonten und iPhone bewusst nicht.
+
+| Bereich | Ergebnis |
+|---|---|
+| Go-Backend | **76** Tests mit `-race` gegen PostGIS (u. a. Empfängerregeln, Widerruf verbirgt ältere Meldungen, Opt-in für Klingeln/Standort, Hysterese, Verlauf-Freigabe), golangci-lint 0, govulncheck ohne erreichbare Schwachstelle |
+| Web | **71** Tests, Lint/TypeScript/Build/API-Vertrag grün; im Browser gegen den Dev-Server geprüft (mobil, Desktop, dunkel) |
+| Android | **238** JVM-Tests, Lint 0 Fehler; im Emulator: SOS empfangen/senden/beenden, Klingeln (Opt-in, Stopp, 60 s), Standort aktualisieren, Check-in, Akku ≤ 15 % einmalig, letzter Standort beim Ausschalten, Nachholen nach Prozess-Kill und per Worker, Orte, Verlauf |
+| Docker | Smoke-Test **19/19** (inkl. SOS, Klingeln ohne Opt-in = 403, Orte); Upgrade 0.2.1 → Phase 3 mit Daten, Downgrade verweigert |
+| Hardware | 📱 H-26 bis H-33 offen (u. a. Vollbild-SOS auf gesperrtem Handy, Doze, Hersteller) |
+
 ## Offen – physische Hardwaretests 📱
 Alle 24 Fälle in [HARDWARE_TESTS.md](HARDWARE_TESTS.md) sind offen, insbesondere: zwei echte Handys gegenseitig
 sichtbar (H-02), Bildschirm aus / App weggewischt (H-03), Neustart (H-07), Akkuverbrauch (H-09), echter
