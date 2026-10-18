@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read # required in private repositories (workflow run metadata)
       security-events: write
     strategy:
       fail-fast: false
@@ -41,4 +42,33 @@ jobs:
         if: matrix.language == 'go'
         working-directory: services/api
         run: go build ./...
+      # Code scanning upload needs a public repository or GitHub Advanced Security. Until then the
+      # results are evaluated here (the job fails on findings) and kept as a SARIF artifact.
+      # Set the repository variable ENABLE_CODE_SCANNING_UPLOAD=true once uploads are available.
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          upload: ${{ vars.ENABLE_CODE_SCANNING_UPLOAD == 'true' && 'always' || 'never' }}
+          output: sarif
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: codeql-${{ matrix.language }}
+          path: sarif
+          retention-days: 14
+      - name: Fail on findings
+        if: vars.ENABLE_CODE_SCANNING_UPLOAD != 'true'
+        run: |
+          python3 - <<'EOF'
+          import glob, json, sys
+          findings = []
+          for path in glob.glob("sarif/*.sarif"):
+              for run in json.load(open(path))["runs"]:
+                  for r in run.get("results", []):
+                      if r.get("level", "warning") in ("error", "warning"):
+                          loc = r["locations"][0]["physicalLocation"]
+                          findings.append(f'{r["ruleId"]}: {loc["artifactLocation"]["uri"]}:{loc.get("region", {}).get("startLine")} {r["message"]["text"][:160]}')
+          for f in findings:
+              print("::error::" + f)
+          print(f"{len(findings)} CodeQL finding(s)")
+          sys.exit(1 if findings else 0)
+          EOF
