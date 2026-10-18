@@ -5,9 +5,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
-## [0.2.0] - unveröffentlicht
+## [0.2.0] - 2026-10-18
 
-Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Deployment (in Arbeit).
+Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Deployment. Pre-Release zum Testen – Android-Hardwaretests stehen noch aus (docs/HARDWARE_TESTS.md).
 
 ### Hinzugefügt
 - Kopplungscodes: Handy per QR-Code mit bestehendem Konto verbinden (`POST /me/pairing-codes`,
