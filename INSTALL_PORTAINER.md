@@ -3,7 +3,7 @@
 Diese Anleitung installiert FamilyCircle als Portainer-Stack aus fertigen Container-Images.
 Sie brauchen weder Git noch einen eigenen Build noch zusätzliche Konfigurationsdateien.
 
-> **Hinweis zum Projektstand (0.2.0):** Offizielle Images erscheinen mit dem ersten Release unter
+> **Hinweis zum Projektstand (0.2.1):** Offizielle Images erscheinen mit dem ersten Release unter
 > `ghcr.io/purepixeldev/familycircle` (GitHub Actions). Bis dahin: Image-Archiv importieren, siehe
 > [„Ohne GHCR: Image-Archiv importieren“](#ohne-ghcr-image-archiv-importieren). Ein Build ist in keinem Fall nötig.
 
@@ -21,7 +21,7 @@ Unter **Environment variables** → **Advanced mode** (oder „Load variables fr
 [`.env.example`](.env.example) als Vorlage):
 
 ```env
-FC_IMAGE=ghcr.io/purepixeldev/familycircle:0.2.0
+FC_IMAGE=ghcr.io/purepixeldev/familycircle:0.2.1
 FC_HTTP_PORT=9092
 FC_DB_PASSWORD=<langer Zufallswert>
 FC_PUBLIC_URL=http://192.168.1.10:9092

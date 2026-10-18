@@ -5,6 +5,24 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-18
+
+Teilen läuft weiter, wenn die App weggewischt wird; neues Logo. Update über 0.2.0 ohne Neuanmeldung
+(gleicher Signaturschlüssel); Server ohne Datenbankänderung. Hardwaretests weiterhin offen.
+
+### Geändert
+- Android: Das Teilen endet nur noch durch den Benutzer. Wegwischen der App aus der Übersicht beendet
+  es nicht (`stopWithTask=false`); die Benachrichtigung hat neben „Pausieren“ jetzt „Beenden“.
+- Android: Beendet Android das Teilen trotzdem (Hersteller-Taskkiller, Neustart, **App-Update**), startet
+  es von selbst wieder, sofern „Standort immer erlauben“ erteilt ist (Watchdog alle 15 min, Prüfung
+  1 min nach dem Wegwischen, `MY_PACKAGE_REPLACED`). Sonst erscheint ein Hinweis zum Fortsetzen; der
+  Status bleibt „pausiert“ statt „aus“.
+- Android: Startseite bietet während des Teilens „Akku-Optimierung ausschalten“ und „Standort immer
+  erlauben“ an, solange eines davon fehlt.
+- Android und Web: Passwort anzeigen/verbergen bei Anmeldung und Registrierung.
+- Neues Logo (Familien-Herz) überall: Web-Favicon, PWA-Icons, Anmeldeseiten; Android-App-Icon
+  (inkl. Themen-Icon), Benachrichtigungssymbol, Willkommens- und Anmeldebildschirm. Quellen in `branding/`.
+
 ## [0.2.0] - 2026-10-18
 
 Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Deployment. Pre-Release zum Testen – Android-Hardwaretests stehen noch aus (docs/HARDWARE_TESTS.md).

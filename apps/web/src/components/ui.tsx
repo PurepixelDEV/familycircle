@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ApiError, avatarUrl } from "../api/client";
 import { useI18n } from "../i18n";
+import logoMark from "../assets/logo-mark.png";
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -170,12 +171,6 @@ export function useErrorText() {
 }
 
 export function Logo({ size = 28 }: { size?: number }) {
-  // Three overlapping circles: people sharing a common centre.
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="16" cy="11" r="7" fill="none" stroke="var(--brand)" strokeWidth="2.5" />
-      <circle cx="10.5" cy="20" r="7" fill="none" stroke="var(--brand)" strokeWidth="2.5" opacity="0.75" />
-      <circle cx="21.5" cy="20" r="7" fill="none" stroke="var(--brand)" strokeWidth="2.5" opacity="0.5" />
-    </svg>
-  );
+  // Family heart mark (branding/familycircle-mark.png); decorative, the app name is always next to it.
+  return <img src={logoMark} width={size} height={size} alt="" aria-hidden="true" />;
 }

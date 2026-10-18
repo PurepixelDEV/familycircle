@@ -57,12 +57,8 @@ object Notifications {
         } else {
             context.getString(R.string.notif_tracking_waiting)
         }
-        val pause = PendingIntent.getService(
-            context,
-            1,
-            Intent(context, LocationService::class.java).setAction(LocationService.ACTION_PAUSE),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val pause = serviceAction(context, 1, LocationService.ACTION_PAUSE)
+        val stop = serviceAction(context, 2, LocationService.ACTION_STOP)
         return NotificationCompat.Builder(context, CHANNEL_TRACKING)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(ContextCompat.getColor(context, R.color.notification_accent))
@@ -75,17 +71,33 @@ object Notifications {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .addAction(0, context.getString(R.string.notif_action_pause), pause)
+            .addAction(0, context.getString(R.string.notif_action_stop), stop)
             .build()
     }
 
-    /** Shown after a reboot when sharing cannot resume automatically. */
-    fun showResumeHint(context: Context) {
+    private fun serviceAction(context: Context, requestCode: Int, action: String): PendingIntent = PendingIntent.getService(
+        context,
+        requestCode,
+        Intent(context, LocationService::class.java).setAction(action),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+    /** Shown when sharing is switched on but Android ended it and it cannot resume automatically. */
+    fun showResumeHint(context: Context, reason: ResumeReason) {
         if (!canPost(context)) return
+        val text = context.getString(
+            when (reason) {
+                ResumeReason.BOOT -> R.string.notif_resume_text
+                ResumeReason.APP_UPDATED -> R.string.notif_resume_text_updated
+                ResumeReason.INTERRUPTED -> R.string.notif_resume_text_interrupted
+            },
+        )
         val notification = NotificationCompat.Builder(context, CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notif_resume_title))
-            .setContentText(context.getString(R.string.notif_resume_text))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(context.getString(R.string.notif_resume_text)))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setOnlyAlertOnce(true)
             .setContentIntent(openAppIntent(context))
             .setAutoCancel(true)
             .build()

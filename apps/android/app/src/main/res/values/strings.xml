@@ -103,8 +103,8 @@
     <string name="perm_notif_body">While your location is shared, a notification shows it and lets you pause with one tap. Without this permission you would not see that sharing is on.</string>
     <string name="perm_notif_button">Allow notifications</string>
     <string name="perm_status_allowed">Allowed</string>
-    <string name="perm_bg_title">Resume after a restart (optional)</string>
-    <string name="perm_bg_body">Normally you need to open FamilyCircle once after your phone restarts. If you allow location access \"all the time\", sharing resumes on its own. FamilyCircle does not use this permission for anything else.</string>
+    <string name="perm_bg_title">Resume automatically (optional)</string>
+    <string name="perm_bg_body">Normally you need to open FamilyCircle again after your phone restarts, after an app update or when Android ended the app. If you allow location access \"all the time\", sharing resumes on its own. FamilyCircle does not use this permission for anything else.</string>
     <string name="perm_bg_how">On the next screen choose \"%1$s\".</string>
     <string name="perm_bg_label_fallback">Allow all the time</string>
     <string name="perm_bg_needs_location">Allow location access first.</string>
@@ -166,6 +166,10 @@
     <string name="home_sharing_paused_title">Hidden from everyone</string>
     <string name="home_sharing_paused_body">\"Pause sharing\" is switched on in the settings: nobody can see your location, even while sharing is on.</string>
     <string name="home_sharing_paused_resume">Show my location again</string>
+    <string name="home_background_title">Keep sharing in the background</string>
+    <string name="home_background_body">So that Android does not end sharing when you swipe FamilyCircle away, restart your phone or update the app, allow the following. Sharing then only ends when you stop it here or in the notification.</string>
+    <string name="home_background_battery">Switch off battery optimisation</string>
+    <string name="home_background_always">Allow location all the time</string>
     <string name="problem_permission">FamilyCircle is not allowed to access your location.</string>
     <string name="problem_location_off">Location is turned off on this phone.</string>
     <string name="problem_no_provider">This phone has no usable location source.</string>
@@ -238,6 +242,9 @@
     <string name="notif_action_pause">Pause</string>
     <string name="notif_resume_title">Location sharing is paused</string>
     <string name="notif_resume_text">Your phone restarted. Open FamilyCircle to resume sharing your location.</string>
+    <string name="notif_resume_text_updated">FamilyCircle was updated. Open the app to resume sharing your location.</string>
+    <string name="notif_resume_text_interrupted">Android ended FamilyCircle. Open the app to resume sharing your location. Tip: in FamilyCircle, switch off battery optimisation.</string>
+    <string name="notif_action_stop">Stop</string>
 
     <!-- Navigation / short ages (v0.2) -->
     <string name="nav_map">Map</string>

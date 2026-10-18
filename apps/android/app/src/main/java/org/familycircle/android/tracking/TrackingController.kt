@@ -92,6 +92,7 @@ class TrackingController(
         return try {
             ContextCompat.startForegroundService(context, LocationService.startIntent(context))
             Notifications.cancelResumeHint(context)
+            ResumeWatchdog.schedule(context)
             StartResult.Started
         } catch (e: Exception) {
             // IllegalStateException (ForegroundServiceStartNotAllowedException on 12+) or SecurityException.
@@ -113,12 +114,14 @@ class TrackingController(
 
     fun stop(problem: TrackingProblem? = null) {
         prefs.setTracking(desired = false, pausedByUser = false, problem = problem)
+        ResumeWatchdog.cancel(context)
         context.stopService(LocationService.startIntent(context))
     }
 
     /** "Pause" from the notification: like stop, but the UI offers to resume. */
     fun pause() {
         prefs.setTracking(desired = false, pausedByUser = true)
+        ResumeWatchdog.cancel(context)
     }
 
     /** One-shot fix → queue → upload. Works with and without the running service. */

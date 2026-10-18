@@ -2,6 +2,7 @@ package org.familycircle.android.ui.home
 
 import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +32,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,9 +46,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.familycircle.android.R
 import org.familycircle.android.data.prefs.TrackingProblem
+import org.familycircle.android.tracking.BatteryOptimization
 import org.familycircle.android.tracking.Notifications
 import org.familycircle.android.tracking.TrackingMode
 import org.familycircle.android.tracking.TrackingPolicy
@@ -56,6 +63,7 @@ import org.familycircle.android.ui.components.relativeAgeText
 import org.familycircle.android.ui.components.rememberNow
 import org.familycircle.android.ui.components.uiErrorText
 import org.familycircle.android.ui.components.uploadErrorText
+import org.familycircle.android.ui.permissions.PermissionSnapshot
 import org.familycircle.android.ui.theme.LocalStatusColors
 import java.text.DateFormat
 import java.util.Date
@@ -117,6 +125,8 @@ fun HomeScreen(snackbar: SnackbarHostState) {
             }
         }
 
+        if (state.status == TrackingStatus.ON) BackgroundCard()
+
         when (state.status) {
             TrackingStatus.ON -> OutlinedButton(onClick = vm::stop, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.home_stop))
@@ -159,6 +169,33 @@ fun HomeScreen(snackbar: SnackbarHostState) {
                 }
             },
         )
+    }
+}
+
+/**
+ * While sharing is on: offers what Android needs so that swiping the app away, a reboot or an app
+ * update does not end sharing (see [org.familycircle.android.tracking.BackgroundResume]).
+ * Hidden once both are granted.
+ */
+@Composable
+private fun BackgroundCard() {
+    val context = LocalContext.current
+    var refreshTick by remember { mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refreshTick++ }
+    val batteryExempt = remember(refreshTick) { BatteryOptimization.isExempt(context) }
+    val background = remember(refreshTick) { PermissionSnapshot.read(context).background }
+    val backgroundLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refreshTick++ }
+    if (batteryExempt && background) return
+
+    WarningCard(stringResource(R.string.home_background_title), stringResource(R.string.home_background_body)) {
+        if (!batteryExempt) {
+            TextButton(onClick = { BatteryOptimization.request(context) }) { Text(stringResource(R.string.home_background_battery)) }
+        }
+        if (!background && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            TextButton(onClick = { backgroundLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }) {
+                Text(stringResource(R.string.home_background_always))
+            }
+        }
     }
 }
 

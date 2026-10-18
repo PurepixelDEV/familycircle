@@ -1,12 +1,8 @@
 package org.familycircle.android.ui.settings
 
-import android.annotation.SuppressLint
-import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,12 +28,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.familycircle.android.R
 import org.familycircle.android.live.LiveConnectionState
+import org.familycircle.android.tracking.BatteryOptimization
 import org.familycircle.android.tracking.TrackingRuntime
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.SectionTitle
@@ -93,7 +89,7 @@ fun DiagnosticsSection() {
             )
             if (!snapshot.ignoringBatteryOptimizations) {
                 Text(stringResource(R.string.diag_battery_explain), style = MaterialTheme.typography.bodySmall)
-                OutlinedButton(onClick = { requestIgnoreBatteryOptimizations(context) }, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { BatteryOptimization.request(context) }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.diag_battery_button))
                 }
             }
@@ -165,24 +161,4 @@ private fun DiagLine(label: Int, value: String) {
 private fun copyToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(ClipboardManager::class.java) ?: return
     clipboard.setPrimaryClip(ClipData.newPlainText("FamilyCircle diagnostics", text))
-}
-
-/**
- * Opens the system dialog to exempt the app from battery optimisation. Needs
- * `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`: allowed for apps whose core function (here: continuous
- * location sharing) needs it; the app is not distributed via Google Play. Falls back to the list
- * of all apps if the dialog is not available.
- */
-@SuppressLint("BatteryLife")
-private fun requestIgnoreBatteryOptimizations(context: Context) {
-    val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, "package:${context.packageName}".toUri())
-    try {
-        context.startActivity(direct)
-    } catch (_: ActivityNotFoundException) {
-        try {
-            context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        } catch (_: ActivityNotFoundException) {
-            // Nothing we can open on this device.
-        }
-    }
 }

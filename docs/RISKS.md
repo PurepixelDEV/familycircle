@@ -4,7 +4,7 @@ Stand: 2026-10-18. Bewertung: Eintritt × Auswirkung (H/M/N). Erledigte Risiken 
 
 | ID | Risiko | Bewertung | Massnahme / Stand |
 |---|---|---|---|
-| R-01 | **Android-Hintergrundortung auf echten Geräten unzuverlässig** (Herstellerspezifische Akkuoptimierung, Doze, beendete Dienste) | H × H | Foreground Service, sichtbarer Status „letzter Fix vor …“, Offline-Puffer. **Noch kein Hardwaretest.** ⏳ Hardwaretests H-01…H-12, optionaler Dialog zur Ausnahme von der Akkuoptimierung, Hinweise je Hersteller |
+| R-01 | **Android-Hintergrundortung auf echten Geräten unzuverlässig** (Herstellerspezifische Akkuoptimierung, Doze, beendete Dienste) | H × H | Foreground Service, sichtbarer Status „letzter Fix vor …“, Offline-Puffer. **Noch kein Hardwaretest.** ⏳ Hardwaretests H-01…H-12, Neustart durch Watchdog (15 min) bzw. Hinweis, Akku-Optimierungs-Ausnahme auf der Startseite angeboten; offen: Hinweise je Hersteller |
 | R-02 | Genauigkeit und Akkuverbrauch ohne Google-Fused-Provider unbekannt | M × M | Provider-Auswahl mit Fallback; Messung in H-09 |
 | R-03 | **targetSdk 37** macht `ACCESS_LOCAL_NETWORK` für LAN-Server zur Pflicht | H × M | Aktuell targetSdk 36 (implizit erlaubt). Vor Erhöhung: Berechtigung + Erklärung + Laufzeitabfrage; SDK-Plattform 37 lokal installieren. Neueste Compose/Lifecycle/Navigation-Versionen setzen compileSdk 37 voraus |
 | R-04 | `postgis/postgis` nur für amd64 | M × M | `FC_DB_IMAGE=imresamu/postgis:17-3.5` für ARM dokumentiert; Community-Image – Pflege beobachten |
@@ -16,7 +16,6 @@ Stand: 2026-10-18. Bewertung: Eintritt × Auswirkung (H/M/N). Erledigte Risiken 
 | R-11 | F-Droid: AGP 9/compileSdk 36 auf dem Buildserver und reproduzierbare Builds (Baseline-Profile) ungeklärt | M × N | Vor Einreichung prüfen; Abhängigkeiten sind vollständig FLOSS (docs/LICENSES.md) |
 | R-18 | Nach einem physikalisch unmöglichen Sprung (z. B. falsche/zwischengespeicherte Position) bestätigt der Server die neue Position erst mit dem nächsten Fix – im Ruhezustand „Ausgewogen“ bis ~10 min | N × M | Alte Position bleibt mit echtem Alter markiert (nie „live“). Verbesserung: App sendet bei grossem Positionswechsel sofort einen zweiten Fix |
 | R-19 | „Ausgewogen“ prüft in Ruhe nur alle 5 min auf Bewegung → Abfahrt wird bis zu 5 min spät erkannt | M × N | Bewusster Akku-Kompromiss; auf Hardware messen (H-02/H-09); ggf. Bewegungssensor (Significant Motion) ergänzen |
-| R-20 | Nach einem App-Update setzt das Teilen nicht automatisch fort | M × M | App zeigt „pausiert“ korrekt; Verbesserung: `MY_PACKAGE_REPLACED`-Receiver analog zum Neustart |
 | R-21 | APK ~70 MB (MapLibre für 4 Prozessorarchitekturen) | N × N | Für Releases ABI-Splits oder Beschränkung auf arm64-v8a/armeabi-v7a prüfen |
 | R-12 | Upload-Stapel, den der Server dauerhaft mit 400 ablehnt, blockiert die Android-Warteschlange | N × M | Status zeigt den Fehler; ⏳ Stapel teilen / einzelne Punkte verwerfen |
 | R-14 | Bewegungsstatus („steht“/„zu Fuss“) heuristisch; Emulator liefert keine Geschwindigkeit | M × N | Als Heuristik gekennzeichnet; auf Geräten validieren |
@@ -36,4 +35,5 @@ Stand: 2026-10-18. Bewertung: Eintritt × Auswirkung (H/M/N). Erledigte Risiken 
 | E-07 | Wechselnde Provider erzeugten falsche GPS-Sprünge (fused lieferte alte Position mit neuem Zeitstempel) | GPS-Vorrang im FixFilter, Regressionstest |
 | E-08 | Gemeldete Geschwindigkeit 0 trotz Bewegung → als „ruhend“ eingestuft | Verschiebung schlägt Provider-Geschwindigkeit, Regressionstest |
 | E-09 | R-13 Android ohne Live-Verbindung | WebSocket in der App (0.2.0) |
+| E-11 | R-20 Teilen nach App-Update nicht fortgesetzt; App aus der Übersicht gewischt | `MY_PACKAGE_REPLACED`, Watchdog, `stopWithTask=false`, „Beenden“-Aktion (Unreleased). Auf Hardware offen: H-03, H-23 |
 | E-10 | R-09 Workflows nie auf GitHub gelaufen | CI, CodeQL und Release laufen grün (2026-10-18); dabei behoben: Ausführungsrechte, CodeQL im privaten Repo, AGP-9-Testaufgabe, Log-Injection-Befund |
