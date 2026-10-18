@@ -13,6 +13,8 @@ import kotlinx.coroutines.sync.withLock
 import org.familycircle.android.AppContainer
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.api.FamilySummary
+import org.familycircle.android.api.InviteCreate
+import org.familycircle.android.api.InviteLinks
 import org.familycircle.android.api.MemberLocation
 import org.familycircle.android.ui.components.UiError
 import org.familycircle.android.ui.components.toUiError
@@ -37,7 +39,22 @@ data class FamilyUiState(
     val error: UiError? = null,
     val lastRefreshMs: Long? = null,
     val shareBusy: Set<String> = emptySet(),
-)
+    /** Last invite created on this screen (memory only, never persisted); shared right away. */
+    val invite: SharedInvite? = null,
+    val inviting: Boolean = false,
+    /** One-shot: open the share sheet for [invite] (cleared by [FamilyViewModel.shareHandled]). */
+    val shareRequested: Boolean = false,
+) {
+    val selectedFamily: FamilySummary? get() = families.firstOrNull { it.id == selectedFamilyId }
+
+    /** Only admins can invite (the server enforces it as well). */
+    val canInvite: Boolean get() = selectedFamily?.role == "admin"
+}
+
+/** A freshly created invite with everything needed for the share message. */
+data class SharedInvite(val familyName: String, val link: String, val code: String, val expiresAt: String) {
+    override fun toString(): String = "SharedInvite($familyName, <code>, $expiresAt)"
+}
 
 class FamilyViewModel(private val container: AppContainer) : ViewModel() {
     private val api = container.api
@@ -105,6 +122,27 @@ class FamilyViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** Creates a single-use invite (72 h) for the selected family; the screen opens the share sheet. */
+    fun createInvite() {
+        val family = _state.value.selectedFamily ?: return
+        val server = prefs.current.serverUrl ?: return
+        if (_state.value.inviting) return
+        _state.update { it.copy(inviting = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val created = api.createInvite(family.id, InviteCreate(expiresInHours = INVITE_HOURS, maxUses = 1))
+                val invite = SharedInvite(family.name, InviteLinks.registerUrl(server, created.code), created.code, created.expiresAt)
+                _state.update { it.copy(inviting = false, invite = invite, shareRequested = true) }
+            } catch (e: ApiException) {
+                _state.update { it.copy(inviting = false, error = e.toUiError()) }
+            }
+        }
+    }
+
+    fun shareAgain() = _state.update { if (it.invite != null) it.copy(shareRequested = true) else it }
+
+    fun shareHandled() = _state.update { it.copy(shareRequested = false) }
+
     /** Share / stop sharing my location with [userId] (`PUT`/`DELETE /shares/{userId}`). */
     fun setSharing(userId: String, share: Boolean) {
         if (userId in _state.value.shareBusy) return
@@ -130,3 +168,5 @@ class FamilyViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 }
+
+private const val INVITE_HOURS = 72

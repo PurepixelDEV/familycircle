@@ -58,6 +58,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- "In der App öffnen" on the web page of an invite/pairing link (docs/QR_FORMAT.md).
+                 Custom scheme: the server's host is not known at build time, so no App Links. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="familycircle" android:host="link" />
+            </intent-filter>
         </activity>
 
         <service

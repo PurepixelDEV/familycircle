@@ -57,6 +57,7 @@ und ersetzen keinen Hardwaretest. Kurzanleitung für Testerinnen und Tester: [TE
 | H-22 | Mehr als 1 h angemeldet lassen (Access-Token läuft ab) | Keine erneute Anmeldung nötig, Uploads gehen weiter (Token-Rotation) |
 | H-23 | App-Update: neuere APK über die alte installieren | Konto bleibt angemeldet. Mit „Immer erlauben“: Teilen läuft von selbst weiter. Ohne: Hinweis „FamilyCircle wurde aktualisiert“, App zeigt „pausiert“ |
 | H-24 | Server-Wechsel (Einstellungen → anderer Server) | Lokale Daten werden nach Rückfrage gelöscht, Neuanmeldung möglich |
+| H-25 | Einladung per WhatsApp: Verwalter teilt den Link aus der App, Empfänger (Android, App noch nicht installiert) tippt ihn in WhatsApp an | Registrierungsseite mit „App herunterladen“; nach Installation öffnet „In der App öffnen“ die Registrierung mit Code, Server ist vorausgefüllt |
 
 ## Ergebnisse (physische Geräte)
 | Datum | Test | Gerät / Android | Ergebnis | Notizen / Diagnose |

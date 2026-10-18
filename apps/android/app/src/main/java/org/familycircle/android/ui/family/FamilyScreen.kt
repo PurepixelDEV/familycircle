@@ -1,6 +1,7 @@
 package org.familycircle.android.ui.family
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -16,10 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,6 +70,14 @@ fun FamilyScreen(snackbar: SnackbarHostState) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val noMapsApp = stringResource(R.string.family_no_maps_app)
+
+    LaunchedEffect(state.shareRequested) {
+        val invite = state.invite
+        if (state.shareRequested && invite != null) {
+            shareInvite(context, invite)
+            vm.shareHandled()
+        }
+    }
 
     // Auto-refresh every 30 s, only while the screen is visible.
     LaunchedEffect(lifecycleOwner) {
@@ -117,6 +128,11 @@ fun FamilyScreen(snackbar: SnackbarHostState) {
                 )
             }
         }
+        if (state.canInvite) {
+            item {
+                InviteCard(state.invite, state.inviting, onCreate = vm::createInvite, onShareAgain = vm::shareAgain)
+            }
+        }
         items(state.members, key = { it.userId }) { member ->
             MemberCard(
                 member = member,
@@ -135,6 +151,42 @@ fun FamilyScreen(snackbar: SnackbarHostState) {
             )
         }
     }
+}
+
+/** Admins: create an invite link and send it with any app (WhatsApp, SMS, e-mail …). */
+@Composable
+private fun InviteCard(invite: SharedInvite?, inviting: Boolean, onCreate: () -> Unit, onShareAgain: () -> Unit) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.family_invite_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.family_invite_body), style = MaterialTheme.typography.bodyMedium)
+            if (invite != null) {
+                Text(
+                    stringResource(R.string.family_invite_code, invite.code, formatExpiry(invite.expiresAt)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedButton(onClick = onShareAgain, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.family_invite_share_again))
+                }
+            }
+            Button(onClick = onCreate, enabled = !inviting, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(if (invite == null) R.string.family_invite_create else R.string.family_invite_create_another))
+            }
+        }
+    }
+}
+
+private fun formatExpiry(rfc3339: String): String =
+    Rfc3339.parseMillis(rfc3339)?.let { DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(it)) } ?: rfc3339
+
+/** System share sheet with a ready-to-send message; the user picks WhatsApp, SMS, e-mail … */
+private fun shareInvite(context: Context, invite: SharedInvite) {
+    val text = context.getString(R.string.invite_message, invite.familyName, invite.link, formatExpiry(invite.expiresAt))
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.family_invite_title))
+        .putExtra(Intent.EXTRA_TEXT, text)
+    context.startActivity(Intent.createChooser(send, context.getString(R.string.family_invite_chooser)))
 }
 
 @Composable

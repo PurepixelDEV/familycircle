@@ -5,6 +5,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefügt
+- Familie per Link einladen (WhatsApp, SMS, E-Mail): Web „Link teilen“ / „Per WhatsApp senden“ /
+  „Nachricht kopieren“; Android „Einladungslink erstellen und teilen“ für Verwalter.
+- Einladungs- und Kopplungsseite im Browser bieten auf Android „App herunterladen“ (APK passend zur
+  Serverversion) und „In der App öffnen“ (`familycircle://link`, docs/QR_FORMAT.md). Angemeldete Nutzer
+  treten mit einem Einladungslink nach Rückfrage einer weiteren Familie bei.
+
+### Behoben
+- Web: Ein Einladungslink, der in einem Browser ohne Sitzung geöffnet wurde, leitete auf `/login` um und
+  verlor den Code (Sitzungsprüfung beim Start löste die Abmelde-Weiterleitung aus).
+
 ## [0.2.1] - 2026-10-18
 
 Teilen läuft weiter, wenn die App weggewischt wird; neues Logo. Update über 0.2.0 ohne Neuanmeldung

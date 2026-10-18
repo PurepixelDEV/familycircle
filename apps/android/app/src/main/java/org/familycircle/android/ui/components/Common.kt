@@ -91,17 +91,17 @@ fun Throwable.toUiError(): UiError = when (this) {
 }
 
 @Composable
-fun uiErrorText(error: UiError): String = stringResource(
-    when (error) {
-        UiError.NETWORK -> R.string.error_network
-        UiError.SESSION_EXPIRED -> R.string.error_session_expired
-        UiError.RATE_LIMITED -> R.string.error_rate_limited
-        UiError.NOT_FOUND -> R.string.error_not_found
-        UiError.FORBIDDEN -> R.string.error_forbidden
-        UiError.SERVER -> R.string.error_server
-        UiError.UNEXPECTED -> R.string.error_unexpected
-    },
-)
+fun uiErrorText(error: UiError): String = stringResource(uiErrorRes(error))
+
+fun uiErrorRes(error: UiError): Int = when (error) {
+    UiError.NETWORK -> R.string.error_network
+    UiError.SESSION_EXPIRED -> R.string.error_session_expired
+    UiError.RATE_LIMITED -> R.string.error_rate_limited
+    UiError.NOT_FOUND -> R.string.error_not_found
+    UiError.FORBIDDEN -> R.string.error_forbidden
+    UiError.SERVER -> R.string.error_server
+    UiError.UNEXPECTED -> R.string.error_unexpected
+}
 
 @Composable
 fun problemText(problem: TrackingProblem): String = stringResource(

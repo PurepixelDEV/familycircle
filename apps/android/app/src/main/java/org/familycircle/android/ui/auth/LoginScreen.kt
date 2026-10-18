@@ -46,6 +46,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.familycircle.android.api.LinkRoute
+import org.familycircle.android.api.LinkRouting
+import org.familycircle.android.api.QrLink
 import org.familycircle.android.R
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.data.AccountRepository
@@ -146,6 +149,14 @@ fun LoginScreen(serverUrl: String, sessionExpired: Boolean) {
     val state by vm.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         container.onboarding.takeInviteCode()?.let(vm::applyScannedInvite)
+    }
+    // Invite link opened from WhatsApp & co. for this server (other links: see AppRoot).
+    val incoming by container.onboarding.link.collectAsStateWithLifecycle()
+    LaunchedEffect(incoming) {
+        val link = incoming as? QrLink.Register ?: return@LaunchedEffect
+        if (LinkRouting.route(link, serverUrl, loggedIn = false) == LinkRoute.INVITE_FORM && container.onboarding.takeLink(link)) {
+            vm.applyScannedInvite(link.code)
+        }
     }
 
     Surface(Modifier.fillMaxSize()) {

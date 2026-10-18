@@ -632,3 +632,11 @@ dialog.confirm {
 }
 dialog.confirm::backdrop { background: rgb(15 28 31 / 0.45); }
 dialog.confirm .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+
+/* Invite: share sheet / WhatsApp / copy */
+.share-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.share-row .btn { flex: 1 1 auto; text-align: center; text-decoration: none; }
+
+/* Browser → Android app hand-over on /register and /pair */
+.app-handoff { display: grid; gap: 10px; margin: 4px 0 18px; }
+.app-handoff .btn { text-align: center; text-decoration: none; }

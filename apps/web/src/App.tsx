@@ -32,7 +32,7 @@ export function App() {
     api
       .instance()
       .then(async (instance) => {
-        const me = instance.setup_required ? null : await api.me().catch(() => null);
+        const me = instance.setup_required ? null : await api.probeSession().catch(() => null);
         if (cancelled) return;
         if (me) setLocale(me.locale);
         setBoot({ state: "ready", instance, me });

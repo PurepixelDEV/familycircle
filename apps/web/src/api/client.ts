@@ -83,6 +83,9 @@ export const api = {
   logout: () => request<void>("DELETE", "/auth/session"),
 
   me: () => request<Me>("GET", "/me"),
+  /** Session probe at start-up: 401 just means "not signed in" and must not redirect to /login
+   *  (that would drop the code of an invite link opened in a fresh browser). */
+  probeSession: () => request<Me>("GET", "/me", undefined, { auth: false }),
   updateMe: (b: { display_name?: string; locale?: "de" | "en" }) => request<Me>("PATCH", "/me", b),
   deleteMe: (password: string) => request<void>("DELETE", "/me", { password }),
   changePassword: (current_password: string, new_password: string) =>

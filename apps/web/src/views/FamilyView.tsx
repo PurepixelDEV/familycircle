@@ -4,6 +4,7 @@ import { useApp } from "../state";
 import { useI18n } from "../i18n";
 import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
 import { inviteUrl, QrCode } from "../components/QrCode";
+import { whatsAppUrl } from "../lib/applink";
 
 const INVITE_HOURS = 72;
 
@@ -147,16 +148,7 @@ export function FamilyView() {
                     {newInvite.code}
                   </div>
                   <p className="small muted">{t("family.inviteShown")}</p>
-                  <button
-                    className="btn secondary"
-                    type="button"
-                    onClick={() => {
-                      const link = `${location.origin}/register?code=${encodeURIComponent(newInvite.code)}`;
-                      navigator.clipboard?.writeText(`${newInvite.code}\n${link}`).then(() => toast(t("common.copied")), () => undefined);
-                    }}
-                  >
-                    {t("common.copy")}
-                  </button>
+                  <InviteShare familyName={family.name} invite={newInvite} />
                 </div>
               )}
               <button
@@ -212,6 +204,46 @@ export function FamilyView() {
         )}
       </div>
       {confirmDialog}
+    </div>
+  );
+}
+
+/** Hands a fresh invite to the system share sheet, WhatsApp or the clipboard as a ready-to-send message. */
+function InviteShare({ familyName, invite }: { familyName: string; invite: InviteCreated }) {
+  const { t, locale } = useI18n();
+  const link = inviteUrl(location.origin, invite.code);
+  const text = t("invite.message", {
+    family: familyName,
+    link,
+    date: new Date(invite.expires_at).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" }),
+  });
+  const canShare = typeof navigator.share === "function";
+  return (
+    <div className="share-row">
+      {canShare && (
+        <button
+          className="btn"
+          type="button"
+          onClick={() => {
+            // AbortError = the user closed the share sheet; nothing to report.
+            navigator.share({ title: t("family.invite"), text }).catch(() => undefined);
+          }}
+        >
+          {t("invite.share")}
+        </button>
+      )}
+      <a className="btn secondary" href={whatsAppUrl(text)} target="_blank" rel="noopener noreferrer">
+        {t("invite.whatsapp")}
+      </a>
+      <button
+        className="btn secondary"
+        type="button"
+        onClick={() => {
+          navigator.clipboard?.writeText(text).then(() => toast(t("common.copied")), () => undefined);
+        }}
+      >
+        {t("invite.copyText")}
+      </button>
     </div>
   );
 }

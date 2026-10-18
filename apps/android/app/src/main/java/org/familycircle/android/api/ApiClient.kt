@@ -97,6 +97,14 @@ class ApiClient(
     suspend fun familyMap(familyId: String): FamilyMap =
         decode(authed("GET", listOf("families", familyId, "map")))
 
+    /** Admins only (the server answers 403 otherwise). */
+    suspend fun createInvite(familyId: String, request: InviteCreate): InviteCreated =
+        decode(authed("POST", listOf("families", familyId, "invites"), encode(request)))
+
+    /** Joins the family of [code] with the signed-in account. */
+    suspend fun acceptInvite(code: String): FamilySummary =
+        decode(authed("POST", listOf("invites", "accept"), encode(InviteAccept(code))))
+
     suspend fun shares(): Shares = decode(authed("GET", listOf("shares")))
 
     suspend fun grantShare(userId: String) {

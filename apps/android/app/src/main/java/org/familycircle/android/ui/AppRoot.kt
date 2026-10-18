@@ -16,6 +16,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -34,6 +35,8 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 import org.familycircle.android.R
 import org.familycircle.android.api.AuthSession
+import org.familycircle.android.api.LinkRoute
+import org.familycircle.android.api.LinkRouting
 import org.familycircle.android.ui.auth.LoginScreen
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.windowWidthDp
@@ -56,6 +59,19 @@ fun AppRoot() {
     val prefs by container.prefs.state.collectAsStateWithLifecycle()
     val auth by container.auth.state.collectAsStateWithLifecycle()
     val lastEnd by container.auth.lastEnd.collectAsStateWithLifecycle()
+    val incoming by container.onboarding.link.collectAsStateWithLifecycle()
+    val loggedIn = auth != AuthSession.State.LoggedOut
+
+    // Links opened from outside the app (docs/QR_FORMAT.md). Signed out with a link that needs the
+    // server step (pairing, other server): start over there; the server screen then takes the link.
+    LaunchedEffect(incoming, prefs.serverUrl, loggedIn) {
+        val link = incoming ?: return@LaunchedEffect
+        when (LinkRouting.route(link, prefs.serverUrl, loggedIn)) {
+            LinkRoute.RESTART_AT_SERVER_STEP -> container.account.changeServer()
+            LinkRoute.IGNORE -> container.onboarding.takeLink(link)
+            else -> Unit // taken by the server screen, the sign-in form or IncomingLinkInApp
+        }
+    }
 
     when {
         prefs.serverUrl == null -> ServerScreen()
@@ -106,6 +122,8 @@ private fun MainScaffold() {
     }
 
     fun isSelected(tab: Tab) = destination?.hierarchy?.any { it.hasRoute(tab.type) } == true
+
+    IncomingLinkInApp(snackbar)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },

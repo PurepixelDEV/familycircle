@@ -12,6 +12,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  * | `<origin>/pair?code=XXXX-XXXX-XXXX` | connect this phone to an existing account |
  * | `<origin>/register?code=…`          | invite → registration form               |
  *
+ * The same URLs also arrive as `familycircle://link?u=<url>` from the browser ([parseAppLink]).
+ *
  * `<origin>` is `scheme://host[:port]`; sub-paths are not supported, so the server is always the
  * origin of the scanned URL. Codes are short-lived secrets: they are never logged or persisted, and
  * [toString] redacts them.
@@ -81,6 +83,28 @@ sealed interface QrLink {
                 "/register" -> codeOf(url.queryParameterValues("code"))?.let { Register(origin, it) }
                 else -> Server(origin)
             }
+        }
+
+        private const val APP_LINK_PREFIX = "familycircle://link?"
+
+        /**
+         * `familycircle://link?u=<url-encoded QR URL>` – opened from the web page of an invite or
+         * pairing link ("In der App öffnen"). The inner URL is validated exactly like a QR code.
+         */
+        fun parseAppLink(raw: String): QrLink? {
+            val text = raw.trim()
+            if (text.length > MAX_LENGTH || !text.startsWith(APP_LINK_PREFIX, ignoreCase = true)) return null
+            val values = text.substring(APP_LINK_PREFIX.length).substringBefore('#').split('&')
+                .filter { it.startsWith("u=") }
+                .map { it.removePrefix("u=") }
+            if (values.size != 1) return null
+            // encodeURIComponent never emits '+', so a literal one is a '+' (not a space).
+            val inner = try {
+                java.net.URLDecoder.decode(values.single().replace("+", "%2B"), "UTF-8")
+            } catch (_: IllegalArgumentException) {
+                return null
+            }
+            return parse(inner)
         }
 
         /** Exactly one non-blank, well-formed code. */
