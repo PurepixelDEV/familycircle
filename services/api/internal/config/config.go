@@ -42,7 +42,20 @@ func Load(getenv func(string) string, version string) (Config, error) {
 		Version:     version,
 	}
 	if cfg.DatabaseURL == "" {
-		errs = append(errs, errors.New("FC_DATABASE_URL is required"))
+		// Compose/Portainer friendly: build the DSN from parts so that passwords with special
+		// characters need no manual URL encoding.
+		if pw := getenv("FC_DB_PASSWORD"); pw != "" {
+			u := url.URL{
+				Scheme:   "postgres",
+				User:     url.UserPassword(orDefault(getenv("FC_DB_USER"), "familycircle"), pw),
+				Host:     orDefault(getenv("FC_DB_HOST"), "db") + ":" + orDefault(getenv("FC_DB_PORT"), "5432"),
+				Path:     "/" + orDefault(getenv("FC_DB_NAME"), "familycircle"),
+				RawQuery: "sslmode=" + orDefault(getenv("FC_DB_SSLMODE"), "disable"),
+			}
+			cfg.DatabaseURL = u.String()
+		} else {
+			errs = append(errs, errors.New("FC_DATABASE_URL or FC_DB_PASSWORD is required"))
+		}
 	}
 
 	if raw := strings.TrimSpace(getenv("FC_PUBLIC_URL")); raw != "" {

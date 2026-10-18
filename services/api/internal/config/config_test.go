@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -45,6 +46,24 @@ func TestLoadFull(t *testing.T) {
 	}
 	if len(cfg.MapOrigins) != 2 {
 		t.Fatalf("origins: %v", cfg.MapOrigins)
+	}
+}
+
+func TestDatabaseURLFromParts(t *testing.T) {
+	cfg, err := Load(env(map[string]string{"FC_DB_PASSWORD": "p@ss:w/rd#1 ?"}), "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "postgres://familycircle:p%40ss%3Aw%2Frd%231%20%3F@db:5432/familycircle?sslmode=disable"
+	if cfg.DatabaseURL != want {
+		t.Fatalf("got %s", cfg.DatabaseURL)
+	}
+	u, err := url.Parse(cfg.DatabaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pw, _ := u.User.Password(); pw != "p@ss:w/rd#1 ?" {
+		t.Fatalf("password does not round-trip: %q", pw)
 	}
 }
 

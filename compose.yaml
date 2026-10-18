@@ -1,0 +1,57 @@
+# FamilyCircle – production stack (Docker Compose / Portainer).
+#
+# Two containers: the FamilyCircle server (API + web app) and PostgreSQL/PostGIS.
+# Configure via environment variables (Portainer: "Environment variables" / "Load variables from
+# .env file"). See .env.example and INSTALL_PORTAINER.md. No other files are needed.
+
+name: familycircle
+
+services:
+  familycircle:
+    image: ${FC_IMAGE:?Set FC_IMAGE to a versioned image, e.g. ghcr.io/OWNER/familycircle:0.1.0}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FC_DB_HOST: db
+      FC_DB_PASSWORD: ${FC_DB_PASSWORD:?Set FC_DB_PASSWORD to a long random value}
+      FC_PUBLIC_URL: ${FC_PUBLIC_URL:-}
+      FC_TRUSTED_PROXIES: ${FC_TRUSTED_PROXIES:-}
+      FC_MAP_STYLE_URL: ${FC_MAP_STYLE_URL:-}
+      FC_MAP_EXTRA_ORIGINS: ${FC_MAP_EXTRA_ORIGINS:-}
+      FC_SETUP_TOKEN: ${FC_SETUP_TOKEN:-}
+      FC_LOG_LEVEL: ${FC_LOG_LEVEL:-info}
+    ports:
+      - "${FC_HTTP_PORT:-9092}:8080"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: familycircle
+      POSTGRES_DB: familycircle
+      POSTGRES_PASSWORD: ${FC_DB_PASSWORD:?Set FC_DB_PASSWORD to a long random value}
+    # No published ports: the database is only reachable inside the stack network.
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U familycircle -d familycircle"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    shm_size: 128mb
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  db-data:

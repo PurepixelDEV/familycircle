@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+!services/api/internal/webui/dist
+**/.git
+.github
+apps/android
+docs
+**/*.md
+!apps/web/**/*.md
+**/.env
+**/coverage
+**/test-results
