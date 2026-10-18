@@ -74,8 +74,17 @@ func (r *statusRecorder) Flush() {
 	}
 }
 
-// logRequests logs method, path, status and duration. Never bodies or query strings: those may
-// contain coordinates or credentials.
+// routeOf returns the matched route pattern (e.g. "GET /api/v1/families/{familyId}/map") for logs.
+// The raw path is never logged: it is user input (log injection) and contains family/user IDs.
+func routeOf(r *http.Request) string {
+	if r.Pattern != "" {
+		return r.Pattern
+	}
+	return "unmatched"
+}
+
+// logRequests logs route pattern, status and duration. Never raw paths, bodies or query strings:
+// those may contain IDs, coordinates or credentials.
 func (s *Server) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -90,7 +99,7 @@ func (s *Server) logRequests(next http.Handler) http.Handler {
 		} else if strings.HasPrefix(r.URL.Path, apiPrefix) {
 			level = s.log.Info
 		}
-		level("http", "method", r.Method, "path", r.URL.Path, "status", rec.status, "duration_ms", time.Since(start).Milliseconds())
+		level("http", "route", routeOf(r), "status", rec.status, "duration_ms", time.Since(start).Milliseconds())
 	})
 }
 
@@ -101,7 +110,7 @@ func (s *Server) recoverer(next http.Handler) http.Handler {
 				if err, ok := v.(error); ok && errors.Is(err, http.ErrAbortHandler) {
 					panic(v)
 				}
-				s.log.Error("panic in handler", "path", r.URL.Path, "panic", fmt.Sprint(v))
+				s.log.Error("panic in handler", "route", routeOf(r), "panic", fmt.Sprint(v))
 				writeError(w, http.StatusInternalServerError, "internal", "internal error")
 			}
 		}()

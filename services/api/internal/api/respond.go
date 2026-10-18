@@ -58,7 +58,7 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, store.ErrConflict):
 		writeError(w, http.StatusConflict, "conflict", "conflicting state")
 	default:
-		s.log.Error("request failed", "method", r.Method, "path", r.URL.Path, "err", err)
+		s.log.Error("request failed", "route", routeOf(r), "err", err)
 		writeError(w, http.StatusInternalServerError, "internal", "internal error")
 	}
 }
