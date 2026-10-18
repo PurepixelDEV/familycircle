@@ -1,10 +1,12 @@
 package org.familycircle.android.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -19,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -179,4 +183,10 @@ fun SwitchRow(
         }
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
+}
+
+/** The FamilyCircle mark (branding/familycircle-mark.png). Decorative: the screen title names the app. */
+@Composable
+fun AppLogo(modifier: Modifier = Modifier, size: Dp = 72.dp) {
+    Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = modifier.size(size))
 }

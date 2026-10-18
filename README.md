@@ -1,9 +1,16 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/familycircle-logo-dark.png" />
+    <img src="branding/familycircle-logo.png" width="260" alt="FamilyCircle" />
+  </picture>
+</p>
+
 # FamilyCircle
 
 **Private Standortfreigabe für Familien – selbst gehostet, quelloffen, ohne Tracker.**
 *Self-hosted, privacy-first family location sharing – an open-source alternative to Life360 (AGPL-3.0-or-later).*
 
-> **Status: 0.1.0 – Prototyp (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
+> **Status: 0.2.0 – Pre-Release zum Testen (nicht produktionsreif).** Was getestet ist und was nicht, steht ehrlich in
 > [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md). Offene Risiken: [docs/RISKS.md](docs/RISKS.md).
 
 ## Was FamilyCircle kann

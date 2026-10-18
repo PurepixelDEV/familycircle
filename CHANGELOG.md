@@ -5,6 +5,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geändert
+- Neues Logo (Familien-Herz) überall: Web-Favicon, PWA-Icons, Anmeldeseiten; Android-App-Icon
+  (inkl. Themen-Icon), Benachrichtigungssymbol, Willkommens- und Anmeldebildschirm. Quellen in `branding/`.
+
 ## [0.2.0] - 2026-10-18
 
 Phase 1.5: benutzbare Familien-App, Hardware-Testbereitschaft, vereinfachtes Deployment. Pre-Release zum Testen – Android-Hardwaretests stehen noch aus (docs/HARDWARE_TESTS.md).
