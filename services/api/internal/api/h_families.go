@@ -38,7 +38,13 @@ func decodeFamilyName(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return in.Name, !f.write(w)
 }
 
+// handleCreateFamily is restricted to the instance admin: whoever creates a family can invite
+// new accounts, so open family creation would turn "invite only" into open registration.
 func (s *Server) handleCreateFamily(w http.ResponseWriter, r *http.Request) {
+	if !principalFrom(r).user.IsInstanceAdmin {
+		writeError(w, http.StatusForbidden, "forbidden", "only the instance administrator can create families")
+		return
+	}
 	name, ok := decodeFamilyName(w, r)
 	if !ok {
 		return

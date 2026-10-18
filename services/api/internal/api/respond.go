@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -75,6 +76,7 @@ func decode(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
 	if limit == 0 {
 		limit = maxJSONBody
 	}
+	setReadDeadline(w, 15*time.Second)
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
 	if err := dec.Decode(v); err != nil {
 		var tooLarge *http.MaxBytesError
@@ -90,6 +92,12 @@ func decode(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
 		return false
 	}
 	return true
+}
+
+// setReadDeadline bounds how long a client may take to send the request body (slow-body DoS).
+// The server has no global ReadTimeout because WebSocket connections are long-lived.
+func setReadDeadline(w http.ResponseWriter, d time.Duration) {
+	_ = http.NewResponseController(w).SetReadDeadline(time.Now().Add(d))
 }
 
 // pathID parses a UUID path parameter. Invalid IDs are reported as not found, like foreign IDs.

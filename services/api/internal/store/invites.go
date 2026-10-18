@@ -99,6 +99,9 @@ func (s *Store) AcceptInvite(ctx context.Context, userID uuid.UUID, codeHash []b
 		if err != nil {
 			return err
 		}
+		if err := lockFamilies(ctx, tx, familyID); err != nil {
+			return err
+		}
 		if err := addMember(ctx, tx, familyID, userID, "member"); err != nil {
 			return err
 		}

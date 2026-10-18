@@ -254,14 +254,16 @@ function JoinOrCreate() {
           {t("family.join")}
         </button>
       </form>
-      <form className="panel pad" onSubmit={create}>
-        <Field label={t("family.createName")}>
-          {(id) => <input id={id} className="input" value={name} onChange={(e) => setName(e.target.value)} required maxLength={64} />}
-        </Field>
-        <button className="btn secondary" disabled={!name.trim()}>
-          {t("family.create")}
-        </button>
-      </form>
+      {app.me.is_instance_admin && (
+        <form className="panel pad" onSubmit={create}>
+          <Field label={t("family.createName")}>
+            {(id) => <input id={id} className="input" value={name} onChange={(e) => setName(e.target.value)} required maxLength={64} />}
+          </Field>
+          <button className="btn secondary" disabled={!name.trim()}>
+            {t("family.create")}
+          </button>
+        </form>
+      )}
     </section>
   );
 }

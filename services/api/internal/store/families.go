@@ -97,6 +97,9 @@ func (s *Store) FamilyMemberIDs(ctx context.Context, familyID uuid.UUID) ([]uuid
 // requireRole loads the actor's role inside tx (locking the membership row) and checks it.
 // Non-members get ErrNotFound, members without the role ErrForbidden.
 func requireRole(ctx context.Context, tx pgx.Tx, familyID, actor uuid.UUID, admin bool) error {
+	if err := lockFamilies(ctx, tx, familyID); err != nil {
+		return err
+	}
 	var role string
 	err := tx.QueryRow(ctx, "SELECT role FROM family_members WHERE family_id = $1 AND user_id = $2 FOR UPDATE",
 		familyID, actor).Scan(&role)
@@ -119,10 +122,21 @@ func (s *Store) RenameFamily(ctx context.Context, familyID, actor uuid.UUID, nam
 	})
 }
 
+// lockFamilies takes row locks on the given families in ID order. Every transaction that changes
+// memberships or roles goes through it first, so concurrent admin operations serialise per family
+// (no lost "last admin", no lock-order deadlocks).
+func lockFamilies(ctx context.Context, tx pgx.Tx, ids ...uuid.UUID) error {
+	_, err := tx.Exec(ctx, "SELECT 1 FROM families WHERE id = ANY($1) ORDER BY id FOR UPDATE", ids)
+	return err
+}
+
 // LeaveFamily removes the user from the family. Returns share relations that ended as a result.
 func (s *Store) LeaveFamily(ctx context.Context, familyID, userID uuid.UUID) ([]SharePair, error) {
 	var ended []SharePair
 	err := s.tx(ctx, func(tx pgx.Tx) error {
+		if err := lockFamilies(ctx, tx, familyID); err != nil {
+			return err
+		}
 		var role string
 		if err := tx.QueryRow(ctx, "SELECT role FROM family_members WHERE family_id = $1 AND user_id = $2",
 			familyID, userID).Scan(&role); err != nil {

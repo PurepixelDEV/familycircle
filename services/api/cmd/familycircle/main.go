@@ -111,6 +111,9 @@ func serve(migrateOnly bool) error {
 	if err != nil {
 		return err
 	}
+	if cfg.SecureContext() && len(cfg.TrustedProxies) == 0 {
+		log.Warn("FC_PUBLIC_URL is https but FC_TRUSTED_PROXIES is empty: behind a reverse proxy all clients share the proxy address for rate limiting. Set FC_TRUSTED_PROXIES to the proxy address.")
+	}
 	if !cfg.SecureContext() {
 		log.Warn("FC_PUBLIC_URL is not https: session cookies are sent without the Secure flag. Use only in a trusted LAN or put an HTTPS reverse proxy in front.")
 	}

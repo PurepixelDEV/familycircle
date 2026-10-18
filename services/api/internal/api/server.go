@@ -31,11 +31,13 @@ type Route struct {
 }
 
 type limiters struct {
-	general    *ratelimit.Limiter // per client IP, all API requests
-	login      *ratelimit.Limiter // per client IP, credential endpoints
-	loginEmail *ratelimit.Limiter // per e-mail address
-	sensitive  *ratelimit.Limiter // per client IP: setup, register, invite accept, refresh
-	upload     *ratelimit.Limiter // per user: location uploads
+	general   *ratelimit.Limiter // per client IP, all API requests
+	login     *ratelimit.Limiter // per client IP, credential endpoints
+	failPair  *ratelimit.Limiter // failed logins per (account, IP) – consumed only on failure
+	failAcct  *ratelimit.Limiter // failed logins per account from all IPs (distributed guessing)
+	sensitive *ratelimit.Limiter // per client IP: setup, register, invite accept, refresh
+	upload    *ratelimit.Limiter // per user: location uploads
+	avatar    *ratelimit.Limiter // per user: avatar uploads (expensive image decoding)
 }
 
 type Server struct {
@@ -49,6 +51,7 @@ type Server struct {
 
 	setupMu    sync.Mutex
 	setupToken string
+	ownerLocks sync.Map // uuid.UUID -> *sync.Mutex, see ownerLock
 	now        func() time.Time
 }
 
@@ -68,11 +71,13 @@ func New(o Options) *Server {
 		setupToken: o.SetupToken,
 		now:        func() time.Time { return time.Now().UTC() },
 		lim: limiters{
-			general:    ratelimit.New(240, 600),
-			login:      ratelimit.New(20, 4),
-			loginEmail: ratelimit.New(5, 1),
-			sensitive:  ratelimit.New(10, 2),
-			upload:     ratelimit.New(60, 60),
+			general:   ratelimit.New(240, 600),
+			login:     ratelimit.New(20, 4),
+			failPair:  ratelimit.New(5, 1),
+			failAcct:  ratelimit.New(30, 20.0/60),
+			sensitive: ratelimit.New(10, 2),
+			upload:    ratelimit.New(60, 60),
+			avatar:    ratelimit.New(5, 1),
 		},
 	}
 }
@@ -82,7 +87,7 @@ func (s *Server) SetClock(now func() time.Time) { s.now = now }
 
 // Limiters exposes the rate limiters for periodic sweeping.
 func (s *Server) Limiters() []*ratelimit.Limiter {
-	return []*ratelimit.Limiter{s.lim.general, s.lim.login, s.lim.loginEmail, s.lim.sensitive, s.lim.upload}
+	return []*ratelimit.Limiter{s.lim.general, s.lim.login, s.lim.failPair, s.lim.failAcct, s.lim.sensitive, s.lim.upload, s.lim.avatar}
 }
 
 func (s *Server) checkSetupToken(given string) bool {

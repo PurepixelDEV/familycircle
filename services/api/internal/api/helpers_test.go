@@ -42,7 +42,10 @@ type env struct {
 	srv   *api.Server
 }
 
-func newEnv(t *testing.T) *env {
+func newEnv(t *testing.T) *env { return newEnvWith(t, nil) }
+
+// newEnvWith starts a server with additional configuration variables.
+func newEnvWith(t *testing.T, vars map[string]string) *env {
 	t.Helper()
 	pool := testdb.Migrated(t)
 	st := store.New(pool)
@@ -50,7 +53,7 @@ func newEnv(t *testing.T) *env {
 		if k == "FC_DATABASE_URL" {
 			return "postgres://unused"
 		}
-		return ""
+		return vars[k]
 	}, "test")
 	if err != nil {
 		t.Fatal(err)
@@ -74,6 +77,7 @@ type client struct {
 	userID  string
 	device  string
 	noCSRF  bool
+	xff     string // simulated client address (requires FC_TRUSTED_PROXIES)
 }
 
 func (e *env) webClient() *client {
@@ -118,6 +122,9 @@ func (c *client) do(method, path string, body any) resp {
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
+	}
+	if c.xff != "" {
+		req.Header.Set("X-Forwarded-For", c.xff)
 	}
 	if c.bearer != "" {
 		req.Header.Set("Authorization", "Bearer "+c.bearer)

@@ -406,6 +406,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
     post:
       tags: [families]
+      summary: Create a family (instance administrator only – families can mint invites).
       operationId: createFamily
       requestBody:
         required: true
@@ -424,6 +425,7 @@ paths:
               schema: { $ref: "#/components/schemas/Family" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /families/{familyId}:
     get:
       tags: [families]

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"sync"
 
 	"github.com/google/uuid"
 
@@ -37,8 +38,19 @@ func mustJSON(v any) []byte {
 	return b
 }
 
+// ownerLock serialises "compute recipients + send" for one owner against "visibility changed +
+// send location_hidden". Without it a location computed just before a revoke could be delivered
+// just after the corresponding location_hidden event.
+func (s *Server) ownerLock(owner uuid.UUID) func() {
+	v, _ := s.ownerLocks.LoadOrStore(owner, &sync.Mutex{})
+	mu := v.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
+}
+
 // publishLocation sends owner's new location to the owner and every currently authorized viewer.
 func (s *Server) publishLocation(ctx context.Context, owner uuid.UUID, loc store.Location, shareBattery bool) {
+	defer s.ownerLock(owner)()
 	viewers, err := s.store.ViewersOf(ctx, owner)
 	if err != nil {
 		s.log.Error("publish: load viewers", "err", err)
@@ -70,6 +82,7 @@ func (s *Server) republish(ctx context.Context, owner uuid.UUID) {
 
 // sendLocationTo sends owner's location to a single viewer if (and only if) it is visible.
 func (s *Server) sendLocationTo(ctx context.Context, owner, viewer uuid.UUID) {
+	defer s.ownerLock(owner)()
 	loc, err := s.store.LatestFor(ctx, viewer, owner)
 	if err != nil || loc == nil {
 		return
@@ -79,6 +92,7 @@ func (s *Server) sendLocationTo(ctx context.Context, owner, viewer uuid.UUID) {
 
 func (s *Server) notifyHidden(owner uuid.UUID, viewers []uuid.UUID) {
 	if len(viewers) > 0 {
+		defer s.ownerLock(owner)()
 		s.hub.SendTo(viewers, mustJSON(userEvent{"location_hidden", owner}))
 	}
 }

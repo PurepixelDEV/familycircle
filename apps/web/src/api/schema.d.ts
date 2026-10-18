@@ -294,6 +294,7 @@ export interface paths {
         };
         get: operations["listFamilies"];
         put?: never;
+        /** Create a family (instance administrator only – families can mint invites). */
         post: operations["createFamily"];
         delete?: never;
         options?: never;
@@ -1413,6 +1414,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getFamily: {

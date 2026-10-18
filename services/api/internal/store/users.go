@@ -166,6 +166,9 @@ func (s *Store) DeleteUser(ctx context.Context, id uuid.UUID) (DeletedUser, erro
 		if out.Families, err = pgx.CollectRows(fams, pgx.RowTo[uuid.UUID]); err != nil {
 			return err
 		}
+		if err := lockFamilies(ctx, tx, out.Families...); err != nil {
+			return err
+		}
 		if _, err := tx.Exec(ctx, "DELETE FROM family_members WHERE user_id = $1", id); err != nil {
 			return err
 		}
