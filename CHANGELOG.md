@@ -5,6 +5,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-18
+
+Teilen läuft weiter, wenn die App weggewischt wird; neues Logo. Update über 0.2.0 ohne Neuanmeldung
+(gleicher Signaturschlüssel); Server ohne Datenbankänderung. Hardwaretests weiterhin offen.
+
 ### Geändert
 - Android: Das Teilen endet nur noch durch den Benutzer. Wegwischen der App aus der Übersicht beendet
   es nicht (`stopWithTask=false`); die Benachrichtigung hat neben „Pausieren“ jetzt „Beenden“.

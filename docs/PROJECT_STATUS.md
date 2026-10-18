@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: **2026-10-18** · Version **0.2.0 (unveröffentlicht)** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
+Stand: **2026-10-18** · Version **0.2.1** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
 
 Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Browser/Docker) · 📱 **Hardwaretest offen** · ⏳ offen
 
@@ -18,6 +18,7 @@ Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Brow
 | QR-Verbindungsassistent | ✅ 🧪 | Kopplungscode (10 min, einmalig, API + Migration 0002), Einladungs-QR, Scanner mit CameraX + ZXing; Kopplung im Emulator per Link getestet, **Kamera-Scan nur mit generierten Bildern unit-getestet** |
 | Portainer-Deployment | ✅ 🧪 | Zwei Container, `compose.yaml` + `.env.example`, Image-Archiv-Import (ohne Build) getestet: Smoke 15/15 |
 | GitHub Actions | ✅ | Auf GitHub grün: CI (Go, Web, Android, Docker + Trivy + Smoke-Test), CodeQL (0 Befunde), Release `v0.2.0` |
+| Release v0.2.1 | ⏳ | Teilen übersteht Wegwischen/Update, neues Logo, Passwort anzeigen. Wird nach dem Merge getaggt; APK gleicher Schlüssel wie 0.2.0 |
 | Release v0.2.0 | ✅ | Pre-Release https://github.com/PurepixelDEV/familycircle/releases/tag/v0.2.0: signierte APK (v2, Fingerabdruck im README), `ghcr.io/purepixeldev/familycircle:0.2.0` und `:0.2` für amd64 + arm64 |
 | Dokumentation | ✅ | README, INSTALL_PORTAINER, BACKUP_RESTORE, SECURITY, RELEASE, QR_FORMAT, HARDWARE_TESTS, TESTING_ANDROID, RISKS |
 
