@@ -69,7 +69,7 @@ Dabei gefundene und behobene Fehler (alle mit Re-Test):
 | 4 Veröffentlichung | 🟡 CI/CD, Release-Workflow, Doku, Lizenzprüfung; ⏳ GitHub-Repo, erster Release, F-Droid |
 
 ## Entscheidungen, die der Projektinhaber treffen muss
-1. **GitHub-Owner/Repository-Name** – bestimmt `ghcr.io/<owner>/familycircle` (aktuell Platzhalter `OWNER`).
+1. ~~GitHub-Owner~~ – entschieden: `PurepixelDEV/familycircle`, Image `ghcr.io/purepixeldev/familycircle`.
 2. **Android applicationId** (aktuell `org.familycircle.android`) – nach dem ersten Release unveränderbar.
 3. **Kontaktadresse** für Code of Conduct / Sicherheitsmeldungen.
 4. compileSdk/targetSdk 37 (erfordert SDK-Plattform 37 und die `ACCESS_LOCAL_NETWORK`-Berechtigung, RISKS R-03).

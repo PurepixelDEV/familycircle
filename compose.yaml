@@ -8,7 +8,7 @@ name: familycircle
 
 services:
   familycircle:
-    image: ${FC_IMAGE:?Set FC_IMAGE to a versioned image, e.g. ghcr.io/OWNER/familycircle:0.1.0}
+    image: ${FC_IMAGE:?Set FC_IMAGE to a versioned image, e.g. ghcr.io/purepixeldev/familycircle:0.2.0}
     restart: unless-stopped
     depends_on:
       db:

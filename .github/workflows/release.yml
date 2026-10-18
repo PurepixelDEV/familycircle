@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # GHCR requires lower-case names (the owner is "PurepixelDEV").
+  IMAGE: ghcr.io/purepixeldev/familycircle
+
 jobs:
   verify:
     name: Verify version
@@ -47,7 +51,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/${{ github.repository_owner }}/familycircle
+          images: ${{ env.IMAGE }}
           # Only explicit versions – no floating "latest" tag (see INSTALL_PORTAINER.md).
           tags: |
             type=semver,pattern={{version}}

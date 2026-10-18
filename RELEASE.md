@@ -4,7 +4,7 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/). Vor 1.0 k
 Changes enthalten; sie werden im CHANGELOG markiert.
 
 ## Einmalige Einrichtung (Repository)
-1. GitHub-Repository anlegen und Code pushen.
+1. Repository: https://github.com/PurepixelDEV/familycircle (privat).
 2. **Actions → General → Workflow permissions**: „Read repository contents“ (der Release-Workflow fordert
    `packages: write` und `contents: write` gezielt pro Job an).
 3. Android-Signaturschlüssel erzeugen (einmalig, **sicher aufbewahren** – ohne ihn sind keine Updates der App möglich):
@@ -34,7 +34,7 @@ Changes enthalten; sie werden im CHANGELOG markiert.
    ```
 4. Der Workflow [`release.yml`](.github/workflows/release.yml):
    * baut das Multi-Arch-Image (amd64, arm64) mit SBOM und Provenance und pusht
-     `ghcr.io/<owner>/familycircle:X.Y.Z` sowie `:X.Y` (bewusst kein `latest`),
+     `ghcr.io/purepixeldev/familycircle:X.Y.Z` sowie `:X.Y` (bewusst kein `latest`),
    * baut, testet und signiert die APK, erzeugt `SHA256SUMS.txt`,
    * erstellt das GitHub-Release mit dem CHANGELOG-Abschnitt als Text (0.x als Pre-Release).
 5. `compose.yaml`/`.env.example` in der Dokumentation auf die neue Version verweisen lassen.
@@ -42,7 +42,7 @@ Changes enthalten; sie werden im CHANGELOG markiert.
 ## Verifikation durch Nutzer
 * APK: `sha256sum -c SHA256SUMS.txt`; Signatur-Fingerprint mit `apksigner verify --print-certs` prüfen
   (der Fingerprint wird im README veröffentlicht, sobald der Release-Schlüssel existiert).
-* Image: `docker buildx imagetools inspect ghcr.io/<owner>/familycircle:X.Y.Z` zeigt SBOM/Provenance.
+* Image: `docker buildx imagetools inspect ghcr.io/purepixeldev/familycircle:X.Y.Z` zeigt SBOM/Provenance.
 
 ## F-Droid
 Vorbereitet, aber noch nicht eingereicht: keine proprietären Abhängigkeiten, Build aus Quellcode möglich.

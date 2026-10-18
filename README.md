@@ -17,6 +17,8 @@
 * **Einfacher Betrieb**: zwei Container (FamilyCircle + PostgreSQL/PostGIS), Installation per Portainer-Stack,
   automatische Datenbankmigrationen, Backups mit Standardwerkzeugen.
 
+Repository: https://github.com/PurepixelDEV/familycircle · Image: `ghcr.io/purepixeldev/familycircle` (ab dem ersten Release)
+
 ## Installation
 → **[INSTALL_PORTAINER.md](INSTALL_PORTAINER.md)** (Portainer-Stack, HTTPS mit Nginx Proxy Manager)
 → [BACKUP_RESTORE.md](BACKUP_RESTORE.md) · [SECURITY.md](SECURITY.md) · [RELEASE.md](RELEASE.md)

@@ -3,9 +3,9 @@
 Diese Anleitung installiert FamilyCircle als Portainer-Stack aus fertigen Container-Images.
 Sie brauchen weder Git noch einen eigenen Build noch zusätzliche Konfigurationsdateien.
 
-> **Hinweis zum Projektstand (0.1.0):** Die offiziellen Images werden erst mit dem ersten Release über
-> GitHub Actions in die GitHub Container Registry (GHCR) veröffentlicht. Bis dahin muss das Image lokal gebaut
-> werden (siehe [README](README.md#entwicklung)). Ab dem ersten Release funktioniert die Anleitung unverändert.
+> **Hinweis zum Projektstand (0.2.0):** Offizielle Images erscheinen mit dem ersten Release unter
+> `ghcr.io/purepixeldev/familycircle` (GitHub Actions). Bis dahin: Image-Archiv importieren, siehe
+> [„Ohne GHCR: Image-Archiv importieren“](#ohne-ghcr-image-archiv-importieren). Ein Build ist in keinem Fall nötig.
 
 ## Voraussetzungen
 * Docker-Host (amd64; ARM siehe Schritt 3) mit Portainer Community Edition 2.x
@@ -21,13 +21,12 @@ Unter **Environment variables** → **Advanced mode** (oder „Load variables fr
 [`.env.example`](.env.example) als Vorlage):
 
 ```env
-FC_IMAGE=ghcr.io/OWNER/familycircle:0.1.0
+FC_IMAGE=ghcr.io/purepixeldev/familycircle:0.2.0
 FC_HTTP_PORT=9092
 FC_DB_PASSWORD=<langer Zufallswert>
 FC_PUBLIC_URL=http://192.168.1.10:9092
 ```
 
-* `OWNER` ist der GitHub-Account bzw. die Organisation, unter der die Images veröffentlicht werden.
 * Immer eine **feste Version** verwenden (`0.1.0`), nie `latest`. So entscheiden Sie selbst, wann aktualisiert wird.
 * `FC_DB_PASSWORD`: z. B. mit `openssl rand -hex 32` erzeugen. Sonderzeichen sind erlaubt. Das Passwort wird beim
   **ersten** Start in der Datenbank gesetzt; spätere Änderungen siehe [BACKUP_RESTORE.md](BACKUP_RESTORE.md#datenbank-passwort-ändern).
@@ -60,19 +59,37 @@ Er wird bei jedem Neustart neu erzeugt, solange noch kein Konto existiert.
 4. Im FamilyCircle-Stack setzen und neu deployen:
    ```env
    FC_PUBLIC_URL=https://family.example.org
-   FC_TRUSTED_PROXIES=<IP von NPM aus Sicht des Containers, z. B. 172.16.0.0/12>
+   FC_TRUSTED_PROXIES=<Adresse des Proxys aus Sicht des Containers>
    ```
+   Die richtige Adresse steht nach dem ersten Aufruf über den Proxy im Log von `familycircle`:
+   `received X-Forwarded-For from an untrusted peer … "peer":"172.18.0.1"` → diesen Wert eintragen.
    `FC_TRUSTED_PROXIES` sorgt dafür, dass die Rate-Limits die echte Client-IP verwenden. Ohne diesen Eintrag teilen
-   sich alle Clients die IP des Proxys.
+   sich alle Clients die IP des Proxys. **Nur die eine Adresse eintragen, kein ganzes Docker-Netz** – sonst könnten
+   Clients aus diesem Netz eine falsche Absenderadresse vortäuschen (im HTTPS-Test nachgewiesen).
 5. Optional: Port 9092 in der Firewall nur noch für den Proxy freigeben.
 
 Mit `https://` in `FC_PUBLIC_URL` setzt der Server Secure-Cookies und HSTS.
 FamilyCircle verändert keine bestehenden Docker-Netzwerke. Wenn NPM im selben Docker-Netz laufen soll,
 verbinden Sie die Container bewusst selbst.
 
+## Ohne GHCR: Image-Archiv importieren
+Solange es noch kein veröffentlichtes Image gibt (oder der Server keinen Internetzugang hat):
+1. Archiv `familycircle-<version>-amd64.tar` (bzw. `-arm64.tar`) beschaffen – erzeugt mit
+   `scripts/build-image-archive.sh <version> [linux/arm64]`; Prüfsumme steht in der `.sha256`-Datei.
+2. Portainer → **Images** → **Import** → Datei hochladen. Danach erscheint `familycircle:<version>`.
+3. Im Stack `FC_IMAGE=familycircle:<version>` setzen und deployen. Alles andere wie oben.
+
+## Datenbank-Passwort als Datei (optional)
+Statt `FC_DB_PASSWORD` als Variable (in Portainer und `docker inspect` sichtbar) kann der Server das Passwort aus einer
+Datei lesen: Datei auf dem Host anlegen (`chmod 600`), in beide Container mounten und setzen:
+`FC_DB_PASSWORD_FILE=/run/secrets/db_password` (FamilyCircle) bzw. `POSTGRES_PASSWORD_FILE=/run/secrets/db_password`
+(Datenbank). Das erfordert eine angepasste Compose-Datei; der Standard bleibt bewusst bei einer einzigen Variablen.
+
 ## 7. Android-App verbinden
-APK aus den GitHub Releases installieren, Serveradresse eingeben (`https://family.example.org` bzw. im LAN-Test
-`http://192.168.1.10:9092`), anmelden oder Einladungscode verwenden, Standortfreigabe aktivieren.
+APK aus den GitHub Releases installieren (https://github.com/PurepixelDEV/familycircle/releases). Am einfachsten:
+in der Web-App unter **Privatsphäre → Handy verbinden** einen QR-Code anzeigen und in der App „QR-Code scannen“ –
+oder Serveradresse eingeben (`https://family.example.org` bzw. im LAN-Test `http://192.168.1.10:9092`) und anmelden.
+Neue Familienmitglieder scannen den QR-Code ihrer Einladung.
 
 ## Update
 1. Release-Notizen lesen (CHANGELOG).
