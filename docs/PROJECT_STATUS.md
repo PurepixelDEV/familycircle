@@ -1,81 +1,70 @@
 # Projektstatus
 
-Stand: **2026-10-18** · Version **0.1.0 (unveröffentlicht)** · Phase 0 abgeschlossen, Phase 1 weitgehend umgesetzt.
+Stand: **2026-10-18** · Version **0.2.0 (unveröffentlicht)** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
 
-Legende: ✅ automatisiert getestet · 🧪 manuell / Ende-zu-Ende getestet (Emulator oder Browser) ·
-🟡 implementiert, nicht getestet · ⏳ offen · 📱 braucht Hardwaretest
+Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Browser/Docker) · 📱 **Hardwaretest offen** · ⏳ offen
 
-## Qualitätskriterien des ersten Prototyps
+## Ziel dieser Phase: zwei echte Android-Handys sehen sich gegenseitig
+* 🧪 **Im Emulator erreicht:** zwei gleichzeitig laufende Android-16-Emulatoren, gekoppelt als Anna und Bob, teilen
+  im Modus „Ausgewogen“ und sehen sich gegenseitig auf der Karte in der App; Bewegungen erscheinen ohne Interaktion.
+* 📱 **Auf echten Handys noch nicht geprüft.** Debug-APK und Testprotokoll liegen bereit
+  ([HARDWARE_TESTS.md](HARDWARE_TESTS.md), [TESTING_ANDROID.md](TESTING_ANDROID.md)).
 
-| # | Kriterium | Status | Nachweis |
-|---|---|---|---|
-| 1 | Zwei Konten geben Standorte gegenseitig frei | ✅ 🧪 | API-Tests `TestShareGrantPauseRevoke` u. a.; Emulator: Registrierung + Freigabe in der App |
-| 2 | Zwei **Android-Geräte** übermitteln GPS-Daten | 🧪 📱 | **Ein Emulator** (Android 16, API 36) hat echte Positionen über die App übertragen (Werte in der DB geprüft). Zweites Gerät per API simuliert. **Kein physisches Gerät getestet.** |
-| 3 | Webkarte zeigt zuletzt empfangene echte Positionen | 🧪 | Browser-Test: vom Emulator gesendete Position erscheint auf der Karte (Marker-Position gegengeprüft) |
-| 4 | Neue Positionen erscheinen ohne Neuladen | ✅ 🧪 | `TestLiveUpdatesRespectRevocation`; Browser: Marker und Liste aktualisiert bei 1 Navigation |
-| 5 | Offline aufgezeichnete Positionen werden nachgeliefert | ✅ 🧪 | Emulator: WLAN+Daten aus, 5 Punkte in Room-Warteschlange, nach Reconnect alle 5 in 4 s mit Original-Zeitstempeln in der DB |
-| 6 | Deaktivierte Freigabe → kein Zugriff mehr | ✅ 🧪 | API-Tests (REST + WebSocket); Emulator: Widerruf in der App → API sofort leer, offene Webkarte entfernt Marker live |
-| 7 | Docker Compose gestartet und API getestet | ✅ 🧪 | Produktions-`compose.yaml` mit lokal gebautem Image: 15/15 Smoke-Tests (`scripts/smoke-test.sh`), auch in CI |
-| 8 | Alle automatisierten Tests grün | ✅ | Go 61 Testfunktionen (inkl. Race-Detector, echte PostGIS), Web 19, Android 86 – Details unten |
-| 9 | Ungetestete Hardwarefunktionen markiert | ✅ | Diese Datei + [HARDWARE_TESTS.md](HARDWARE_TESTS.md) |
-
-## Automatisierte Tests (letzter lokaler Lauf 2026-10-18)
-| Bereich | Ergebnis | Inhalt |
+## Lieferumfang 0.2.0
+| Ergebnis | Stand | Nachweis |
 |---|---|---|
-| Go-Backend | **61/61 grün**, `go test -race` | Unit: Argon2id, Tokens/Codes, Geo/Sprungerkennung/Aktualität, Rate-Limiter, Hub, Config. Integration gegen PostGIS 17-3.5: Migrator (Rollback, Checksumme, Downgrade), 35 API-Tests inkl. Negativtests (IDOR, Admin-Umgehung, Einladungsmissbrauch inkl. Nebenläufigkeit, Widerruf live/REST, veraltete Daten, fremde Identität, CSRF, Token-Diebstahlerkennung, Drosselung pro Adresse, IPv6-/64), Vertragstest Routen ↔ OpenAPI |
-| Lint/Security Go | 0 Befunde | `gofmt`, `go vet`, golangci-lint 2.15 (inkl. gosec), govulncheck 1.9: keine erreichbare Schwachstelle |
-| Web | 19/19 grün | Aktualitätslogik, Live-Ereignis-Reducer, API-Client (CSRF, Fehler, Abmeldung), MemberRow, i18n-Vollständigkeit; ESLint + `tsc` sauber; API-Typen aktuell |
-| Android | 86/86 grün | TrackingPolicy, MotionClassifier, FixFilter, Uploader (Batches, Idempotenz, Fehler), serialisierte Token-Erneuerung, ServerUrl, JSON-Vertrag, ApiClient gegen MockWebServer; Lint: 0 Fehler |
-| Deployment | 15/15 | Smoke-Test gegen Produktions-Stack; Backup → Löschen → Restore → Login getestet |
+| Android-Debug-APK | ✅ | `dist/familycircle-0.2.0-debug.apk` (70 MB, SHA-256 in `.sha256`), `org.familycircle.android.debug`, Android 8–16 |
+| Familienkarte in der App | ✅ 🧪 | MapLibre Native, Profilbild-Marker, Genauigkeitskreise, eigener Standort, Akkustand (falls freigegeben), veraltet = grau/gestrichelt/Alter, WebSocket-Live-Updates, Bottom-Sheet bzw. Seitenleiste ab 600 dp |
+| QR-Verbindungsassistent | ✅ 🧪 | Kopplungscode (10 min, einmalig, API + Migration 0002), Einladungs-QR, Scanner mit CameraX + ZXing; Kopplung im Emulator per Link getestet, **Kamera-Scan nur mit generierten Bildern unit-getestet** |
+| Portainer-Deployment | ✅ 🧪 | Zwei Container, `compose.yaml` + `.env.example`, Image-Archiv-Import (ohne Build) getestet: Smoke 15/15 |
+| GitHub Actions | ✅ | CI, CodeQL, Release (GHCR `ghcr.io/purepixeldev/familycircle`, APK); actionlint sauber; **noch nie auf GitHub gelaufen** |
+| Dokumentation | ✅ | README, INSTALL_PORTAINER, BACKUP_RESTORE, SECURITY, RELEASE, QR_FORMAT, HARDWARE_TESTS, TESTING_ANDROID, RISKS |
 
-## Ende-zu-Ende-Tests mit Emulator und Browser (2026-10-18)
-Umgebung: Produktions-`compose.yaml` mit lokal gebautem Image auf Windows/Docker Desktop, Android-Emulator
-„Medium Phone“ Android 16 (API 36.1, **Google-Play-Image** – die App nutzt keine Google-Dienste, das Image enthält sie
-aber; ein reines AOSP-Image wurde nicht getestet), Server über `http://10.0.2.2:9092`, Chromium per Playwright.
-
-Durchgeführt und bestanden:
-1. Onboarding: Serveradresse, Verbindungsprüfung, HTTP-Warndialog, Registrierung per Einladungscode in der App.
-2. Berechtigungs-Erklärung, System-Dialoge (genauer Standort „Bei Nutzung der App“, Benachrichtigungen).
-3. Foreground Service Typ `location` aktiv (`dumpsys`: `isForeground=true, types=0x8`), Benachrichtigung mit Pause-Aktion.
-4. GPS-Position (`geo fix`) → Upload → exakt in `locations_latest` (≈3 s Latenz).
-5. Freigabe in der App → Dana erscheint live auf Annas Webkarte; Bewegung über 4 Punkte nachverfolgt.
-6. Offline-Puffer und Nachlieferung (siehe Kriterium 5), Verlauf-Opt-in aus der App heraus.
-7. Widerruf in der App (siehe Kriterium 6).
-
-Dabei gefundene und behobene Fehler (alle mit Re-Test):
-* MapLibre-Worker wurde im Produktionsbuild nicht gefunden → Karte leer.
-* Marker-Klassen überschrieben MapLibres Positionierung → **alle Marker ausser dem ersten waren horizontal verschoben**.
-* Kartenausschnitt verdeckte Marker unter Bottom-Sheet bzw. Zoom-Reglern; Rail-Beschriftung abgeschnitten;
-  horizontaler Überlauf der Privatsphäre-Seite auf dem Handy.
-* Aufbewahrungs-Job scheiterte an SQL-Parametertypen (nur im echten Stack sichtbar).
-
-## Was nicht getestet ist (offen)
-* 📱 **Keinerlei Test auf physischen Android-Geräten** (Akkuverbrauch, Herstellerspezifische Energiesparmodi,
-  echte GPS-Qualität, Neustart/`BOOT_COMPLETED`, Doze über Stunden, Benachrichtigungs-Pause-Aktion per Fingertipp).
-* 📱 Zwei gleichzeitig laufende Android-Clients (nur einer im Emulator, zweiter per API).
-* HTTPS hinter Nginx Proxy Manager (Konfiguration dokumentiert, nicht aufgebaut).
-* Multi-Arch-Image (arm64) und Portainer-UI selbst (Compose-Datei mit Docker Compose getestet, nicht in Portainer).
-* GitHub-Workflows: mit actionlint geprüft, aber **noch nie auf GitHub gelaufen** (kein Repository vorhanden).
-* Release-APK zur Laufzeit; Signatur (kein Schlüssel vorhanden).
-* PWA-Installation und Offline-Shell; Barrierefreiheit mit Screenreader (TalkBack/NVDA).
-
-## Umfang nach Phasen
-| Phase | Stand |
+## Testergebnisse (letzter Lauf 2026-10-18)
+| Bereich | Ergebnis |
 |---|---|
-| 0 Analyse & Architektur | ✅ Architektur, Datenmodell, OpenAPI, ADRs 0001–0009, Threat Model, Android-Recherche |
-| 1 Vertikaler Prototyp | ✅ Backend, DB, Login, Familien, Einladungen, Web-App mit Karte, Android-App (Tracking, Offline, Freigaben), Live-Updates, Docker. ⏳ QR-Code-Onboarding, Karte in der Android-App |
-| 2 Zuverlässige Ortung | 🟡 Foreground Service, Offline-Speicher, Modi, Geräteverwaltung umgesetzt; ⏳ Hardwaretests, Akku-Optimierung, Batterieoptimierungs-Ausnahme |
-| 3 Erweiterte Funktionen | ⏳ Geofences, Benachrichtigungen (UnifiedPush/ntfy prüfen), Timeline-Ansicht, Check-ins/SOS, Kinderkonten (ADR-0006 Entwurf) |
-| 4 Veröffentlichung | 🟡 CI/CD, Release-Workflow, Doku, Lizenzprüfung; ⏳ GitHub-Repo, erster Release, F-Droid |
+| Go-Backend | **65/65** Tests grün mit `-race` gegen PostGIS 17-3.5; golangci-lint 0, govulncheck ohne erreichbare Schwachstelle |
+| Web | **22/22** Tests, ESLint/TypeScript sauber, API-Typen = Vertrag |
+| Android | **176/176** JVM-Unit-Tests, Lint 0 Fehler; Debug- und R8-Release-Build |
+| Docker-Smoke-Test | **15/15** gegen Produktions-`compose.yaml` mit importiertem Image-Archiv |
+| HTTPS über Reverse Proxy | ✅ nginx wie NPM: TLS, Secure-Cookie, HSTS, `wss` durch Proxy, fremder Origin abgelehnt, gefälschtes `X-Forwarded-For` wirkungslos (Gegenprobe mit zu breitem `FC_TRUSTED_PROXIES` schlägt erwartungsgemäss fehl) |
+| Datenbank-Upgrade | ✅ 0.1.0 → 0.2.0 auf gleichem Volume: Daten identisch, Migration 0002 angewandt, Login ok, Downgrade verweigert |
+| Secret-Scan | ✅ gitleaks: 7 Commits + Arbeitsverzeichnis ohne Funde |
 
-## Entscheidungen, die der Projektinhaber treffen muss
-1. ~~GitHub-Owner~~ – entschieden: `PurepixelDEV/familycircle`, Image `ghcr.io/purepixeldev/familycircle`.
-2. **Android applicationId** (aktuell `org.familycircle.android`) – nach dem ersten Release unveränderbar.
-3. **Kontaktadresse** für Code of Conduct / Sicherheitsmeldungen.
-4. compileSdk/targetSdk 37 (erfordert SDK-Plattform 37 und die `ACCESS_LOCAL_NETWORK`-Berechtigung, RISKS R-03).
+## Schwerpunktprüfungen (Aufgabe D)
+| Thema | Automatisiert | Ende-zu-Ende |
+|---|---|---|
+| Standortfreigaben / Zugriff ohne Berechtigung | ✅ IDOR, Admin-Umgehung, fremde Familie, Pairing-/Einladungs-Trennung | 🧪 Smoke-Test, zwei Emulatoren |
+| Widerruf bei aktiver WebSocket-Verbindung | ✅ `TestLiveUpdatesRespectRevocation` | 🧪 zwei Emulatoren: Marker weg nach 3–10 s (Software-Rendering); 📱 H-05 |
+| Mehrere Android-Geräte | – | 🧪 zwei Emulatoren gleichzeitig; 📱 H-02 |
+| Token-Rotation | ✅ Server + App (MockWebServer) | 🧪 abgelaufenes Token → automatische Erneuerung, Uploads + Live laufen weiter; 📱 H-22 |
+| Offline-Synchronisierung | ✅ | 🧪 6 Punkte offline gepuffert, nach Reconnect mit Original-Zeitstempel geliefert; 📱 H-04 |
+| Datenbank-Upgrades | ✅ Migrator-Tests | 🧪 `scripts/upgrade-test.sh` |
+| HTTPS über Reverse Proxy | – | 🧪 `scripts/https-proxy-test.sh` |
 
-## Nächste Schritte (Vorschlag)
-1. Hardwaretests H-01…H-12 mit zwei Geräten (Testprotokoll vorhanden).
-2. GitHub-Repository anlegen, CI laufen lassen, ersten Release `v0.1.0` erzeugen.
-3. Karte in der Android-App (MapLibre Native), QR-Onboarding, WebSocket-Live in der App.
-4. Phase 3: serverseitige Geofence-Ereignisse mit Entprellung und In-App-Benachrichtigungen.
+## Im Zwei-Geräte-Test gefundene und behobene Fehler
+1. **„Ausgewogen“ lieferte keine Positionen**, wenn die Netzwerk-Ortung fehlte (nur `fused` angefragt) → GPS zusätzlich.
+2. **Falsche GPS-Sprünge** durch wechselnde Provider (`fused` lieferte alte Position mit neuem Zeitstempel) → GPS-Vorrang.
+3. **Bewegung als „ruhend“ erkannt**, weil die gemeldete Geschwindigkeit 0 war → tatsächliche Verschiebung zählt.
+
+Jeweils mit Regressionstest; erneuter Emulator-Lauf bestätigt: Updates alle ~2 min in Bewegung, keine Fehlsprünge.
+
+## Offen – physische Hardwaretests 📱
+Alle 24 Fälle in [HARDWARE_TESTS.md](HARDWARE_TESTS.md) sind offen, insbesondere: zwei echte Handys gegenseitig
+sichtbar (H-02), Bildschirm aus / App weggewischt (H-03), Neustart (H-07), Akkuverbrauch (H-09), echter
+QR-Kamera-Scan (H-13/H-14), HTTPS mit echtem Zertifikat (H-12), Hersteller-Energiesparmodi.
+
+## Weitere offene Punkte
+* GitHub: erster Push (wartet auf Freigabe/Authentifizierung), erster CI-Lauf, erster Release `v0.2.0`.
+* Bekannte Einschränkungen: R-18 bis R-21 in [RISKS.md](RISKS.md) (Sprungbestätigung, 5-min-Ruheintervall,
+  kein Auto-Resume nach App-Update, APK-Grösse).
+* Phase 3 (Geofences, Benachrichtigungen, Check-ins/SOS, Kinderkonten) **bewusst nicht begonnen**.
+
+## Entscheidungen
+| Thema | Stand |
+|---|---|
+| Repository / Image | entschieden: `PurepixelDEV/familycircle`, `ghcr.io/purepixeldev/familycircle` |
+| Android applicationId | **unverändert `org.familycircle.android`** – Änderung nur mit Freigabe (`ch.putepixel.familycircle` vorgeschlagen, nicht umgesetzt) |
+| Kontaktadresse | `hello@putepixel.ch` festgelegt, **öffentliche Verwendung nicht freigegeben** (nicht in Doku eingetragen) |
+| Git-Autor | neue Commits `PutePixel <hello@putepixel.ch>`; alte Commits unverändert |
+| targetSdk 37 | offen (R-03) |
