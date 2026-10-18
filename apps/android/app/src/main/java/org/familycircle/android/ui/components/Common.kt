@@ -17,6 +17,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -36,6 +38,13 @@ import org.familycircle.android.ui.theme.LocalStatusColors
 import org.familycircle.android.util.RelativeAge
 
 val LocalAppContainer = staticCompositionLocalOf<AppContainer> { error("AppContainer not provided") }
+
+/** Width of the window in dp (phones ~360–430, tablets/landscape ≥ 600). */
+@Composable
+fun windowWidthDp(): Int {
+    val size = LocalWindowInfo.current.containerSize
+    return with(LocalDensity.current) { size.width.toDp().value.toInt() }
+}
 
 /** ViewModel created from the [AppContainer] (manual DI). */
 @Composable

@@ -36,6 +36,8 @@ data class AppPrefs(
     val trackingProblem: TrackingProblem? = null,
     /** Fix time (`Location.time`) of the last recorded point. */
     val lastFixAtMs: Long? = null,
+    /** Accuracy (m) of that fix – diagnostics only; coordinates are never stored in preferences. */
+    val lastFixAccuracyM: Double? = null,
     val lastUploadAtMs: Long? = null,
     val lastUploadOk: Boolean? = null,
     /** Short machine-readable key, mapped to a localised text in the UI. */
@@ -94,7 +96,10 @@ class AppPreferences(context: Context) {
         if (liveStartedAtMs == null) remove(K_LIVE_STARTED) else putLong(K_LIVE_STARTED, liveStartedAtMs)
     }
 
-    fun setLastFix(fixTimeMs: Long) = write { putLong(K_LAST_FIX, fixTimeMs) }
+    fun setLastFix(fixTimeMs: Long, accuracyM: Double?) = write {
+        putLong(K_LAST_FIX, fixTimeMs)
+        if (accuracyM == null) remove(K_LAST_FIX_ACC) else putFloat(K_LAST_FIX_ACC, accuracyM.toFloat())
+    }
 
     fun setUploadResult(atMs: Long, ok: Boolean, error: String?, count: Int) = write {
         putLong(K_UPLOAD_AT, atMs)
@@ -136,6 +141,7 @@ class AppPreferences(context: Context) {
         trackingProblem = sp.getString(K_TRACKING_PROBLEM, null)
             ?.let { name -> TrackingProblem.entries.firstOrNull { it.name == name } },
         lastFixAtMs = sp.longOrNull(K_LAST_FIX),
+        lastFixAccuracyM = if (sp.contains(K_LAST_FIX_ACC)) sp.getFloat(K_LAST_FIX_ACC, 0f).toDouble() else null,
         lastUploadAtMs = sp.longOrNull(K_UPLOAD_AT),
         lastUploadOk = if (sp.contains(K_UPLOAD_OK)) sp.getBoolean(K_UPLOAD_OK, false) else null,
         lastUploadError = sp.getString(K_UPLOAD_ERROR, null),
@@ -164,6 +170,7 @@ class AppPreferences(context: Context) {
         const val K_LIVE_STARTED = "live_started_at"
         const val K_TRACKING_PROBLEM = "tracking_problem"
         const val K_LAST_FIX = "last_fix_at"
+        const val K_LAST_FIX_ACC = "last_fix_accuracy"
         const val K_UPLOAD_AT = "last_upload_at"
         const val K_UPLOAD_OK = "last_upload_ok"
         const val K_UPLOAD_ERROR = "last_upload_error"
@@ -173,7 +180,7 @@ class AppPreferences(context: Context) {
 
         val ACCOUNT_KEYS = listOf(
             K_USER_ID, K_USER_EMAIL, K_USER_NAME, K_DEVICE_ID, K_TRACKING_DESIRED, K_TRACKING_PAUSED,
-            K_TRACKING_MODE, K_LIVE_STARTED, K_TRACKING_PROBLEM, K_LAST_FIX, K_UPLOAD_AT, K_UPLOAD_OK,
+            K_TRACKING_MODE, K_LIVE_STARTED, K_TRACKING_PROBLEM, K_LAST_FIX, K_LAST_FIX_ACC, K_UPLOAD_AT, K_UPLOAD_OK,
             K_UPLOAD_ERROR, K_UPLOAD_COUNT, K_SHARE_BATTERY, K_SELECTED_FAMILY,
         )
     }

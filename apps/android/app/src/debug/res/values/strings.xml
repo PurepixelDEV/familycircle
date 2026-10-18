@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug builds install as org.familycircle.android.debug next to a release build. -->
+    <string name="app_name" translatable="false">FamilyCircle Debug</string>
+</resources>

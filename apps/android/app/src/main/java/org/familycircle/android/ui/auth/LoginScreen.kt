@@ -22,6 +22,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +45,7 @@ import kotlinx.coroutines.launch
 import org.familycircle.android.R
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.data.AccountRepository
+import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.WarningCard
 import org.familycircle.android.ui.components.containerViewModel
 
@@ -76,6 +78,10 @@ fun defaultDeviceName(): String {
 class LoginViewModel(private val account: AccountRepository) : ViewModel() {
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
+
+    /** Invite code from a scanned `/register?code=` QR code (memory only): opens the registration form. */
+    fun applyScannedInvite(code: String) =
+        _state.update { it.copy(register = true, inviteCode = code, error = null, invalidFields = emptySet()) }
 
     fun update(transform: (LoginUiState) -> LoginUiState) = _state.update { transform(it).copy(error = null, invalidFields = emptySet()) }
 
@@ -130,8 +136,12 @@ class LoginViewModel(private val account: AccountRepository) : ViewModel() {
 /** Step 2: sign in, or register with an invite code. */
 @Composable
 fun LoginScreen(serverUrl: String, sessionExpired: Boolean) {
+    val container = LocalAppContainer.current
     val vm = containerViewModel { LoginViewModel(it.account) }
     val state by vm.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        container.onboarding.takeInviteCode()?.let(vm::applyScannedInvite)
+    }
 
     Surface(Modifier.fillMaxSize()) {
         Column(

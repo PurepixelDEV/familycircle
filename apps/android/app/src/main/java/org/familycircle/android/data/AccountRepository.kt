@@ -9,6 +9,7 @@ import org.familycircle.android.api.ServerUrl
 import org.familycircle.android.api.TokenRequest
 import org.familycircle.android.data.prefs.AppPreferences
 import org.familycircle.android.data.queue.PendingLocationDao
+import org.familycircle.android.map.AvatarRepository
 import org.familycircle.android.sync.UploadScheduler
 import org.familycircle.android.tracking.LocationRecorder
 import org.familycircle.android.tracking.TrackingController
@@ -23,6 +24,7 @@ class AccountRepository(
     private val dao: PendingLocationDao,
     private val recorder: LocationRecorder,
     private val tracking: TrackingController,
+    private val avatars: AvatarRepository,
     private val appVersion: String,
 ) {
     suspend fun verifyServer(server: ServerUrl.Result.Valid): InstanceInfo = api.instance(server.url)
@@ -54,18 +56,36 @@ class AccountRepository(
             ),
         )
 
+    /**
+     * Connects this phone with a pairing code from a QR code (docs/QR_FORMAT.md). The server is only
+     * saved after the code was accepted; the code itself is never stored or logged.
+     */
+    suspend fun pair(server: ServerUrl.Result.Valid, info: InstanceInfo, code: String, deviceName: String) {
+        val request = TokenRequest.pairing(code.trim(), deviceName.trim(), appVersion)
+        val response = api.pair(server.url, request)
+        forgetPreviousAccountIfDifferent(response.user.id)
+        saveServer(server, info)
+        prefs.setUser(response.user.id, response.user.email, response.user.displayName, response.deviceId, request.deviceName!!)
+        refreshSettingsCache()
+    }
+
     private suspend fun signIn(request: TokenRequest) {
         val response = api.login(request)
+        forgetPreviousAccountIfDifferent(response.user.id)
+        prefs.setUser(response.user.id, response.user.email, response.user.displayName, response.deviceId, request.deviceName!!)
+        refreshSettingsCache()
+    }
+
+    private suspend fun forgetPreviousAccountIfDifferent(userId: String) {
         val previousUser = prefs.current.userId
-        if (previousUser != null && previousUser != response.user.id) {
+        if (previousUser != null && previousUser != userId) {
             // Queued points belong to the previous account; never upload them under another one.
             Logger.i(TAG, "different account signed in, clearing local queue")
             dao.clear()
             recorder.reset()
+            avatars.clear()
             prefs.clearAccount()
         }
-        prefs.setUser(response.user.id, response.user.email, response.user.displayName, response.deviceId, request.deviceName!!)
-        refreshSettingsCache()
     }
 
     /** Caches `share_battery` locally (best effort). */
@@ -102,6 +122,7 @@ class AccountRepository(
         UploadScheduler.cancel(context)
         dao.clear()
         recorder.reset()
+        avatars.clear()
         prefs.clearAccount()
     }
 

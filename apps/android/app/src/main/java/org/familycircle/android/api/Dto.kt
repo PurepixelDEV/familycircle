@@ -33,13 +33,24 @@ data class TokenRequest(
     @SerialName("refresh_token") val refreshToken: String? = null,
     @SerialName("invite_code") val inviteCode: String? = null,
     @SerialName("display_name") val displayName: String? = null,
+    /** Short-lived single-use code from a pairing QR code (`grant_type=pairing_code`). */
+    @SerialName("pairing_code") val pairingCode: String? = null,
 ) {
-    /** Never print credentials, even in debug logs or crash reports. */
+    /** Never print credentials or codes, even in debug logs or crash reports. */
     override fun toString(): String = "TokenRequest(grantType=$grantType)"
 
     companion object {
         const val GRANT_PASSWORD = "password"
         const val GRANT_REFRESH = "refresh_token"
+        const val GRANT_PAIRING = "pairing_code"
+
+        /** `grant_type=pairing_code` request (docs/QR_FORMAT.md). */
+        fun pairing(code: String, deviceName: String, appVersion: String) = TokenRequest(
+            grantType = GRANT_PAIRING,
+            pairingCode = code,
+            deviceName = deviceName,
+            appVersion = appVersion,
+        )
     }
 }
 
@@ -64,6 +75,7 @@ data class Me(
     @SerialName("is_instance_admin") val isInstanceAdmin: Boolean,
     @SerialName("has_avatar") val hasAvatar: Boolean,
     @SerialName("created_at") val createdAt: String,
+    @SerialName("avatar_version") val avatarVersion: Long? = null,
 )
 
 @Serializable
@@ -100,6 +112,7 @@ data class Member(
     val role: String,
     val color: String,
     @SerialName("has_avatar") val hasAvatar: Boolean,
+    @SerialName("avatar_version") val avatarVersion: Long? = null,
     @SerialName("joined_at") val joinedAt: String,
     @SerialName("shares_with_me") val sharesWithMe: Boolean,
     @SerialName("i_share_with") val iShareWith: Boolean,
@@ -135,6 +148,7 @@ data class MapMember(
     @SerialName("display_name") val displayName: String,
     val color: String,
     @SerialName("has_avatar") val hasAvatar: Boolean,
+    @SerialName("avatar_version") val avatarVersion: Long? = null,
     @SerialName("is_self") val isSelf: Boolean,
     val location: MemberLocation? = null,
 )

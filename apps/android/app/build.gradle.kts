@@ -7,7 +7,8 @@ plugins {
 }
 
 android {
-    // TODO(release): confirm the final applicationId before the first public release – it can never change afterwards.
+    // TODO(release): the final applicationId is pending the project owner's approval – it can never
+    //  change after the first public release. namespace (Kotlin package / R class) is independent of it.
     namespace = "org.familycircle.android"
     compileSdk = 36
 
@@ -18,8 +19,8 @@ android {
         //  connections (self-hosted servers on 192.168.x.x etc.). Add the permission + runtime flow
         //  before raising targetSdk. See docs/research/android-platform-2026-10.md.
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     // Release signing only when the CI provides a keystore (see RELEASE.md). Local release builds stay
@@ -37,6 +38,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Installs next to a release build; testers can tell both apart by name and version.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            // Label "FamilyCircle Debug": src/debug/res/values/strings.xml overrides app_name.
+        }
         release {
             if (!signingStore.isNullOrBlank()) {
                 signingConfig = signingConfigs.getByName("release")
@@ -68,6 +75,12 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+
+    lint {
+        // MapLibre ships Timber's lint checks; the app deliberately logs through its own Logger
+        // (android.util.Log, no coordinates/tokens) and does not use Timber.
+        disable += "LogNotTimber"
     }
 }
 
@@ -106,6 +119,14 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Map (MapLibre Native, BSD-2; no Google Play Services) and QR scanning (CameraX + ZXing core,
+    // Apache-2.0; no ML Kit).
+    implementation(libs.maplibre.android)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

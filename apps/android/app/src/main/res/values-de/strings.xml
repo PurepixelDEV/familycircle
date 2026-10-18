@@ -6,7 +6,7 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_back">Zurück</string>
     <string name="action_refresh">Aktualisieren</string>
-    <string name="nav_home">Mein Standort</string>
+    <string name="nav_home">Teilen</string>
     <string name="nav_family">Familie</string>
     <string name="nav_settings">Einstellungen</string>
 
@@ -235,4 +235,105 @@
     <string name="notif_action_pause">Pausieren</string>
     <string name="notif_resume_title">Standort-Teilen ist pausiert</string>
     <string name="notif_resume_text">Dein Handy wurde neu gestartet. Öffne FamilyCircle, um das Teilen fortzusetzen.</string>
+
+    <!-- Navigation / kurze Altersangaben (v0.2) -->
+    <string name="nav_map">Karte</string>
+    <string name="age_short_now">jetzt</string>
+    <string name="age_short_minutes">%d Min.</string>
+    <string name="age_short_hours">%d Std.</string>
+    <string name="age_short_days">%d T.</string>
+
+    <!-- Karte -->
+    <plurals name="map_cd">
+        <item quantity="one">Familienkarte mit %d Person. Die Liste zeigt alle und bewegt die Karte zu ihnen.</item>
+        <item quantity="other">Familienkarte mit %d Personen. Die Liste zeigt alle und bewegt die Karte zu ihnen.</item>
+    </plurals>
+    <string name="map_unavailable">Die Karte konnte nicht geladen werden. Die Liste zeigt trotzdem, wo alle sind.</string>
+    <string name="map_you">Du</string>
+    <string name="map_you_age">Du · %1$s</string>
+    <string name="map_chip_on">Teilen ist an</string>
+    <string name="map_chip_paused">Teilen pausiert</string>
+    <string name="map_chip_off">Teilen ist aus</string>
+    <plurals name="map_chip_queue">
+        <item quantity="one">%1$s · %2$d wartet</item>
+        <item quantity="other">%1$s · %2$d warten</item>
+    </plurals>
+    <string name="map_chip_action">«Teilen» öffnen</string>
+    <string name="map_show_all">Alle zeigen</string>
+    <string name="map_live_on">Live-Aktualisierung aktiv</string>
+    <string name="map_live_connecting">Live-Aktualisierung wird verbunden…</string>
+    <string name="map_family_picker_cd">Familie: %1$s. Andere Familie wählen</string>
+    <string name="map_show_on_map">Auf der Karte zeigen</string>
+    <string name="map_accuracy">±%1$d m</string>
+    <string name="map_from_device">Position von diesem Handy</string>
+    <string name="map_not_visible">Für dich nicht sichtbar – nicht geteilt, pausiert oder noch keine Position.</string>
+    <string name="map_nobody">Noch niemand teilt einen Standort mit dir. Frag deine Familie im Tab «Familie».</string>
+
+    <!-- QR-Code -->
+    <string name="qr_title">QR-Code scannen</string>
+    <string name="qr_instructions">Halte die Kamera auf den QR-Code. Du findest ihn in der FamilyCircle-Web-App unter «Privatsphäre» → «Handy verbinden» oder in einer Einladung.</string>
+    <string name="qr_camera_explanation">Um den QR-Code zu lesen, braucht FamilyCircle die Kamera. Sie wird nur auf diesem Bildschirm verwendet; es werden keine Bilder gespeichert oder gesendet.</string>
+    <string name="qr_camera_denied">Der Kamerazugriff wurde abgelehnt. Du kannst die Serveradresse auch selbst eingeben.</string>
+    <string name="qr_camera_denied_settings">Der Kamerazugriff wurde abgelehnt. Du kannst ihn in den App-Einstellungen erlauben oder die Serveradresse selbst eingeben.</string>
+    <string name="qr_allow_camera">Kamera erlauben</string>
+    <string name="qr_manual">Adresse stattdessen eingeben</string>
+    <string name="qr_preview_cd">Kameravorschau für den QR-Code</string>
+    <string name="qr_not_familycircle">Dieser QR-Code ist kein FamilyCircle-Code. Verwende den Code aus der FamilyCircle-Web-App.</string>
+    <string name="qr_no_camera">Keine Kamera verfügbar. Bitte gib die Serveradresse ein.</string>
+
+    <!-- Server-Bildschirm mit QR -->
+    <string name="server_intro_qr">Am einfachsten: Öffne die FamilyCircle-Web-App auf einem Computer, wähle «Handy verbinden» und scanne den angezeigten QR-Code.</string>
+    <string name="server_scan_qr">QR-Code scannen</string>
+    <string name="server_manual_title">Oder Adresse eingeben</string>
+    <string name="server_qr_invite">Der QR-Code enthält eine Einladung. Als Nächstes erstellst du dein Konto.</string>
+    <string name="server_continue_register">Weiter zur Registrierung</string>
+    <string name="server_scan_again">Neuen QR-Code scannen</string>
+    <string name="pair_title">Dieses Handy verbinden?</string>
+    <string name="pair_body">Dieses Handy wird mit deinem Konto auf %1$s angemeldet. Fahre nur fort, wenn du diesen QR-Code selbst erstellt hast.</string>
+    <string name="pair_connect">Dieses Handy verbinden</string>
+    <string name="pair_use_password">Stattdessen mit E-Mail und Passwort anmelden</string>
+    <string name="pair_error_invalid">Dieser QR-Code ist nicht mehr gültig (er funktioniert einmal und 10 Minuten lang). Erstelle in der Web-App einen neuen und scanne erneut.</string>
+    <string name="pair_error_unsupported">Der Server hat den QR-Code nicht akzeptiert. Er braucht eventuell ein Update – melde dich stattdessen mit E-Mail und Passwort an.</string>
+
+    <!-- Einstellungen: weiteres Handy, Diagnose -->
+    <string name="settings_connect_phone">Weiteres Handy verbinden</string>
+    <string name="settings_connect_phone_body">Öffne die FamilyCircle-Web-App, gehe zu «Privatsphäre» → «Handy verbinden» und scanne den QR-Code mit dem anderen Handy. Der Code funktioniert einmal und 10 Minuten lang.</string>
+    <string name="diag_title">Diagnose</string>
+    <string name="diag_intro">Hilft, wenn das Teilen nicht wie erwartet funktioniert. Der kopierte Bericht enthält keine Positionen, keine E-Mail-Adresse und keine Passwörter.</string>
+    <string name="diag_battery_exempt">Akku-Optimierung: FamilyCircle darf ohne Einschränkungen laufen.</string>
+    <string name="diag_battery_restricted">Akku-Optimierung: Android kann FamilyCircle im Hintergrund pausieren.</string>
+    <string name="diag_battery_explain">Optional: Wenn deine Familie dich oft als «Veraltet» sieht, obwohl das Teilen an ist, erlaube FamilyCircle, ohne Akku-Einschränkungen zu laufen. Das kann etwas mehr Akku brauchen.</string>
+    <string name="diag_battery_button">Ohne Einschränkungen laufen lassen (optional)</string>
+    <string name="diag_show">Details anzeigen</string>
+    <string name="diag_hide">Details ausblenden</string>
+    <string name="diag_state_shown">Details sichtbar</string>
+    <string name="diag_state_hidden">Details ausgeblendet</string>
+    <string name="diag_yes">ja</string>
+    <string name="diag_no">nein</string>
+    <string name="diag_app">App</string>
+    <string name="diag_android">Android</string>
+    <string name="diag_service">Teilen-Dienst läuft</string>
+    <string name="diag_providers_in_use">Verwendete Standortquellen</string>
+    <string name="diag_providers_available">Standortquellen auf diesem Handy</string>
+    <string name="diag_location_enabled">Standort eingeschaltet</string>
+    <string name="diag_perm_fine">Genauer Standort</string>
+    <string name="diag_perm_coarse">Ungefährer Standort</string>
+    <string name="diag_perm_background">Standort immer</string>
+    <string name="diag_perm_notifications">Benachrichtigungen</string>
+    <string name="diag_perm_camera">Kamera</string>
+    <string name="diag_battery_label">Von Akku-Optimierung ausgenommen</string>
+    <string name="diag_queue">Positionen, die noch gesendet werden</string>
+    <string name="diag_last_fix">Letzte erfasste Position</string>
+    <string name="diag_last_upload">Letzter Upload</string>
+    <plurals name="diag_upload_ok">
+        <item quantity="one">%1$s · %2$d gesendet</item>
+        <item quantity="other">%1$s · %2$d gesendet</item>
+    </plurals>
+    <string name="diag_live">Live-Aktualisierung</string>
+    <string name="diag_live_connected">verbunden</string>
+    <string name="diag_live_connecting">wird verbunden</string>
+    <string name="diag_live_idle">aus (nur bei geöffneter Karte)</string>
+    <string name="diag_copy">Diagnose kopieren</string>
+    <string name="diag_copy_note">Der Bericht ist auf Englisch, damit Entwickler ihn lesen können.</string>
+    <string name="diag_copied">Diagnose kopiert</string>
 </resources>

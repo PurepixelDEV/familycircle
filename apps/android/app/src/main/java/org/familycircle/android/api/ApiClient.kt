@@ -41,7 +41,8 @@ class ApiClient(
     private val json: Json = ApiJson,
 ) : LocationApi {
 
-    private val userAgent = "FamilyCircle-Android/$appVersion"
+    /** Also used by [LiveSocket] for the WebSocket handshake. */
+    val userAgent = "FamilyCircle-Android/$appVersion"
 
     init {
         auth.refresher = { refreshToken ->
@@ -59,6 +60,19 @@ class ApiClient(
     suspend fun login(request: TokenRequest): TokenResponse {
         require(request.grantType == TokenRequest.GRANT_PASSWORD)
         val response = issueToken(request)
+        auth.onTokensIssued(response)
+        return response
+    }
+
+    /**
+     * Pairing grant (`grant_type=pairing_code`, docs/QR_FORMAT.md) against an explicit [baseUrl]:
+     * the server is only saved after the code was accepted. Stores the tokens on success.
+     * An invalid/expired/used code is a 401 `invalid_grant` ([ApiException.Unauthorized]).
+     */
+    suspend fun pair(baseUrl: String, request: TokenRequest): TokenResponse {
+        require(request.grantType == TokenRequest.GRANT_PAIRING)
+        val response: TokenResponse =
+            decode(raw("POST", listOf("auth", "token"), encode(request), bearer = null, baseUrl = baseUrl))
         auth.onTokensIssued(response)
         return response
     }
@@ -101,16 +115,58 @@ class ApiClient(
     override suspend fun uploadLocations(points: List<LocationPointDto>): LocationUploadResult =
         decode(authed("POST", listOf("locations"), encode(LocationUpload(points))))
 
+    /**
+     * `GET /users/{id}/avatar?v={version}` – JPEG bytes, or null when the user has no picture or is
+     * not visible to us (404).
+     */
+    suspend fun avatar(userId: String, version: Long?): ByteArray? {
+        val response = authed(
+            "GET",
+            listOf("users", userId, "avatar"),
+            query = version?.let { mapOf("v" to it.toString()) },
+            accept = "image/*",
+        )
+        if (response.code == 404) return null
+        if (response.code !in 200..299) throw toError(response)
+        return response.bytes
+    }
+
+    /**
+     * Request for the live WebSocket (`GET /api/v1/ws`; OkHttp upgrades it, `https` = `wss`).
+     * Null when no server is configured.
+     */
+    fun liveSocketRequest(accessToken: String): Request? {
+        val base = baseUrlProvider() ?: return null
+        val url = try {
+            buildUrl(base, listOf("ws"), null)
+        } catch (_: ApiException.NoServer) {
+            return null
+        }
+        return Request.Builder()
+            .url(url)
+            .header("Authorization", "Bearer $accessToken")
+            .header("User-Agent", userAgent)
+            .build()
+    }
+
     // ---------------------------------------------------------------- plumbing
 
-    internal class RawResponse(val code: Int, val body: String, val retryAfter: String?)
+    internal class RawResponse(val code: Int, val bytes: ByteArray, val retryAfter: String?) {
+        val body: String get() = bytes.toString(Charsets.UTF_8)
+    }
 
-    private suspend fun authed(method: String, segments: List<String>, body: String? = null): RawResponse {
+    private suspend fun authed(
+        method: String,
+        segments: List<String>,
+        body: String? = null,
+        query: Map<String, String>? = null,
+        accept: String = "application/json",
+    ): RawResponse {
         val token = auth.accessToken() ?: throw ApiException.NotLoggedIn()
-        val first = raw(method, segments, body, bearer = token)
+        val first = raw(method, segments, body, bearer = token, query = query, accept = accept)
         if (first.code != 401) return first
         val refreshed = auth.refreshAfterUnauthorized(token)
-        val second = raw(method, segments, body, bearer = refreshed)
+        val second = raw(method, segments, body, bearer = refreshed, query = query, accept = accept)
         if (second.code == 401) {
             val err = parseError(second.body)
             throw ApiException.Unauthorized(err?.code, err?.message)
@@ -124,8 +180,10 @@ class ApiClient(
         body: String?,
         bearer: String?,
         baseUrl: String? = null,
+        query: Map<String, String>? = null,
+        accept: String = "application/json",
     ): RawResponse {
-        val url = buildUrl(baseUrl ?: baseUrlProvider() ?: throw ApiException.NoServer(), segments)
+        val url = buildUrl(baseUrl ?: baseUrlProvider() ?: throw ApiException.NoServer(), segments, query)
         val requestBody: RequestBody? = when {
             body == null && method in METHODS_REQUIRING_BODY -> EMPTY_BODY
             body == null -> null
@@ -135,7 +193,7 @@ class ApiClient(
         val request = Request.Builder()
             .url(url)
             .method(method, requestBody)
-            .header("Accept", "application/json")
+            .header("Accept", accept)
             .header("X-FC-CSRF", "1")
             .header("User-Agent", userAgent)
             .apply { if (bearer != null) header("Authorization", "Bearer $bearer") }
@@ -147,10 +205,11 @@ class ApiClient(
         }
     }
 
-    private fun buildUrl(base: String, segments: List<String>): HttpUrl {
+    private fun buildUrl(base: String, segments: List<String>, query: Map<String, String>?): HttpUrl {
         val builder = (base.toHttpUrlOrNull() ?: throw ApiException.NoServer()).newBuilder()
         builder.addPathSegment("api").addPathSegment("v1")
         segments.forEach { builder.addPathSegment(it) }
+        query?.forEach { (k, v) -> builder.addQueryParameter(k, v) }
         return builder.build()
     }
 
@@ -218,7 +277,7 @@ private suspend fun Call.awaitRaw(): ApiClient.RawResponse = suspendCancellableC
         override fun onResponse(call: Call, response: Response) {
             try {
                 val raw = response.use {
-                    ApiClient.RawResponse(it.code, it.body.string(), it.header("Retry-After"))
+                    ApiClient.RawResponse(it.code, it.body.bytes(), it.header("Retry-After"))
                 }
                 cont.resume(raw)
             } catch (e: IOException) {

@@ -10,6 +10,10 @@ import kotlinx.coroutines.launch
 import org.familycircle.android.api.ApiClient
 import org.familycircle.android.api.AuthSession
 import org.familycircle.android.data.AccountRepository
+import org.familycircle.android.data.OnboardingHandoff
+import org.familycircle.android.live.LiveSocket
+import org.familycircle.android.map.AvatarRepository
+import java.io.File
 import org.familycircle.android.data.prefs.AppPreferences
 import org.familycircle.android.data.prefs.TrackingProblem
 import org.familycircle.android.data.queue.AppDatabase
@@ -28,7 +32,15 @@ class AppContainer(private val app: Application) {
 
     val prefs = AppPreferences(app)
     val auth = AuthSession(KeystoreTokenStore(app))
-    val api = ApiClient(ApiClient.defaultHttpClient(), auth, { prefs.current.serverUrl }, BuildConfig.VERSION_NAME)
+    private val http = ApiClient.defaultHttpClient()
+    val api = ApiClient(http, auth, { prefs.current.serverUrl }, BuildConfig.VERSION_NAME)
+
+    /** Live updates for the map; only connected while the map is visible. */
+    val live = LiveSocket(http, auth, api::liveSocketRequest)
+    val avatars = AvatarRepository(api, File(app.cacheDir, "avatars"))
+
+    /** In-memory hand-over of a scanned invite code to the registration form (never persisted). */
+    val onboarding = OnboardingHandoff()
 
     private val db = Room.databaseBuilder(app, AppDatabase::class.java, "familycircle.db").build()
     val dao = db.pendingLocations()
@@ -37,7 +49,7 @@ class AppContainer(private val app: Application) {
 
     val recorder = LocationRecorder(app, dao, prefs)
     val tracking = TrackingController(app, prefs, recorder, sync)
-    val account = AccountRepository(app, api, auth, prefs, dao, recorder, tracking, BuildConfig.VERSION_NAME)
+    val account = AccountRepository(app, api, auth, prefs, dao, recorder, tracking, avatars, BuildConfig.VERSION_NAME)
 
     init {
         // If the server ends the session (refresh token rejected), stop sharing: without tokens no

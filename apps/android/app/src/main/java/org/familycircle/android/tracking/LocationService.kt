@@ -179,6 +179,7 @@ class LocationService : LifecycleService() {
             }
         }
         activeParams = params
+        TrackingRuntime.providers.value = listeners.keys.sorted()
         Logger.i(TAG, "requesting ${params.mode} via ${providers.joinToString()}")
         return true
     }
@@ -274,6 +275,7 @@ class LocationService : LifecycleService() {
         foreground = false
         TrackingRuntime.running.value = false
         TrackingRuntime.effectiveMode.value = null
+        TrackingRuntime.providers.value = emptyList()
         stopSelfResult(lastStartId)
     }
 
@@ -281,6 +283,7 @@ class LocationService : LifecycleService() {
         removeUpdates()
         TrackingRuntime.running.value = false
         TrackingRuntime.effectiveMode.value = null
+        TrackingRuntime.providers.value = emptyList()
         // Points recorded but not yet uploaded are handed to WorkManager.
         container.scheduleCatchUpIfQueued()
         super.onDestroy()
