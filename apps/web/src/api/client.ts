@@ -15,6 +15,7 @@ export type InviteCreated = Schemas["InviteCreated"];
 export type Shares = Schemas["Shares"];
 export type Session = Schemas["Session"];
 export type Device = Schemas["Device"];
+export type PairingCode = Schemas["PairingCode"];
 
 /** Error returned by the API, with the stable machine-readable code from the Error schema. */
 export class ApiError extends Error {
@@ -95,6 +96,7 @@ export const api = {
   devices: () => request<{ devices: Device[] }>("GET", "/me/devices"),
   deleteDevice: (id: string) => request<void>("DELETE", `/me/devices/${id}`),
   deleteMyLocations: () => request<void>("DELETE", "/me/locations"),
+  createPairingCode: () => request<PairingCode>("POST", "/me/pairing-codes"),
 
   families: () => request<{ families: FamilySummary[] }>("GET", "/families"),
   createFamily: (name: string) => request<Family>("POST", "/families", { name }),

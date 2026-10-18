@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: FamilyCircle API
-  version: 0.1.0
+  version: 0.2.0
   summary: Self-hosted, privacy-first family location sharing.
   license:
     name: AGPL-3.0-or-later
@@ -128,6 +128,8 @@ paths:
       description: |
         `password` creates a new device and a device session. `refresh_token` rotates the refresh
         token; presenting an already rotated refresh token revokes the whole session.
+        `pairing_code` creates a new device for the account that generated the short-lived code
+        (see `POST /me/pairing-codes`, docs/QR_FORMAT.md).
         With `invite_code` + `display_name` the password grant also registers a new account.
       security: []
       operationId: issueToken
@@ -215,6 +217,19 @@ paths:
         "204": { description: Changed. }
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/pairing-codes:
+    post:
+      tags: [me]
+      summary: Create a short-lived, single-use code to connect a phone by QR code (valid 10 minutes).
+      operationId: createPairingCode
+      responses:
+        "201":
+          description: Created. The code is only returned once.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PairingCode" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
   /me/settings:
     get:
       tags: [me]
@@ -769,7 +784,8 @@ components:
       type: object
       required: [grant_type]
       properties:
-        grant_type: { type: string, enum: [password, refresh_token] }
+        grant_type: { type: string, enum: [password, refresh_token, pairing_code] }
+        pairing_code: { type: string, description: For grant_type pairing_code. }
         email: { type: string }
         password: { type: string }
         device_name: { type: string, minLength: 1, maxLength: 64 }
@@ -799,6 +815,12 @@ components:
         has_avatar: { type: boolean }
         avatar_version: { type: [integer, "null"], description: Changes whenever the avatar changes (cache busting). }
         created_at: { type: string, format: date-time }
+    PairingCode:
+      type: object
+      required: [code, expires_at]
+      properties:
+        code: { type: string, examples: [K7QF-2M9X-HD4R] }
+        expires_at: { type: string, format: date-time }
     Settings:
       type: object
       required: [sharing_paused, history_enabled, history_retention_days, share_battery]

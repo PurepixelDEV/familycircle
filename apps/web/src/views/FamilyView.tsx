@@ -3,6 +3,7 @@ import { api, type Family, type Invite, type InviteCreated, type Member } from "
 import { useApp } from "../state";
 import { useI18n } from "../i18n";
 import { Avatar, Field, Switch, toast, useConfirm, useErrorText } from "../components/ui";
+import { inviteUrl, QrCode } from "../components/QrCode";
 
 const INVITE_HOURS = 72;
 
@@ -138,6 +139,10 @@ export function FamilyView() {
               <p className="muted">{t("family.inviteHelp", { hours: INVITE_HOURS })}</p>
               {newInvite && (
                 <div className="section">
+                  <QrCode value={inviteUrl(location.origin, newInvite.code)} label={t("invite.qrLabel")} size={200} />
+                  <p className="small muted" style={{ textAlign: "center" }}>
+                    {t("invite.qrHelp")}
+                  </p>
                   <div className="code-display" aria-live="polite">
                     {newInvite.code}
                   </div>

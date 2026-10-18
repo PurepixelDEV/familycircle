@@ -41,3 +41,9 @@ playwright-report/
 
 # Local browser test artefacts (Playwright MCP)
 .playwright-mcp/
+
+# HTTPS proxy test certificates (generated)
+deploy/test/https-proxy/.certs/
+
+# Build outputs for testers (image archives, APKs)
+dist/

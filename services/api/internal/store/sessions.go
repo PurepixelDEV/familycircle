@@ -63,6 +63,17 @@ func (s *Store) CreateWebSession(ctx context.Context, userID uuid.UUID, userAgen
 
 // CreateDeviceSession registers a new device and issues access + refresh tokens for it.
 func (s *Store) CreateDeviceSession(ctx context.Context, userID uuid.UUID, deviceName, appVersion, userAgent string) (Tokens, error) {
+	var t Tokens
+	err := s.tx(ctx, func(tx pgx.Tx) error {
+		var err error
+		t, err = s.createDeviceSessionTx(ctx, tx, userID, deviceName, appVersion, userAgent)
+		return err
+	})
+	return t, err
+}
+
+// createDeviceSessionTx registers a device and issues its tokens inside an existing transaction.
+func (s *Store) createDeviceSessionTx(ctx context.Context, tx pgx.Tx, userID uuid.UUID, deviceName, appVersion, userAgent string) (Tokens, error) {
 	access, accessHash := auth.NewToken(auth.PrefixAccess)
 	refresh, refreshHash := auth.NewToken(auth.PrefixRefresh)
 	now := s.now()
@@ -71,20 +82,18 @@ func (s *Store) CreateDeviceSession(ctx context.Context, userID uuid.UUID, devic
 		appV = &appVersion
 	}
 	t := Tokens{Access: access, Refresh: refresh, AccessExpires: now.Add(AccessTokenTTL)}
-	err := s.tx(ctx, func(tx pgx.Tx) error {
-		var deviceID uuid.UUID
-		if err := tx.QueryRow(ctx, `INSERT INTO devices (user_id, name, platform, app_version, last_seen_at)
-			VALUES ($1, $2, 'android', $3, $4) RETURNING id`, userID, deviceName, appV, now).Scan(&deviceID); err != nil {
-			return err
-		}
-		t.Session = Session{UserID: userID, DeviceID: &deviceID, DeviceName: &deviceName, Kind: "device",
-			AccessExpiresAt: t.AccessExpires, UserAgent: truncateUA(userAgent), CreatedAt: now, LastUsedAt: now}
-		return tx.QueryRow(ctx, `
-			INSERT INTO sessions (user_id, device_id, kind, access_hash, access_expires_at, refresh_hash, refresh_expires_at, user_agent, created_at, last_used_at)
-			VALUES ($1, $2, 'device', $3, $4, $5, $6, $7, $8, $8) RETURNING id`,
-			userID, deviceID, accessHash, t.AccessExpires, refreshHash, now.Add(RefreshTokenTTL), t.Session.UserAgent, now).
-			Scan(&t.Session.ID)
-	})
+	var deviceID uuid.UUID
+	if err := tx.QueryRow(ctx, `INSERT INTO devices (user_id, name, platform, app_version, last_seen_at)
+		VALUES ($1, $2, 'android', $3, $4) RETURNING id`, userID, deviceName, appV, now).Scan(&deviceID); err != nil {
+		return Tokens{}, err
+	}
+	t.Session = Session{UserID: userID, DeviceID: &deviceID, DeviceName: &deviceName, Kind: "device",
+		AccessExpiresAt: t.AccessExpires, UserAgent: truncateUA(userAgent), CreatedAt: now, LastUsedAt: now}
+	err := tx.QueryRow(ctx, `
+		INSERT INTO sessions (user_id, device_id, kind, access_hash, access_expires_at, refresh_hash, refresh_expires_at, user_agent, created_at, last_used_at)
+		VALUES ($1, $2, 'device', $3, $4, $5, $6, $7, $8, $8) RETURNING id`,
+		userID, deviceID, accessHash, t.AccessExpires, refreshHash, now.Add(RefreshTokenTTL), t.Session.UserAgent, now).
+		Scan(&t.Session.ID)
 	return t, err
 }
 

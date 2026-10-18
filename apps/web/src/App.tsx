@@ -6,6 +6,7 @@ import { AppProvider } from "./state";
 import { LoginView, RegisterView, SetupView } from "./views/Auth";
 import { FamilyView } from "./views/FamilyView";
 import { PrivacyView } from "./views/PrivacyView";
+import { PairInfo } from "./views/PairInfo";
 import { FamilyIcon, MapIcon, ShieldIcon } from "./components/icons";
 import { ToastHost, useErrorText } from "./components/ui";
 
@@ -56,6 +57,9 @@ export function App() {
     setBoot((b) => (b.state === "ready" ? { ...b, me, instance: { ...b.instance, setup_required: false } } : b));
     navigate("/", true);
   };
+
+  // Scanned with a normal camera instead of the app: explain, never touch the code.
+  if (path === "/pair") return <PairInfo />;
 
   if (boot.state === "loading") {
     return <p className="auth muted">{t("common.loading")}</p>;

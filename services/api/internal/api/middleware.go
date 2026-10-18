@@ -178,6 +178,14 @@ func (s *Server) clientAddr(r *http.Request) string {
 	}
 	peer = peer.Unmap()
 	if !s.trusted(peer) {
+		if r.Header.Get("X-Forwarded-For") != "" {
+			// Most likely a reverse proxy that is not configured as trusted. Tell the operator once
+			// which address to use (the proxy's address is not personal data of a family member).
+			s.proxyHintOnce.Do(func() {
+				s.log.Warn("received X-Forwarded-For from an untrusted peer; if this is your reverse proxy, set FC_TRUSTED_PROXIES to this address",
+					"peer", peer.String())
+			})
+		}
 		return peer.String()
 	}
 	hops := strings.Split(r.Header.Get("X-Forwarded-For"), ",")

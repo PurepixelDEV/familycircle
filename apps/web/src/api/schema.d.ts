@@ -86,6 +86,8 @@ export interface paths {
          * Device login (password grant) or token refresh (refresh_token grant).
          * @description `password` creates a new device and a device session. `refresh_token` rotates the refresh
          *     token; presenting an already rotated refresh token revokes the whole session.
+         *     `pairing_code` creates a new device for the account that generated the short-lived code
+         *     (see `POST /me/pairing-codes`, docs/QR_FORMAT.md).
          *     With `invite_code` + `display_name` the password grant also registers a new account.
          */
         post: operations["issueToken"];
@@ -123,6 +125,23 @@ export interface paths {
         /** Change password. Revokes all other sessions. */
         put: operations["changePassword"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/pairing-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a short-lived, single-use code to connect a phone by QR code (valid 10 minutes). */
+        post: operations["createPairingCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -558,7 +577,9 @@ export interface components {
         };
         TokenRequest: {
             /** @enum {string} */
-            grant_type: "password" | "refresh_token";
+            grant_type: "password" | "refresh_token" | "pairing_code";
+            /** @description For grant_type pairing_code. */
+            pairing_code?: string;
             email?: string;
             password?: string;
             device_name?: string;
@@ -591,6 +612,12 @@ export interface components {
             avatar_version?: number | null;
             /** Format: date-time */
             created_at: string;
+        };
+        PairingCode: {
+            /** @example K7QF-2M9X-HD4R */
+            code: string;
+            /** Format: date-time */
+            expires_at: string;
         };
         Settings: {
             /** @description Hides the own location from everyone while true. */
@@ -1085,6 +1112,28 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    createPairingCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created. The code is only returned once. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairingCode"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getSettings: {

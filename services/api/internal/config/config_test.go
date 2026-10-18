@@ -3,6 +3,7 @@ package config
 import (
 	"log/slog"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 )
@@ -81,5 +82,25 @@ func TestLoadErrors(t *testing.T) {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error should mention %s: %v", want, err)
 		}
+	}
+}
+
+func TestDatabasePasswordFromFile(t *testing.T) {
+	files := map[string]string{"/run/secrets/db": "s3cret\n"}
+	read := func(p string) ([]byte, error) {
+		if v, ok := files[p]; ok {
+			return []byte(v), nil
+		}
+		return nil, os.ErrNotExist
+	}
+	cfg, err := LoadWithFiles(env(map[string]string{"FC_DB_PASSWORD_FILE": "/run/secrets/db"}), read, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DatabaseURL != "postgres://familycircle:s3cret@db:5432/familycircle?sslmode=disable" {
+		t.Fatalf("got %s (trailing newline must be stripped)", cfg.DatabaseURL)
+	}
+	if _, err := LoadWithFiles(env(map[string]string{"FC_DB_PASSWORD_FILE": "/missing"}), read, "test"); err == nil {
+		t.Fatal("missing password file must be an error")
 	}
 }
