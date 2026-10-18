@@ -66,7 +66,8 @@ func (s *Server) notifyAllFamilies(ctx context.Context, userID uuid.UUID) {
 // verifyPassword re-checks the current user's password for sensitive operations (rate limited).
 func (s *Server) verifyPassword(w http.ResponseWriter, r *http.Request, password string) bool {
 	p := principalFrom(r)
-	if ok, wait := s.lim.loginEmail.Allow("reauth:" + p.user.ID.String()); !ok {
+	key := "reauth:" + p.user.ID.String()
+	if blocked, wait := s.lim.failPair.Blocked(key); blocked {
 		tooMany(w, wait)
 		return false
 	}
@@ -76,6 +77,7 @@ func (s *Server) verifyPassword(w http.ResponseWriter, r *http.Request, password
 		return false
 	}
 	if !ok {
+		s.lim.failPair.Allow(key)
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "password is wrong")
 		return false
 	}
@@ -203,17 +205,26 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 const (
 	maxAvatarUpload = 2 << 20
 	avatarSize      = 256
-	maxAvatarPixels = 40_000_000
+	// 16 MP covers current phone cameras; a decoded 16 MP image needs ~64 MB, and at most two
+	// decodes run concurrently (avatarSlots), bounding memory against decompression bombs.
+	maxAvatarPixels = 16_000_000
 )
+
+var avatarSlots = make(chan struct{}, 2)
 
 // handlePutAvatar decodes and re-encodes the image. Re-encoding strips all metadata (EXIF can
 // contain the GPS position where a photo was taken) and neutralises malformed files.
 func (s *Server) handlePutAvatar(w http.ResponseWriter, r *http.Request) {
+	if ok, wait := s.lim.avatar.Allow(principalFrom(r).user.ID.String()); !ok {
+		tooMany(w, wait)
+		return
+	}
 	ct := r.Header.Get("Content-Type")
 	if ct != "image/jpeg" && ct != "image/png" {
 		writeError(w, http.StatusUnsupportedMediaType, "invalid_input", "upload image/jpeg or image/png")
 		return
 	}
+	setReadDeadline(w, 30*time.Second)
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxAvatarUpload))
 	if err != nil {
 		writeError(w, http.StatusRequestEntityTooLarge, "invalid_input", "image larger than 2 MB")
@@ -222,6 +233,12 @@ func (s *Server) handlePutAvatar(w http.ResponseWriter, r *http.Request) {
 	cfg, _, err := image.DecodeConfig(bytes.NewReader(body))
 	if err != nil || cfg.Width*cfg.Height > maxAvatarPixels || cfg.Width == 0 || cfg.Height == 0 {
 		writeError(w, http.StatusBadRequest, "invalid_input", "not a valid image")
+		return
+	}
+	select {
+	case avatarSlots <- struct{}{}:
+		defer func() { <-avatarSlots }()
+	case <-r.Context().Done():
 		return
 	}
 	src, _, err := image.Decode(bytes.NewReader(body))

@@ -148,9 +148,26 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 	})
 }
 
-// clientIP returns the address of the client. X-Forwarded-For is honoured only when the direct
-// peer is a configured trusted proxy; then the right-most untrusted address is used.
+// clientIP returns the rate-limiting identity of the client. X-Forwarded-For is honoured only
+// when the direct peer is a configured trusted proxy; then the right-most untrusted address is used.
+// IPv6 clients are grouped by /64, since one host typically controls a whole /64.
 func (s *Server) clientIP(r *http.Request) string {
+	return rateKey(s.clientAddr(r))
+}
+
+func rateKey(addr string) string {
+	a, err := netip.ParseAddr(addr)
+	if err != nil || a.Is4() {
+		return addr
+	}
+	p, err := a.Prefix(64)
+	if err != nil {
+		return addr
+	}
+	return p.String()
+}
+
+func (s *Server) clientAddr(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		host = r.RemoteAddr

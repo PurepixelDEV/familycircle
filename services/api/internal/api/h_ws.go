@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	wsMaxPerUser   = 10
 	wsPingInterval = 25 * time.Second
 	wsWriteTimeout = 10 * time.Second
 )
@@ -19,6 +20,10 @@ const (
 // database, so an expired or revoked session loses its connection even without an explicit event.
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	p := principalFrom(r)
+	if s.hub.Count(p.user.ID) >= wsMaxPerUser {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many live connections")
+		return
+	}
 	opts := &websocket.AcceptOptions{} // default: Origin must match Host (blocks cross-site WebSocket hijacking)
 	if s.cfg.PublicURL != nil {
 		opts.OriginPatterns = []string{s.cfg.PublicURL.Host}

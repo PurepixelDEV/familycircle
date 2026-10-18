@@ -98,9 +98,13 @@ func TestAdminCannotBypassSharing(t *testing.T) {
 func TestCrossFamilyIDOR(t *testing.T) {
 	e := newEnv(t)
 	anna, famA := e.setup("Anna")
-	// Second, unrelated family: Dave creates it after being invited to Anna's and leaving again.
+	// Second, unrelated family: the instance admin (Anna) creates it for Dave, makes him admin,
+	// then leaves it; Dave also leaves Anna's family. Afterwards Anna is a complete outsider.
 	dave := e.register(e.invite(anna, famA, 1), "Dave")
-	famD := dave.must(201, "POST", "/families", map[string]any{"name": "Dave's"}).str("id")
+	famD := anna.must(201, "POST", "/families", map[string]any{"name": "Dave's"}).str("id")
+	dave.must(200, "POST", "/invites/accept", map[string]any{"code": e.invite(anna, famD, 1)})
+	anna.must(204, "PATCH", "/families/"+famD+"/members/"+dave.userID, map[string]any{"role": "admin"})
+	anna.must(204, "POST", "/families/"+famD+"/leave", nil)
 	dave.must(204, "POST", "/families/"+famA+"/leave", nil)
 	daveDev := e.device("Dave")
 	daveDev.upload(point(46.95, 7.44, time.Now()))
@@ -180,4 +184,12 @@ func TestLastAdminRules(t *testing.T) {
 	}
 	anna.must(204, "PATCH", "/families/"+familyID+"/members/"+bob.userID, map[string]any{"role": "admin"})
 	anna.must(204, "POST", "/families/"+familyID+"/leave", nil)
+}
+
+func TestOnlyInstanceAdminCreatesFamilies(t *testing.T) {
+	_, anna, bob, _, _, _ := family(t)
+	if r := bob.do("POST", "/families", map[string]any{"name": "Bob's own"}); r.status != 403 {
+		t.Fatalf("regular user creating a family (and thus minting invites): %d", r.status)
+	}
+	anna.must(201, "POST", "/families", map[string]any{"name": "Second family"})
 }

@@ -111,6 +111,13 @@ func (h *Hub) CloseUser(userID uuid.UUID) {
 	}
 }
 
+// Count returns the number of live connections of a user.
+func (h *Hub) Count(userID uuid.UUID) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.byUser[userID])
+}
+
 // Connected reports whether the user has at least one live connection.
 func (h *Hub) Connected(userID uuid.UUID) bool {
 	h.mu.RLock()

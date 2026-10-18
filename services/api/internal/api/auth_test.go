@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -294,5 +295,39 @@ func TestAccountDeletion(t *testing.T) {
 	}
 	if r := e.webClient().do("POST", "/auth/session", map[string]any{"email": "bob@example.org", "password": password}); r.status != 401 {
 		t.Fatalf("deleted account can still log in: %d", r.status)
+	}
+}
+
+func TestFailedLoginsDoNotLockOutOtherAddresses(t *testing.T) {
+	// The test server acts as a trusted proxy so clients can present different addresses.
+	e := newEnvWith(t, map[string]string{"FC_TRUSTED_PROXIES": "127.0.0.1, ::1"})
+	e.setup("Anna")
+	attacker := e.webClient()
+	attacker.xff = "198.51.100.7"
+	for i := 0; i < 8; i++ {
+		attacker.do("POST", "/auth/session", map[string]any{"email": "anna@example.org", "password": "wrong password"})
+	}
+	if r := attacker.do("POST", "/auth/session", map[string]any{"email": "anna@example.org", "password": password}); r.status != 429 {
+		t.Fatalf("attacker's address must be throttled for this account, got %d", r.status)
+	}
+	anna := e.webClient()
+	anna.xff = "203.0.113.20"
+	anna.must(200, "POST", "/auth/session", map[string]any{"email": "anna@example.org", "password": password})
+}
+
+func TestIPv6ClientsShareRateLimitPer64(t *testing.T) {
+	e := newEnvWith(t, map[string]string{"FC_TRUSTED_PROXIES": "127.0.0.1, ::1"})
+	e.setup("Anna")
+	limited := false
+	for i := 0; i < 30; i++ {
+		c := e.webClient()
+		c.xff = fmt.Sprintf("2001:db8:1:2::%x", i+1) // rotating addresses inside one /64
+		if r := c.do("POST", "/auth/session", map[string]any{"email": fmt.Sprintf("x%d@example.org", i), "password": "wrong password"}); r.status == 429 {
+			limited = true
+			break
+		}
+	}
+	if !limited {
+		t.Fatal("rotating IPv6 addresses within a /64 must not bypass the per-IP login limit")
 	}
 }

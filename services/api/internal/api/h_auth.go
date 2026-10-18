@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"familycircle/internal/auth"
 	"familycircle/internal/store"
@@ -156,22 +157,38 @@ func (s *Server) startWebSession(w http.ResponseWriter, r *http.Request, u store
 // accounts take the same time as known ones.
 func (s *Server) checkCredentials(w http.ResponseWriter, r *http.Request, email, password string) (store.User, bool) {
 	email = strings.ToLower(normEmail(email))
-	if ok, wait := s.lim.login.Allow(s.clientIP(r)); !ok {
-		tooMany(w, wait)
-		return store.User{}, false
-	}
-	if ok, wait := s.lim.loginEmail.Allow(email); !ok {
-		tooMany(w, wait)
-		return store.User{}, false
-	}
-	if email == "" || password == "" || len(password) > 1024 {
+	ip := s.clientIP(r)
+	if email == "" || len(email) > 254 || password == "" || len(password) > 1024 {
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "e-mail or password is wrong")
 		return store.User{}, false
+	}
+	if ok, wait := s.lim.login.Allow(ip); !ok {
+		tooMany(w, wait)
+		return store.User{}, false
+	}
+	// Failure budgets are only consumed by failed attempts, and primarily per (account, IP):
+	// an attacker elsewhere cannot lock the real user out by guessing passwords for their e-mail.
+	pairKey := email + "|" + ip
+	for _, c := range []struct {
+		l interface {
+			Blocked(string) (bool, time.Duration)
+		}
+		key string
+	}{{s.lim.failPair, pairKey}, {s.lim.failAcct, email}} {
+		if blocked, wait := c.l.Blocked(c.key); blocked {
+			tooMany(w, wait)
+			return store.User{}, false
+		}
+	}
+	fail := func() {
+		s.lim.failPair.Allow(pairKey)
+		s.lim.failAcct.Allow(email)
+		writeError(w, http.StatusUnauthorized, "invalid_credentials", "e-mail or password is wrong")
 	}
 	u, err := s.store.UserByEmail(r.Context(), email)
 	if errors.Is(err, store.ErrNotFound) {
 		s.hasher.VerifyDummy(r.Context(), password)
-		writeError(w, http.StatusUnauthorized, "invalid_credentials", "e-mail or password is wrong")
+		fail()
 		return store.User{}, false
 	}
 	if err != nil {
@@ -184,10 +201,10 @@ func (s *Server) checkCredentials(w http.ResponseWriter, r *http.Request, email,
 		return store.User{}, false
 	}
 	if !ok {
-		writeError(w, http.StatusUnauthorized, "invalid_credentials", "e-mail or password is wrong")
+		fail()
 		return store.User{}, false
 	}
-	s.lim.loginEmail.Reset(email)
+	s.lim.failPair.Reset(pairKey)
 	if rehash {
 		if h, err := s.hasher.Hash(r.Context(), password); err == nil {
 			_ = s.store.SetPasswordHash(r.Context(), u.ID, h)
