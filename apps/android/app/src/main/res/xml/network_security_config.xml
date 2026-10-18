@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is permitted on the base config because self-hosted servers are often reached via LAN IP
+  literals, and whether a domain-config matches IP literals is not documented
+  (see docs/research/android-platform-2026-10.md). The app itself only accepts an http:// server
+  URL after an explicit warning dialog and shows a persistent "unencrypted connection" warning.
+  HTTPS uses the system trust store only (no user CAs, no pinning).
+-->
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!-- Intentional, see comment above (InsecureBaseConfiguration). -->
+    <base-config
+        cleartextTrafficPermitted="true"
+        tools:ignore="InsecureBaseConfiguration">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

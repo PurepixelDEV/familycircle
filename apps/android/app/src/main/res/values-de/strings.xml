@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Swiss Standard German orthography (ss instead of ß), consistent with the project docs. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="Typos">
+    <!-- Allgemein -->
+    <string name="action_continue">Weiter</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_refresh">Aktualisieren</string>
+    <string name="nav_home">Mein Standort</string>
+    <string name="nav_family">Familie</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <string name="age_just_now">gerade eben</string>
+    <plurals name="age_minutes">
+        <item quantity="one">vor %d Minute</item>
+        <item quantity="other">vor %d Minuten</item>
+    </plurals>
+    <plurals name="age_hours">
+        <item quantity="one">vor %d Stunde</item>
+        <item quantity="other">vor %d Stunden</item>
+    </plurals>
+    <plurals name="age_days">
+        <item quantity="one">vor %d Tag</item>
+        <item quantity="other">vor %d Tagen</item>
+    </plurals>
+
+    <string name="error_network">Der Server ist nicht erreichbar. Bitte prüfe deine Internetverbindung.</string>
+    <string name="error_session_expired">Du wurdest abgemeldet. Bitte melde dich erneut an.</string>
+    <string name="error_rate_limited">Zu viele Versuche. Bitte warte kurz und versuche es dann erneut.</string>
+    <string name="error_not_found">Nicht gefunden, oder du darfst es nicht mehr sehen.</string>
+    <string name="error_forbidden">Das darfst du nicht.</string>
+    <string name="error_server">Der Server hat ein Problem. Bitte versuche es später erneut.</string>
+    <string name="error_unexpected">Etwas ist schiefgegangen. Bitte versuche es erneut.</string>
+
+    <!-- Unverschlüsselte Verbindung -->
+    <string name="cleartext_banner_title">Unverschlüsselte Verbindung</string>
+    <string name="cleartext_banner_body">Dieser Server wird über http:// verwendet. Andere im selben Netzwerk könnten deine Standorte und dein Passwort mitlesen. Verwende wann immer möglich https://.</string>
+    <string name="cleartext_dialog_title">Unverschlüsselte Verbindung verwenden?</string>
+    <string name="cleartext_dialog_body">Die Adresse beginnt mit http://. Alles – auch dein Passwort und deine Standorte – wird unverschlüsselt übertragen. Fahre nur fort, wenn der Server in deinem eigenen Heimnetz steht und du diesem Netz vertraust.</string>
+    <string name="cleartext_dialog_confirm">Trotzdem verwenden</string>
+
+    <!-- Server -->
+    <string name="server_title">Willkommen bei FamilyCircle</string>
+    <string name="server_intro">FamilyCircle verbindet sich mit dem eigenen Server deiner Familie. Gib die Adresse ein, die du von der Person bekommen hast, die ihn eingerichtet hat.</string>
+    <string name="server_url_label">Server-Adresse</string>
+    <string name="server_url_hint">Zum Beispiel https://familycircle.example.org</string>
+    <string name="server_verify">Verbindung prüfen</string>
+    <string name="server_connected">Verbunden – FamilyCircle %1$s</string>
+    <string name="server_setup_required_title">Dieser Server ist noch nicht eingerichtet</string>
+    <string name="server_setup_required_body">Öffne die Server-Adresse zuerst in einem Webbrowser und schliesse dort die Einrichtung ab. Komm danach zurück und prüfe die Verbindung erneut.</string>
+    <string name="server_registration_closed">Auf diesem Server können keine neuen Konten erstellt werden. Mit einem bestehenden Konto kannst du dich trotzdem anmelden.</string>
+    <string name="server_error_empty">Bitte gib die Server-Adresse ein.</string>
+    <string name="server_error_invalid">Das ist keine gültige Adresse.</string>
+    <string name="server_error_scheme">Nur Adressen mit https:// oder http:// werden unterstützt.</string>
+    <string name="server_error_credentials">Bitte gib die Adresse ohne Benutzername oder Passwort ein.</string>
+    <string name="server_error_query">Bitte gib nur die Adresse ein, ohne \"?\"- oder \"#\"-Teile.</string>
+    <string name="server_error_network">Der Server ist nicht erreichbar. Prüfe die Adresse und deine Verbindung.</string>
+    <string name="server_error_redirect">Der Server leitet auf eine andere Adresse um. Bitte gib die endgültige Adresse ein (meist mit https://).</string>
+    <string name="server_error_not_fc">Unter dieser Adresse scheint kein FamilyCircle-Server zu laufen.</string>
+
+    <!-- Anmeldung -->
+    <string name="login_title">Anmelden</string>
+    <string name="login_server">Server: %1$s</string>
+    <string name="login_session_expired_title">Du wurdest abgemeldet</string>
+    <string name="login_session_expired_body">Deine Anmeldung auf diesem Handy ist nicht mehr gültig (zum Beispiel, weil sie in der Web-App entfernt wurde). Das Teilen wurde beendet. Bitte melde dich erneut an.</string>
+    <string name="login_tab_signin">Ich habe ein Konto</string>
+    <string name="login_tab_invite">Ich habe einen Einladungscode</string>
+    <string name="login_invite_intro">Mit einem Einladungscode erstellst du ein neues Konto und trittst direkt der Familie bei.</string>
+    <string name="login_invite_code">Einladungscode</string>
+    <string name="login_display_name">Dein Name</string>
+    <string name="login_display_name_hint">Wird deiner Familie angezeigt</string>
+    <string name="login_email">E-Mail</string>
+    <string name="login_password">Passwort</string>
+    <string name="login_password_hint">Mindestens 10 Zeichen</string>
+    <string name="login_device_name">Name dieses Handys</string>
+    <string name="login_device_name_hint">Damit du dieses Handy in der Liste deiner Geräte wiedererkennst</string>
+    <string name="login_submit_signin">Anmelden</string>
+    <string name="login_submit_register">Konto erstellen und beitreten</string>
+    <string name="login_change_server">Anderen Server verwenden</string>
+    <string name="login_error_missing">Bitte fülle alle Felder aus.</string>
+    <string name="login_error_password_short">Das Passwort muss mindestens 10 Zeichen haben.</string>
+    <string name="login_error_device_name">Bitte gib einen Namen für dieses Handy ein (höchstens 64 Zeichen).</string>
+    <string name="login_error_credentials">E-Mail oder Passwort ist falsch.</string>
+    <string name="login_error_invite">Der Einladungscode ist ungültig, abgelaufen oder schon verwendet.</string>
+    <string name="login_error_email_taken">Mit dieser E-Mail-Adresse gibt es schon ein Konto. Melde dich stattdessen an.</string>
+    <string name="login_error_registration_closed">Auf diesem Server können keine neuen Konten erstellt werden.</string>
+    <string name="login_error_invalid_input">Einige Eingaben sind ungültig. Bitte prüfe die markierten Felder.</string>
+
+    <!-- Berechtigungen -->
+    <string name="perm_title">Bevor es losgeht</string>
+    <string name="perm_intro">FamilyCircle teilt deinen Standort nur, wenn du es einschaltest, und nur mit den Familienmitgliedern, die du auswählst. Du kannst jederzeit pausieren.</string>
+    <string name="perm_location_title">Dein Standort</string>
+    <string name="perm_location_body">Damit deine Familie sieht, wo du bist, braucht die App Zugriff auf deinen Standort. Bitte wähle \"Genau\" – mit \"Ungefähr\" sieht deine Familie nur grob, wo du bist (einige Kilometer).</string>
+    <string name="perm_location_button">Standortzugriff erlauben</string>
+    <string name="perm_status_precise">Genauer Standort erlaubt</string>
+    <string name="perm_status_approximate">Nur ungefährer Standort erlaubt – deine Familie sieht ein Gebiet von einigen Kilometern.</string>
+    <string name="perm_denied_settings">Der Standortzugriff wurde abgelehnt. Du kannst ihn in den App-Einstellungen unter \"Berechtigungen\" erlauben.</string>
+    <string name="perm_open_settings">App-Einstellungen öffnen</string>
+    <string name="perm_notif_title">Benachrichtigungen (empfohlen)</string>
+    <string name="perm_notif_body">Solange dein Standort geteilt wird, zeigt eine Benachrichtigung das an. Dort kannst du mit einem Tipp pausieren. Ohne diese Berechtigung würdest du nicht sehen, dass das Teilen läuft.</string>
+    <string name="perm_notif_button">Benachrichtigungen erlauben</string>
+    <string name="perm_status_allowed">Erlaubt</string>
+    <string name="perm_bg_title">Nach einem Neustart fortsetzen (optional)</string>
+    <string name="perm_bg_body">Normalerweise musst du FamilyCircle nach einem Neustart des Handys einmal öffnen. Wenn du den Standortzugriff \"immer\" erlaubst, wird das Teilen von selbst fortgesetzt. FamilyCircle nutzt diese Berechtigung für nichts anderes.</string>
+    <string name="perm_bg_how">Wähle auf dem nächsten Bildschirm \"%1$s\".</string>
+    <string name="perm_bg_label_fallback">Immer zulassen</string>
+    <string name="perm_bg_needs_location">Erlaube zuerst den Standortzugriff.</string>
+    <string name="perm_bg_button">Immer erlauben</string>
+    <string name="perm_change_later">Du kannst all das später in den Einstellungen ändern.</string>
+
+    <!-- Modi -->
+    <string name="mode_title">Wie oft teilen</string>
+    <string name="mode_intro">Das sind Richtwerte – dein Handy aktualisiert eventuell seltener, um Akku zu sparen.</string>
+    <string name="mode_off">Aus</string>
+    <string name="mode_off_desc">Dein Standort wird nicht geteilt.</string>
+    <string name="mode_saver">Sparsam</string>
+    <string name="mode_saver_desc">Etwa alle 15 Minuten oder 250 m. Braucht am wenigsten Akku.</string>
+    <string name="mode_balanced">Ausgewogen</string>
+    <string name="mode_balanced_desc">Etwa alle 2 Minuten oder 50 m. Gut für jeden Tag.</string>
+    <string name="mode_live">Live</string>
+    <string name="mode_live_desc">Etwa alle 15 Sekunden. Braucht viel Akku und wechselt nach 30 Minuten zurück auf Ausgewogen.</string>
+
+    <!-- Start -->
+    <string name="home_title">Mein Standort-Teilen</string>
+    <string name="status_on">Teilen ist an</string>
+    <string name="status_paused">Teilen ist pausiert</string>
+    <string name="status_off">Teilen ist aus</string>
+    <string name="status_mode">Modus: %1$s</string>
+    <string name="status_mode_reduced">Aktuell %1$s (Akku schwach oder Live-Zeit abgelaufen)</string>
+    <plurals name="status_live_remaining">
+        <item quantity="one">Noch %d Minute live</item>
+        <item quantity="other">Noch %d Minuten live</item>
+    </plurals>
+    <string name="status_last_fix">Letzte Position: %1$s (%2$s)</string>
+    <string name="status_no_fix">Noch keine Position erfasst</string>
+    <string name="status_queue_empty">Alle Positionen wurden gesendet</string>
+    <plurals name="status_queue">
+        <item quantity="one">%d Position wartet auf das Senden</item>
+        <item quantity="other">%d Positionen warten auf das Senden</item>
+    </plurals>
+    <plurals name="status_upload_ok">
+        <item quantity="one">Letztes Senden %1$s: %2$d Position gesendet</item>
+        <item quantity="other">Letztes Senden %1$s: %2$d Positionen gesendet</item>
+    </plurals>
+    <string name="status_upload_failed">Letzter Sendeversuch %1$s fehlgeschlagen: %2$s</string>
+    <string name="upload_error_network">keine Internetverbindung – wird automatisch wiederholt</string>
+    <string name="upload_error_server">der Server ist nicht erreichbar – wird automatisch wiederholt</string>
+    <string name="upload_error_rate_limited">zu viele Sendungen – wird automatisch wiederholt</string>
+    <string name="upload_error_unauthorized">du bist abgemeldet</string>
+    <string name="upload_error_rejected">der Server hat die Sendung abgelehnt</string>
+    <string name="home_start">Teilen starten</string>
+    <string name="home_resume">Teilen fortsetzen</string>
+    <string name="home_stop">Teilen beenden</string>
+    <string name="home_turn_off">Ganz ausschalten</string>
+    <string name="home_send_now">Meinen Standort jetzt senden</string>
+    <string name="home_send_now_running">Standort wird ermittelt…</string>
+    <string name="home_msg_sent">Dein Standort wurde gesendet.</string>
+    <string name="home_msg_queued">Dein Standort wurde gespeichert und wird so bald wie möglich gesendet.</string>
+    <string name="home_msg_no_fix">Dein Standort konnte nicht ermittelt werden. Versuche es im Freien oder am Fenster erneut.</string>
+    <string name="home_problem_title">Das Teilen braucht deine Aufmerksamkeit</string>
+    <string name="home_problem_grant">Standortzugriff erlauben</string>
+    <string name="home_problem_location_settings">Standort einschalten</string>
+    <string name="home_sharing_paused_title">Für alle verborgen</string>
+    <string name="home_sharing_paused_body">\"Teilen pausieren\" ist in den Einstellungen eingeschaltet: Niemand sieht deinen Standort, auch wenn das Teilen läuft.</string>
+    <string name="home_sharing_paused_resume">Meinen Standort wieder zeigen</string>
+    <string name="problem_permission">FamilyCircle darf nicht auf deinen Standort zugreifen.</string>
+    <string name="problem_location_off">Der Standort ist auf diesem Handy ausgeschaltet.</string>
+    <string name="problem_no_provider">Dieses Handy hat keine nutzbare Standortquelle.</string>
+    <string name="problem_start_not_allowed">Android hat das Starten des Teilens nicht erlaubt. Öffne die App und versuche es erneut.</string>
+    <string name="problem_signed_out">Du wurdest abgemeldet, deshalb wurde das Teilen beendet.</string>
+
+    <!-- Familie -->
+    <string name="family_title">Familie</string>
+    <string name="family_none">Du bist noch in keiner Familie. Bitte ein Familien-Admin um einen Einladungscode.</string>
+    <string name="family_updated">Aktualisiert %1$s</string>
+    <string name="family_you">%1$s (du)</string>
+    <string name="family_seen">Gesehen %1$s (%2$s)</string>
+    <string name="family_accuracy">Genau auf etwa %1$d m</string>
+    <string name="family_battery">Akku %1$d %%</string>
+    <string name="family_battery_charging">Akku %1$d %% (lädt)</string>
+    <string name="family_open_map">In Karten-App zeigen</string>
+    <string name="family_no_maps_app">Keine Karten-App installiert.</string>
+    <string name="family_not_shared">Teilt den Standort nicht mit dir.</string>
+    <string name="family_no_location">Noch kein Standort.</string>
+    <string name="family_self_no_location">Der Server hat noch keinen Standort von dir.</string>
+    <string name="family_share_with">Meinen Standort mit %1$s teilen</string>
+    <string name="freshness_live">Live</string>
+    <string name="freshness_recent">Kürzlich</string>
+    <string name="freshness_stale">Veraltet</string>
+    <string name="freshness_cd">Standortstatus: %1$s</string>
+    <string name="motion_stationary">Bewegt sich nicht</string>
+    <string name="motion_walking">Zu Fuss</string>
+    <string name="motion_driving">Unterwegs (Fahrzeug)</string>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_account">Konto</string>
+    <string name="settings_server">Server: %1$s</string>
+    <string name="settings_server_version">Server-Version: %1$s</string>
+    <string name="settings_device">Dieses Handy: %1$s</string>
+    <string name="settings_privacy">Privatsphäre</string>
+    <string name="settings_pause_sharing">Teilen pausieren</string>
+    <string name="settings_pause_sharing_desc">Verbirgt deinen Standort vor allen, bis du das wieder ausschaltest.</string>
+    <string name="settings_share_battery">Akkustand teilen</string>
+    <string name="settings_share_battery_desc">Familienmitglieder, die dich sehen, sehen auch deinen Akkustand.</string>
+    <string name="settings_history">Standortverlauf speichern</string>
+    <plurals name="settings_history_desc">
+        <item quantity="one">Speichert deine bisherigen Positionen %d Tag lang. Wenn aus, wird nur deine letzte Position gespeichert.</item>
+        <item quantity="other">Speichert deine bisherigen Positionen %d Tage lang. Wenn aus, wird nur deine letzte Position gespeichert.</item>
+    </plurals>
+    <string name="settings_history_off_title">Verlauf ausschalten?</string>
+    <string name="settings_history_off_body">Dein gespeicherter Standortverlauf wird auf dem Server gelöscht. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="settings_history_off_confirm">Ausschalten und löschen</string>
+    <string name="settings_permissions">Berechtigungen</string>
+    <string name="settings_change_server">Server wechseln</string>
+    <string name="settings_change_server_confirm_title">Server wechseln?</string>
+    <string name="settings_change_server_confirm_body">Du wirst abgemeldet und alle FamilyCircle-Daten auf diesem Handy werden gelöscht.</string>
+    <string name="settings_logout">Abmelden</string>
+    <string name="settings_logout_confirm_title">Abmelden?</string>
+    <string name="settings_logout_confirm_body">Das Teilen wird beendet und dieses Handy abgemeldet.</string>
+    <plurals name="settings_unsent_lost">
+        <item quantity="one">%d Position wurde noch nicht gesendet und geht verloren.</item>
+        <item quantity="other">%d Positionen wurden noch nicht gesendet und gehen verloren.</item>
+    </plurals>
+    <string name="settings_app_version">App-Version %1$s</string>
+
+    <!-- Benachrichtigungen -->
+    <string name="notif_channel_tracking">Standort teilen</string>
+    <string name="notif_channel_tracking_desc">Wird angezeigt, solange FamilyCircle deinen Standort teilt.</string>
+    <string name="notif_channel_alerts">Hinweise</string>
+    <string name="notif_channel_alerts_desc">Wichtige Hinweise, z. B. wenn das Teilen nach einem Neustart nicht fortgesetzt werden konnte.</string>
+    <string name="notif_tracking_title">Standort wird geteilt · %1$s</string>
+    <string name="notif_tracking_last_fix">Letzte Position um %1$s</string>
+    <string name="notif_tracking_waiting">Warte auf die erste Position…</string>
+    <string name="notif_action_pause">Pausieren</string>
+    <string name="notif_resume_title">Standort-Teilen ist pausiert</string>
+    <string name="notif_resume_text">Dein Handy wurde neu gestartet. Öffne FamilyCircle, um das Teilen fortzusetzen.</string>
+</resources>

@@ -487,9 +487,10 @@ select.input {
 
 /* ---------- Map markers: the signature element ---------- */
 
+/* No `position` here: MapLibre positions markers absolutely (.maplibregl-marker). Overriding it with
+   `relative` makes markers flow next to each other and shifts every marker after the first. */
 .fc-marker {
   --ring: #1e5a52;
-  position: relative;
   width: 56px;
   height: 56px;
   cursor: pointer;
