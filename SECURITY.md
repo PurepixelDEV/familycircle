@@ -5,7 +5,8 @@ FamilyCircle processes highly sensitive data (real-time locations of family memb
 ## Reporting a vulnerability
 **Please do not open public issues for security problems.** Use GitHub's
 [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
-("Security" tab → "Report a vulnerability") of this repository.
+("Security" tab → "Report a vulnerability") of
+[PurepixelDEV/familycircle](https://github.com/PurepixelDEV/familycircle/security).
 
 Please include affected version, configuration, reproduction steps and impact. We aim to acknowledge reports within
 7 days and to publish a fix and advisory as soon as possible, crediting you unless you prefer otherwise.
