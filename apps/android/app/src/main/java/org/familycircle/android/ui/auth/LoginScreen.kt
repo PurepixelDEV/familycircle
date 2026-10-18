@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 import org.familycircle.android.R
 import org.familycircle.android.api.ApiException
 import org.familycircle.android.data.AccountRepository
+import org.familycircle.android.ui.components.AppLogo
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.WarningCard
 import org.familycircle.android.ui.components.containerViewModel
@@ -156,6 +157,7 @@ fun LoginScreen(serverUrl: String, sessionExpired: Boolean) {
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            AppLogo()
             Text(stringResource(R.string.login_title), style = MaterialTheme.typography.headlineMedium)
             Text(stringResource(R.string.login_server, serverUrl), style = MaterialTheme.typography.bodyMedium)
             if (sessionExpired) {

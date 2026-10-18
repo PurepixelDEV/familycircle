@@ -15,6 +15,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Android: Startseite bietet während des Teilens „Akku-Optimierung ausschalten“ und „Standort immer
   erlauben“ an, solange eines davon fehlt.
 - Android und Web: Passwort anzeigen/verbergen bei Anmeldung und Registrierung.
+- Neues Logo (Familien-Herz) überall: Web-Favicon, PWA-Icons, Anmeldeseiten; Android-App-Icon
+  (inkl. Themen-Icon), Benachrichtigungssymbol, Willkommens- und Anmeldebildschirm. Quellen in `branding/`.
 
 ## [0.2.0] - 2026-10-18
 
