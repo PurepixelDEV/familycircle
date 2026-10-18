@@ -32,7 +32,8 @@ services:
       options: { max-size: "10m", max-file: "3" }
 
   db:
-    image: postgis/postgis:17-3.5
+    # amd64 by default. ARM hosts (Raspberry Pi 4/5): FC_DB_IMAGE=imresamu/postgis:17-3.5 (multi-arch PostGIS build).
+    image: ${FC_DB_IMAGE:-postgis/postgis:17-3.5}
     restart: unless-stopped
     environment:
       POSTGRES_USER: familycircle

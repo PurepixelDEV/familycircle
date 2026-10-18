@@ -55,7 +55,7 @@ func exec(t testing.TB, admin, sql string) {
 	if err != nil {
 		t.Fatalf("connect admin db: %v", err)
 	}
-	defer conn.Close(ctx)
+	defer func() { _ = conn.Close(ctx) }()
 	if _, err := conn.Exec(ctx, sql); err != nil {
 		t.Fatalf("%s: %v", sql, err)
 	}
@@ -90,7 +90,7 @@ func Migrated(t testing.TB) *pgxpool.Pool {
 			return
 		}
 		_, templateErr = conn.Exec(ctx, "CREATE DATABASE "+templateName)
-		conn.Close(ctx)
+		_ = conn.Close(ctx)
 		if templateErr != nil {
 			return
 		}
@@ -129,7 +129,7 @@ func DropTemplate() {
 	defer cancel()
 	if conn, err := pgx.Connect(ctx, os.Getenv("FC_TEST_DATABASE_URL")); err == nil {
 		_, _ = conn.Exec(ctx, "DROP DATABASE IF EXISTS "+templateName+" WITH (FORCE)")
-		conn.Close(ctx)
+		_ = conn.Close(ctx)
 	}
 }
 

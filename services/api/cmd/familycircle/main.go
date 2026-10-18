@@ -65,11 +65,12 @@ func healthcheck() error {
 		return err
 	}
 	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("http://127.0.0.1:" + port + "/readyz")
+	// Fixed loopback address; only the port comes from our own configuration.
+	resp, err := client.Get("http://127.0.0.1:" + port + "/readyz") //nolint:gosec,noctx // G704 false positive; short-lived CLI call with client timeout
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unhealthy: %s", resp.Status)
 	}

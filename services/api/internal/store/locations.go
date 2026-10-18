@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"time"
 
@@ -74,7 +75,7 @@ func (s *Store) Ingest(ctx context.Context, userID, deviceID uuid.UUID, points [
 			ST_Y(candidate_position::geometry), ST_X(candidate_position::geometry), candidate_accuracy_m::float8, candidate_recorded_at
 			FROM locations_latest WHERE user_id = $1`, userID).
 			Scan(&lastLat, &lastLon, &lastAcc, &lastAt, &candLat, &candLon, &candAcc, &candAt)
-		if err != nil && err != pgx.ErrNoRows {
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return err
 		}
 		if lastAt != nil {
@@ -172,7 +173,7 @@ func (s *Store) LatestFor(ctx context.Context, viewer, owner uuid.UUID) (*Locati
 	err := s.pool.QueryRow(ctx, `SELECT `+locationColumns+`, us.share_battery
 		FROM locations_latest l JOIN user_settings us ON us.user_id = l.user_id
 		WHERE l.user_id = $1 AND ($1 = $2 OR `+visibleSQL("$1", "$2")+`)`, owner, viewer).Scan(dest...)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

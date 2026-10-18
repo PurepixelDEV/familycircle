@@ -273,7 +273,8 @@ func (s *Server) handleGetAvatar(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Cache-Control", "private, max-age=86400")
 	w.Header().Set("Last-Modified", updated.UTC().Format(http.TimeFormat))
-	_, _ = w.Write(img)
+	// Safe: the bytes are a JPEG re-encoded by us and served as image/jpeg with nosniff.
+	_, _ = w.Write(img) //nolint:gosec // G705 false positive
 }
 
 func (s *Server) handleListSessions(w http.ResponseWriter, r *http.Request) {

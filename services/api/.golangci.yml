@@ -1,0 +1,21 @@
+version: "2"
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - sqlclosecheck
+  settings:
+    gosec:
+      excludes:
+        - G115 # integer conversions are bounded by validation (e.g. battery 0–100)
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, errorlint, errcheck, bodyclose]
+formatters:
+  enable:
+    - gofmt

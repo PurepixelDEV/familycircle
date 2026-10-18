@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /services/api
+    schedule: { interval: weekly }
+    groups:
+      go: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule: { interval: weekly }
+    groups:
+      web-minor:
+        update-types: [minor, patch]
+  - package-ecosystem: gradle
+    directory: /apps/android
+    schedule: { interval: weekly }
+    groups:
+      android-minor:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /deploy/docker
+    schedule: { interval: weekly }

@@ -27,7 +27,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return // Accept already wrote the HTTP error
 	}
-	defer conn.CloseNow()
+	defer func() { _ = conn.CloseNow() }()
 	conn.SetReadLimit(4096)
 
 	client := live.NewClient(p.user.ID, p.session.ID)
@@ -53,7 +53,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			return
 		case <-client.Done():
-			conn.Close(websocket.StatusPolicyViolation, "session ended")
+			_ = conn.Close(websocket.StatusPolicyViolation, "session ended")
 			return
 		case msg := <-client.Messages():
 			if err := write(msg); err != nil {
@@ -62,7 +62,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		case <-ticker.C:
 			active, err := s.store.SessionActive(ctx, p.session.ID)
 			if err != nil || !active {
-				conn.Close(websocket.StatusPolicyViolation, "session ended")
+				_ = conn.Close(websocket.StatusPolicyViolation, "session ended")
 				return
 			}
 			pctx, cancel := context.WithTimeout(ctx, wsWriteTimeout)
