@@ -45,7 +45,7 @@ jobs:
       # Code scanning upload needs a public repository or GitHub Advanced Security. Until then the
       # results are evaluated here (the job fails on findings) and kept as a SARIF artifact.
       # Set the repository variable ENABLE_CODE_SCANNING_UPLOAD=true once uploads are available.
-      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           upload: ${{ vars.ENABLE_CODE_SCANNING_UPLOAD == 'true' && 'always' || 'never' }}
           upload-database: ${{ vars.ENABLE_CODE_SCANNING_UPLOAD == 'true' }}
