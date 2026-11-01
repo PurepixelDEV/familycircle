@@ -5,18 +5,18 @@
 # BOM >= 2026.08.00), lifecycle (2.11), navigation (2.10) and okhttp-android (5.5) declare
 # minCompileSdk=37 in their AAR metadata, so the newest versions that still support compileSdk 36
 # are used for those. Raise them together with compileSdk 37.
-agp = "9.4.1"
+agp = "9.5.0"
 kotlin = "2.4.21"
 ksp = "2.3.12"
-composeBom = "2026.06.01" # Compose 1.11.4, Material3 1.4.0
-coreKtx = "1.18.0"
+composeBom = "2026.09.00" # Compose 1.11.4, Material3 1.4.0
+coreKtx = "1.19.1"
 activityCompose = "1.13.0"
 lifecycle = "2.10.0"
-navigationCompose = "2.9.8"
+navigationCompose = "2.10.2"
 room = "2.8.5"
 work = "2.12.0"
-okhttp = "5.4.0"
-serializationJson = "1.11.0"
+okhttp = "5.5.1"
+serializationJson = "1.12.0"
 coroutines = "1.11.0"
 junit = "4.13.2"
 maplibre = "13.7.1"
