@@ -144,6 +144,7 @@ data class HistoryPoint(
     @SerialName("accuracy_m") val accuracyM: Double,
     @SerialName("speed_mps") val speedMps: Double? = null,
     @SerialName("battery_pct") val batteryPct: Int? = null,
+    @SerialName("battery_charging") val batteryCharging: Boolean? = null,
     val motion: String = "unknown",
     @SerialName("recorded_at") val recordedAt: String,
 ) {
@@ -152,6 +153,26 @@ data class HistoryPoint(
 
 @Serializable
 data class HistoryResponse(val points: List<HistoryPoint>)
+
+/** One interval of `GET /users/{id}/history/days` (usually one local day of a week). */
+@Serializable
+data class HistoryDay(
+    val from: String,
+    val to: String,
+    /** Plausible positions in the interval. */
+    val points: Int = 0,
+    /** Distance travelled (same rule as the timeline, ui/history/TimelineModel.kt). */
+    @SerialName("distance_m") val distanceM: Double = 0.0,
+    @SerialName("first_at") val firstAt: String? = null,
+    @SerialName("last_at") val lastAt: String? = null,
+)
+
+@Serializable
+data class HistoryDaysResponse(val days: List<HistoryDay>)
+
+/** `GET /users/{id}/history/events` – the person's SOS, check-ins and battery notices. */
+@Serializable
+data class HistoryEventsResponse(val events: List<Alert>)
 
 @Serializable
 data class Place(

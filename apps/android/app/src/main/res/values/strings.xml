@@ -486,20 +486,67 @@
     <!-- History -->
     <string name="history_title">History of %1$s</string>
     <string name="history_title_self">My history</string>
+    <string name="history_tab_title">History</string>
     <string name="history_today">Today</string>
-    <string name="history_yesterday">Yesterday</string>
     <string name="history_pick_day">Choose date</string>
     <string name="history_show_day">Show</string>
+    <string name="history_prev_day">Previous day</string>
+    <string name="history_next_day">Next day</string>
+    <string name="history_person_me">Me</string>
+    <string name="history_people">Whose history</string>
     <string name="history_empty">There are no positions for this day.</string>
     <string name="history_not_available">This history is not available (any more): it was not shared with you, sharing is paused, or the history is switched off.</string>
-    <plurals name="history_count">
-        <item quantity="one">%1$d position</item>
-        <item quantity="other">%1$d positions</item>
-    </plurals>
+    <string name="history_off_self">Your history is switched off. Turn on \"Keep location history\" in the settings – from then on your routes are saved.</string>
+    <string name="history_none">Nobody has shared their history with you yet.</string>
+    <string name="history_to_settings">Open settings</string>
     <plurals name="history_map_cd">
         <item quantity="one">Map with the route of the day, %1$d position</item>
         <item quantity="other">Map with the route of the day, %1$d positions</item>
     </plurals>
+    <string name="history_week">Week</string>
+    <string name="history_week_day_cd">%1$s: %2$s</string>
+    <string name="history_week_no_data">no positions</string>
+    <string name="history_week_none">–</string>
+    <string name="history_summary">Day overview</string>
+    <string name="history_distance">Distance</string>
+    <string name="history_distance_value">approx. %1$s</string>
+    <string name="history_moving">On the move</string>
+    <plurals name="history_stays">
+        <item quantity="one">%1$d stay</item>
+        <item quantity="other">%1$d stays</item>
+    </plurals>
+    <plurals name="history_places">
+        <item quantity="one">%1$d place</item>
+        <item quantity="other">%1$d places</item>
+    </plurals>
+    <string name="history_span">%1$s – %2$s</string>
+    <string name="history_battery_range">Battery %1$d–%2$d %%</string>
+    <string name="history_battery_chart_cd">Battery during the day: lowest %1$d %%, highest %2$d %%</string>
+    <string name="history_play">Play the day</string>
+    <string name="history_pause">Pause</string>
+    <string name="history_time_slider">Time of day</string>
+    <string name="history_head_battery">battery %1$d %%</string>
+    <string name="history_head_speed">%1$d km/h</string>
+    <string name="history_head_no_data">no data</string>
+    <string name="history_timeline">Timeline</string>
+    <string name="history_stay">Stay</string>
+    <string name="history_walk">On foot</string>
+    <string name="history_ride">Ride</string>
+    <string name="history_avg_speed">avg. %1$d km/h</string>
+    <string name="history_gap">No location data</string>
+    <string name="history_gap_distance">%1$s as the crow flies</string>
+    <string name="history_event_check_in">Reported arrival</string>
+    <string name="history_event_check_in_at">Reported arrival at %1$s</string>
+    <string name="history_event_sos">Triggered an SOS alarm</string>
+    <string name="history_event_sos_resolved">Safe again</string>
+    <string name="history_event_battery_low">Battery low: %1$d %%</string>
+    <string name="history_event_last_location">Phone switched off</string>
+    <plurals name="history_dropped">
+        <item quantity="one">%1$d imprecise position not shown</item>
+        <item quantity="other">%1$d imprecise positions not shown</item>
+    </plurals>
+    <string name="history_truncated">Only the last 5000 positions of this day are shown.</string>
+    <string name="nav_history">History</string>
 
     <!-- Settings: alarms and remote actions -->
     <string name="settings_history_open">Show my history</string>
