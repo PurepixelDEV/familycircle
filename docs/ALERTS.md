@@ -57,6 +57,27 @@ klingeln lassen“ ausgelöst hat.
   (`PATCH /shares/{meineId} {"history": true}`), Person hat Verlauf eingeschaltet. Sonst 404.
   Akkuwerte nur, wenn die Person Akku teilt. In `GET /shares` zeigt `incoming[].history`, ob ich den
   Verlauf öffnen kann.
+* **Wochenüberblick** `GET /users/{id}/history/days?bounds=t0,…,t7`: Positionen und Strecke je Intervall
+  (die lokalen Mitternächte schickt der Client – keine Zeitzone auf dem Server, Sommerzeit-Tage stimmen).
+* **Ereignisse** `GET /users/{id}/history/events?from=&to=`: SOS, „in Sicherheit“, Check-ins, Akku-Warnung,
+  letzter Standort der Person. Andere sehen nur Meldungen, die sie selbst bekommen haben und noch lesen
+  dürfen – nie mehr als in `GET /alerts`. Ankunft/Abfahrt fehlen bewusst (siehe Zeitachse).
+* Beide Endpunkte prüfen **dieselbe Regel** wie der Verlauf selbst (`store.historyAccess`), sonst 404.
+
+### Zeitachse (Web `lib/timeline.ts`, Android `ui/history/TimelineModel.kt` – gleiche Regeln)
+
+| Regel | Wert |
+|---|---|
+| Positionen, die zählen | nicht `suspect`, Genauigkeit ≤ 200 m |
+| Strecke | Summe der Schritte zwischen aufeinanderfolgenden Positionen; ein Schritt zählt nur, wenn er ≥ max(Genauigkeit beider Punkte, 25 m) ist (sonst Messrauschen). **Gleiche Regel im Server** (Wochenüberblick), damit Tag und Woche übereinstimmen. Schritte über Mitternacht zählen nicht. |
+| Aufenthalt | aufeinanderfolgende Positionen innerhalb 100 m um ihren Mittelpunkt, mindestens 5 min; benachbarte Aufenthalte am gleichen Fleck werden zusammengelegt (kurzer Abstecher). Ein Tag mit nur einer Gruppe ist immer ein Aufenthalt. |
+| Ortsname | nächster Ort (aller eigenen Familien), dessen Radius + 25 m den Mittelpunkt enthält |
+| Weg | alles zwischen zwei Aufenthalten; „Fahrt“ statt „zu Fuss“ bei Ø > 7 km/h, Spitze > 25 km/h oder überwiegend `driving` |
+| Lücke | > 30 min ohne Position während eines Wegs → „Keine Standortdaten“ (mit Luftlinie ab 500 m) |
+| Abspielen | Position zwischen zwei Punkten linear interpoliert; in einer Lücke bleibt sie am letzten Punkt stehen |
+
+Ankunft/Abfahrt-Meldungen erscheinen nicht in der Zeitachse: Die Aufenthalte zeigen die Orte bereits,
+und diese Meldungen hängen von Empfängern und Stummschaltung ab.
 
 ## Zustellung an die Apps (ohne Google-Push)
 

@@ -143,6 +143,11 @@ object MapGeoJson {
         },
     )
 
+    /** Plain points without properties (stays of the history timeline, the playback position). */
+    fun points(points: List<Pair<Double, Double>>): String = collection(
+        points.map { (lat, lon) -> feature(geometry = point(lat, lon), properties = buildJsonObject { }) },
+    )
+
     private fun point(lat: Double, lon: Double) = buildJsonObject {
         put("type", "Point")
         put("coordinates", lonLat(lon, lat))

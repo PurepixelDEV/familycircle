@@ -156,6 +156,8 @@ func (s *Server) Routes() []Route {
 		{"POST", "/users/{userId}/ring", userAuth, s.handleRemoteRequest(store.AlertRing, ringTTL)},
 		{"POST", "/users/{userId}/locate", userAuth, s.handleRemoteRequest(store.AlertLocate, locateTTL)},
 		{"GET", "/users/{userId}/locations", userAuth, s.handleUserHistory},
+		{"GET", "/users/{userId}/history/days", userAuth, s.handleHistoryDays},
+		{"GET", "/users/{userId}/history/events", userAuth, s.handleHistoryEvents},
 
 		{"GET", "/shares", userAuth, s.handleListShares},
 		{"PUT", "/shares/{userId}", userAuth, s.handleGrantShare},

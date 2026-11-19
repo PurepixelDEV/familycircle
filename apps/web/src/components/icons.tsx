@@ -52,3 +52,57 @@ export const BatteryIcon = () => (
   </svg>
 );
 
+
+export const HistoryIcon = () => (
+  <svg {...base}>
+    <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
+    <path d="M3.5 4.5v4h4" />
+    <path d="M12 7.5V12l3 2" />
+  </svg>
+);
+
+export const WalkIcon = () => (
+  <svg {...base}>
+    <circle cx="13" cy="4.5" r="1.8" />
+    <path d="m9 21 2.5-6 2.5 2.5V21M11.5 15l1-5.5-3 1.5L8 14M12.5 9.5l2.5 3 3 1" />
+  </svg>
+);
+
+export const RideIcon = () => (
+  <svg {...base}>
+    <path d="M4 16.5V12l2-5h12l2 5v4.5" />
+    <path d="M3.5 12h17v4.5h-17z" />
+    <circle cx="7.5" cy="18" r="1.5" />
+    <circle cx="16.5" cy="18" r="1.5" />
+  </svg>
+);
+
+export const GapIcon = () => (
+  <svg {...base} strokeDasharray="2 3">
+    <circle cx="12" cy="12" r="8" />
+  </svg>
+);
+
+export const PlayIcon = () => (
+  <svg {...base}>
+    <path d="M7 4.5v15l12-7.5L7 4.5Z" fill="currentColor" />
+  </svg>
+);
+
+export const PauseIcon = () => (
+  <svg {...base}>
+    <path d="M8 5v14M16 5v14" strokeWidth={3} />
+  </svg>
+);
+
+export const ChevronLeftIcon = () => (
+  <svg {...base}>
+    <path d="m15 5-7 7 7 7" />
+  </svg>
+);
+
+export const ChevronRightIcon = () => (
+  <svg {...base}>
+    <path d="m9 5 7 7-7 7" />
+  </svg>
+);

@@ -172,6 +172,33 @@ class ApiClient(
             ),
         ).points
 
+    /**
+     * `GET /users/{id}/history/days?bounds=` – positions and distance per interval
+     * `[bounds[i], bounds[i+1])` (the local midnights of a week), one entry per interval in order.
+     * Same access rule as [history] (404 otherwise).
+     */
+    suspend fun historyDays(userId: String, bounds: List<Long>): List<HistoryDay> =
+        decode<HistoryDaysResponse>(
+            authed(
+                "GET",
+                listOf("users", userId, "history", "days"),
+                query = mapOf("bounds" to bounds.joinToString(",") { Rfc3339.format(it) }),
+            ),
+        ).days
+
+    /**
+     * `GET /users/{id}/history/events?from=&to=` – the person's SOS, check-ins and battery notices
+     * in the range, oldest first (only those I may read). Same access rule as [history].
+     */
+    suspend fun historyEvents(userId: String, fromMs: Long, toMs: Long): List<Alert> =
+        decode<HistoryEventsResponse>(
+            authed(
+                "GET",
+                listOf("users", userId, "history", "events"),
+                query = mapOf("from" to Rfc3339.format(fromMs), "to" to Rfc3339.format(toMs)),
+            ),
+        ).events
+
     /** `PATCH /shares/{userId} {"history": …}` – let this viewer see my history (or not any more). */
     suspend fun setShareHistory(userId: String, history: Boolean) {
         expectNoContent(authed("PATCH", listOf("shares", userId), encode(ShareUpdate(history))))

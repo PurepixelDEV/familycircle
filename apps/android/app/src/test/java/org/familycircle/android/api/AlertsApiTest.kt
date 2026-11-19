@@ -187,6 +187,56 @@ class AlertsApiTest {
     }
 
     @Test
+    fun `history days send the interval bounds and parse empty days`() = runBlocking {
+        server.enqueue(json(200, """{"days":[{"from":"2026-11-15T23:00:00Z","to":"2026-11-16T23:00:00Z","points":12,"distance_m":3420.5,
+            "first_at":"2026-11-16T06:00:00Z","last_at":"2026-11-16T18:00:00Z"},
+            {"from":"2026-11-16T23:00:00Z","to":"2026-11-17T23:00:00Z","points":0,"distance_m":0,"first_at":null,"last_at":null}]}"""))
+        val b0 = Rfc3339.parseMillis("2026-11-15T23:00:00Z")!!
+        val bounds = listOf(b0, b0 + 86_400_000, b0 + 2 * 86_400_000)
+
+        val days = client.historyDays("u2", bounds)
+
+        val req = server.takeRequest()
+        assertEquals("GET", req.method)
+        assertEquals("/api/v1/users/u2/history/days", req.url.encodedPath)
+        assertEquals(
+            "2026-11-15T23:00:00.000Z,2026-11-16T23:00:00.000Z,2026-11-17T23:00:00.000Z",
+            req.url.queryParameter("bounds"),
+        )
+        assertEquals(2, days.size)
+        assertEquals(12, days[0].points)
+        assertEquals(3420.5, days[0].distanceM, 1e-9)
+        assertEquals(0, days[1].points)
+        assertNull(days[1].firstAt)
+    }
+
+    @Test
+    fun `history events ask for a range and parse alerts`() = runBlocking {
+        server.enqueue(json(200, """{"events":[$sosAlert]}"""))
+        val from = Rfc3339.parseMillis("2026-10-17T22:00:00Z")!!
+        val to = Rfc3339.parseMillis("2026-10-18T22:00:00Z")!!
+
+        val events = client.historyEvents("u2", from, to)
+
+        val req = server.takeRequest()
+        assertEquals("/api/v1/users/u2/history/events", req.url.encodedPath)
+        assertEquals("2026-10-17T22:00:00.000Z", req.url.queryParameter("from"))
+        assertEquals("2026-10-18T22:00:00.000Z", req.url.queryParameter("to"))
+        assertEquals(AlertKind.SOS, events.single().kind)
+    }
+
+    @Test
+    fun `history days are a 404 when not allowed`() = runBlocking {
+        server.enqueue(error(404, "not_found"))
+        try {
+            client.historyDays("u2", listOf(0L, 1L))
+            fail("expected 404")
+        } catch (e: ApiException.Server) {
+            assertEquals(404, e.status)
+        }
+    }
+
+    @Test
     fun `history grant is a PATCH with history only`() = runBlocking {
         server.enqueue(noContent())
         client.setShareHistory("u2", true)

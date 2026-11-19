@@ -485,20 +485,67 @@
     <!-- Verlauf -->
     <string name="history_title">Verlauf von %1$s</string>
     <string name="history_title_self">Mein Verlauf</string>
+    <string name="history_tab_title">Verlauf</string>
     <string name="history_today">Heute</string>
-    <string name="history_yesterday">Gestern</string>
     <string name="history_pick_day">Datum wählen</string>
     <string name="history_show_day">Anzeigen</string>
+    <string name="history_prev_day">Vorheriger Tag</string>
+    <string name="history_next_day">Nächster Tag</string>
+    <string name="history_person_me">Ich</string>
+    <string name="history_people">Wessen Verlauf</string>
     <string name="history_empty">Für diesen Tag gibt es keine Positionen.</string>
     <string name="history_not_available">Dieser Verlauf ist nicht (mehr) verfügbar: Er wurde nicht mit dir geteilt, das Teilen ist pausiert oder der Verlauf ist ausgeschaltet.</string>
-    <plurals name="history_count">
-        <item quantity="one">%1$d Position</item>
-        <item quantity="other">%1$d Positionen</item>
-    </plurals>
+    <string name="history_off_self">Dein Verlauf ist ausgeschaltet. Schalte in den Einstellungen „Standortverlauf speichern“ ein – ab dann werden deine Wege gespeichert.</string>
+    <string name="history_none">Bisher hat niemand seinen Verlauf mit dir geteilt.</string>
+    <string name="history_to_settings">Zu den Einstellungen</string>
     <plurals name="history_map_cd">
         <item quantity="one">Karte mit dem Weg des Tages, %1$d Position</item>
         <item quantity="other">Karte mit dem Weg des Tages, %1$d Positionen</item>
     </plurals>
+    <string name="history_week">Woche</string>
+    <string name="history_week_day_cd">%1$s: %2$s</string>
+    <string name="history_week_no_data">keine Positionen</string>
+    <string name="history_week_none">–</string>
+    <string name="history_summary">Tagesübersicht</string>
+    <string name="history_distance">Strecke</string>
+    <string name="history_distance_value">ca. %1$s</string>
+    <string name="history_moving">Unterwegs</string>
+    <plurals name="history_stays">
+        <item quantity="one">%1$d Aufenthalt</item>
+        <item quantity="other">%1$d Aufenthalte</item>
+    </plurals>
+    <plurals name="history_places">
+        <item quantity="one">%1$d Ort</item>
+        <item quantity="other">%1$d Orte</item>
+    </plurals>
+    <string name="history_span">%1$s – %2$s</string>
+    <string name="history_battery_range">Akku %1$d–%2$d %%</string>
+    <string name="history_battery_chart_cd">Akkustand im Tagesverlauf: tiefster %1$d %%, höchster %2$d %%</string>
+    <string name="history_play">Tag abspielen</string>
+    <string name="history_pause">Anhalten</string>
+    <string name="history_time_slider">Uhrzeit</string>
+    <string name="history_head_battery">Akku %1$d %%</string>
+    <string name="history_head_speed">%1$d km/h</string>
+    <string name="history_head_no_data">keine Daten</string>
+    <string name="history_timeline">Zeitachse</string>
+    <string name="history_stay">Aufenthalt</string>
+    <string name="history_walk">Zu Fuss</string>
+    <string name="history_ride">Fahrt</string>
+    <string name="history_avg_speed">Ø %1$d km/h</string>
+    <string name="history_gap">Keine Standortdaten</string>
+    <string name="history_gap_distance">Luftlinie %1$s</string>
+    <string name="history_event_check_in">Ankunft gemeldet</string>
+    <string name="history_event_check_in_at">Ankunft gemeldet: %1$s</string>
+    <string name="history_event_sos">SOS-Alarm ausgelöst</string>
+    <string name="history_event_sos_resolved">Wieder in Sicherheit</string>
+    <string name="history_event_battery_low">Akku schwach: %1$d %%</string>
+    <string name="history_event_last_location">Handy ausgeschaltet</string>
+    <plurals name="history_dropped">
+        <item quantity="one">%1$d ungenaue Position nicht eingezeichnet</item>
+        <item quantity="other">%1$d ungenaue Positionen nicht eingezeichnet</item>
+    </plurals>
+    <string name="history_truncated">Es werden nur die letzten 5000 Positionen dieses Tages gezeigt.</string>
+    <string name="nav_history">Verlauf</string>
 
     <!-- Einstellungen: Alarme und Fernzugriff -->
     <string name="settings_history_open">Meinen Verlauf ansehen</string>

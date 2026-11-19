@@ -498,6 +498,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{userId}/history/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Day overview of a person's history – number of positions and distance per interval (e.g. the viewer's local days of a week).
+         * @description Same access rule as GET /users/{userId}/locations (anything not allowed is a plain 404).
+         *     The client sends the interval boundaries (its local midnights), so no time zone is needed on the server.
+         *     Distance rule (shared with the clients' timeline): only plausible points (not suspect, accuracy ≤ 200 m);
+         *     a step between consecutive points counts only if it is at least as long as the larger accuracy of both and 25 m.
+         *     Steps across an interval boundary are not counted.
+         */
+        get: operations["listHistoryDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/history/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The person's SOS, check-ins and battery alerts in a time range, for the history timeline.
+         * @description Same access rule as GET /users/{userId}/locations. The owner sees all own events; others only alerts they
+         *     received and may still read (never more than GET /alerts). Kinds: sos, sos_resolved, check_in, battery_low,
+         *     last_location – arrivals/departures are derived from the positions. Oldest first, at most 500.
+         */
+        get: operations["listHistoryEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{userId}/ring": {
         parameters: {
             query?: never;
@@ -1046,6 +1092,20 @@ export interface components {
             id: string;
             /** @description Flagged as implausible GPS jump. */
             suspect: boolean;
+        };
+        HistoryDay: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            /** @description Plausible positions in the interval. */
+            points: number;
+            /** @description Distance travelled (rule in GET /users/{userId}/history/days). */
+            distance_m: number;
+            /** Format: date-time */
+            first_at: string | null;
+            /** Format: date-time */
+            last_at: string | null;
         };
         MapMember: {
             /** Format: uuid */
@@ -2160,6 +2220,67 @@ export interface operations {
                 content: {
                     "application/json": {
                         points: components["schemas"]["HistoryPoint"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listHistoryDays: {
+        parameters: {
+            query: {
+                /** @description 2–63 comma-separated, strictly increasing RFC 3339 timestamps spanning at most 63 days. */
+                bounds: string;
+            };
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One entry per interval [bounds[i], bounds[i+1]), in order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        days: components["schemas"]["HistoryDay"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listHistoryEvents: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description After from, at most 63 days later. */
+                to: string;
+            };
+            header?: never;
+            path: {
+                userId: components["parameters"]["UserId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Events, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        events: components["schemas"]["Alert"][];
                     };
                 };
             };

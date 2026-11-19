@@ -56,6 +56,7 @@ import org.familycircle.android.ui.auth.LoginScreen
 import org.familycircle.android.ui.components.LocalAppContainer
 import org.familycircle.android.ui.components.windowWidthDp
 import org.familycircle.android.ui.family.FamilyScreen
+import org.familycircle.android.ui.history.HistoryPerson
 import org.familycircle.android.ui.history.HistoryScreen
 import org.familycircle.android.ui.home.HomeScreen
 import org.familycircle.android.ui.map.MapScreen
@@ -106,6 +107,9 @@ fun AppRoot() {
 
 @Serializable object SettingsRoute
 
+/** The "History" tab: my own history, or the first person who shared theirs with me. */
+@Serializable object HistoryTabRoute
+
 @Serializable object PermissionsRoute
 
 @Serializable data class HistoryRoute(val userId: String, val name: String, val self: Boolean)
@@ -116,6 +120,7 @@ private val tabs = listOf(
     Tab(MapRoute, MapRoute::class, R.string.nav_map, R.drawable.ic_nav_map),
     Tab(HomeRoute, HomeRoute::class, R.string.nav_home, R.drawable.ic_nav_sharing),
     Tab(FamilyRoute, FamilyRoute::class, R.string.nav_family, R.drawable.ic_nav_family),
+    Tab(HistoryTabRoute, HistoryTabRoute::class, R.string.nav_history, R.drawable.ic_nav_history),
     Tab(SettingsRoute, SettingsRoute::class, R.string.nav_settings, R.drawable.ic_nav_settings),
 )
 
@@ -163,7 +168,7 @@ private fun MainScaffold() {
                             // The label is the accessible name; the icon is decorative.
                             icon = { Icon(painterResource(tab.icon), contentDescription = null) },
                             label = { Text(stringResource(tab.label), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            // At large font scales four labels do not fit; only the selected one is shown
+                            // At large font scales five labels do not fit; only the selected one is shown
                             // (the others keep their label as accessible name).
                             alwaysShowLabel = !largeFont,
                         )
@@ -202,9 +207,14 @@ private fun MainScaffold() {
                             },
                         )
                     }
+                    composable<HistoryTabRoute> { HistoryScreen(initial = null, onBack = null, onOpenSettings = { open(SettingsRoute) }) }
                     composable<HistoryRoute> { entry ->
                         val route = entry.toRoute<HistoryRoute>()
-                        HistoryScreen(route.userId, route.name, route.self, onBack = { nav.popBackStack() })
+                        HistoryScreen(
+                            initial = HistoryPerson(route.userId, route.name, route.self),
+                            onBack = { nav.popBackStack() },
+                            onOpenSettings = { open(SettingsRoute) },
+                        )
                     }
                     composable<PermissionsRoute> { PermissionScreen(onDone = { nav.popBackStack() }, onBack = { nav.popBackStack() }) }
                 }

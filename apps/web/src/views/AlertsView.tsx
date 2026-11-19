@@ -56,7 +56,7 @@ function AlertRow({ a, active, when, onShow }: { a: Alert; active: boolean; when
   return (
     <li className={"alert-row kind-" + a.kind + (active ? " active" : "")}>
       <span className="alert-icon" aria-hidden="true">
-        {kindIcon(a.kind)}
+        {alertKindIcon(a.kind)}
       </span>
       <div className="grow">
         <div className="name">
@@ -80,7 +80,8 @@ function AlertRow({ a, active, when, onShow }: { a: Alert; active: boolean; when
   );
 }
 
-function kindIcon(kind: Alert["kind"]) {
+/** Icon of an alert kind (alert list, history timeline). */
+export function alertKindIcon(kind: Alert["kind"]) {
   switch (kind) {
     case "sos":
       return <span className="sos-text">SOS</span>;

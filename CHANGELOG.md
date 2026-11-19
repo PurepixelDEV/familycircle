@@ -5,6 +5,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefügt – Verlauf mit Zeitachse (docs/ALERTS.md, Abschnitt „Verlauf“)
+- **Zeitachse pro Tag**: Aufenthalte (mit Ortsnamen und Dauer), Wege (zu Fuss / Fahrt, Strecke, Dauer,
+  Ø-Tempo), Lücken ohne Daten sowie Check-ins, SOS und Akku-Meldungen zur richtigen Uhrzeit. Antippen zeigt
+  den Abschnitt auf der Karte.
+- **Tagesüberblick**: Strecke, Zeit unterwegs, Aufenthalte/Orte, aktiv von–bis, Akkuverlauf.
+- **Abspielen**: Zeitregler und Wiedergabe des Tages auf der Karte (Uhrzeit, Akku, Tempo).
+- **Wochenleiste** mit Kilometern pro Tag; Tage blättern mit ‹ ›.
+- **Eigener Menüpunkt „Verlauf“** mit Auswahl, wessen Verlauf (ich und alle, die ihn freigegeben haben).
+- API: `GET /users/{id}/history/days` (Wochenüberblick) und `GET /users/{id}/history/events`, gleiche
+  Zugriffsregel wie der Verlauf. Keine Datenbankmigration.
+
 ## [0.3.0] - 2026-10-18
 
 Phase 3: Sicherheitsfunktionen für die Familie und Einladen per Link. Update über 0.2.x ohne

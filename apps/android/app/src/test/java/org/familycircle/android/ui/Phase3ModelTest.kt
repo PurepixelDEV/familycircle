@@ -17,7 +17,7 @@ import org.familycircle.android.map.MapGeoJson
 import org.familycircle.android.map.PlaceShape
 import org.familycircle.android.map.SosPin
 import org.familycircle.android.ui.family.RadiusScale
-import org.familycircle.android.ui.history.HistoryModel
+import org.familycircle.android.ui.history.TimelineModel
 import org.familycircle.android.util.Geo
 import org.familycircle.android.util.Rfc3339
 import org.junit.Assert.assertEquals
@@ -115,22 +115,23 @@ class Phase3ModelTest {
     @Test
     fun `a day is local midnight to midnight, also on daylight saving days`() {
         val zone = ZoneId.of("Europe/Zurich")
-        val (from, to) = HistoryModel.dayRange(LocalDate.of(2026, 10, 25), zone) // clocks go back: 25 h
+        val (from, to) = TimelineModel.dayRange(LocalDate.of(2026, 10, 25), zone) // clocks go back: 25 h
         assertEquals("2026-10-24T22:00:00.000Z", Rfc3339.format(from))
         assertEquals("2026-10-25T23:00:00.000Z", Rfc3339.format(to))
     }
 
     @Test
-    fun `track skips suspect points and is ordered oldest first`() {
-        fun p(id: String, at: String, suspect: Boolean = false) = HistoryPoint(id, suspect, 1.0, 2.0, 5.0, recordedAt = at)
-        val track = HistoryModel.track(
+    fun `track skips suspect and vague points and is ordered oldest first`() {
+        fun p(id: String, at: String, suspect: Boolean = false, acc: Double = 5.0) = HistoryPoint(id, suspect, 1.0, 2.0, acc, recordedAt = at)
+        val track = TimelineModel.usablePoints(
             listOf(
                 p("c", "2026-10-18T10:00:00Z"),
                 p("b", "2026-10-18T09:00:00Z", suspect = true),
+                p("v", "2026-10-18T09:30:00Z", acc = 900.0),
                 p("a", "2026-10-18T08:00:00Z"),
                 p("x", "not a time"),
             ),
         )
-        assertEquals(listOf("2026-10-18T08:00:00.000Z", "2026-10-18T10:00:00.000Z"), track.map { Rfc3339.format(it.atMs) })
+        assertEquals(listOf("2026-10-18T08:00:00.000Z", "2026-10-18T10:00:00.000Z"), track.map { Rfc3339.format(it.t) })
     }
 }
