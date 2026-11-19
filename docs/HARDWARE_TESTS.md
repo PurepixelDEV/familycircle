@@ -66,6 +66,7 @@ und ersetzen keinen Hardwaretest. Kurzanleitung für Testerinnen und Tester: [TE
 | H-31 | B erlaubt „Standort aktualisieren“; A tippt darauf, B ruhend | Neue Position von B erscheint bei A innerhalb von ~30 s |
 | H-32 | Check-in von A mit Nachricht | B: „A ist angekommen – {Ort}“ mit Nachricht |
 | H-33 | Verlauf: A schaltet Verlauf ein und gibt ihn für B frei; B öffnet A’s Verlauf | Linie des Tages sichtbar; nach Widerruf sofort nicht mehr abrufbar |
+| H-34 | Zeitachse: A teilt einen ganzen Tag mit Verlauf an (zu Hause, Weg zu Fuss, Fahrt mit Auto/Velo/ÖV, Aufenthalt an einem Ort); B öffnet abends A’s Verlauf | Aufenthalte an den richtigen Orten mit plausibler Dauer, Wege als „zu Fuss“ bzw. „Fahrt“ erkannt, Tagesstrecke plausibel (± 10 % gegenüber Karten-App), keine Schein-Aufenthalte an Ampeln; Wochenleiste zeigt dieselbe Strecke wie der Tag |
 
 ## Ergebnisse (physische Geräte)
 | Datum | Test | Gerät / Android | Ergebnis | Notizen / Diagnose |

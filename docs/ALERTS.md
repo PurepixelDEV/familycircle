@@ -1,6 +1,6 @@
 # Meldungen, Orte, Fernaktionen und Verlauf (Phase 3)
 
-Stand: 2026-10-18 · API-Vertrag: `packages/api-contract/openapi.yaml` (Version 0.3.0)
+Stand: 2026-11-19 · API-Vertrag: `packages/api-contract/openapi.yaml` (Version 0.4.0)
 
 Grundsatz: **Privatsphäre zuerst.** Alles Automatische (Ankunft, Akku) geht nur an Personen, die den
 Standort ohnehin sehen dürfen. Fernaktionen bei anderen brauchen deren Einwilligung (Standard: aus).
