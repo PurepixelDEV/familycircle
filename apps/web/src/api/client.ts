@@ -22,6 +22,7 @@ export type Place = Schemas["Place"];
 export type PlaceInput = Schemas["PlaceInput"];
 export type Position = Schemas["Position"];
 export type HistoryPoint = Schemas["HistoryPoint"];
+export type HistoryDay = Schemas["HistoryDay"];
 export type ShareEntry = Schemas["ShareEntry"];
 export type AlertCreated = components["responses"]["AlertCreated"]["content"]["application/json"];
 export type RemoteRequest = components["responses"]["RemoteRequest"]["content"]["application/json"];
@@ -135,6 +136,12 @@ export const api = {
   /** History of a person: my own, or someone who granted it (anything else is a 404). Newest first. */
   userLocations: (userId: string, q: { from: string; to: string; limit?: number }) =>
     request<{ points: HistoryPoint[] }>("GET", `/users/${userId}/locations?${query({ from: q.from, to: q.to, limit: q.limit ?? 5000 })}`),
+  /** Positions and distance per interval [bounds[i], bounds[i+1]) – e.g. the local days of a week. */
+  historyDays: (userId: string, bounds: string[]) =>
+    request<{ days: HistoryDay[] }>("GET", `/users/${userId}/history/days?${query({ bounds: bounds.join(",") })}`),
+  /** The person's SOS, check-ins and battery alerts in the range (history timeline), oldest first. */
+  historyEvents: (userId: string, q: { from: string; to: string }) =>
+    request<{ events: Alert[] }>("GET", `/users/${userId}/history/events?${query(q)}`),
 
   alerts: (after = 0, limit = 500) =>
     request<{ alerts: Alert[]; server_time: string }>("GET", `/alerts?${query({ after, limit })}`),

@@ -8,7 +8,7 @@ import { FamilyView } from "./views/FamilyView";
 import { PrivacyView } from "./views/PrivacyView";
 import { PairInfo } from "./views/PairInfo";
 import { AlertsView } from "./views/AlertsView";
-import { BellIcon, FamilyIcon, MapIcon, ShieldIcon } from "./components/icons";
+import { BellIcon, FamilyIcon, HistoryIcon, MapIcon, ShieldIcon } from "./components/icons";
 import { SosBanners } from "./components/Sos";
 import { ToastHost, useErrorText } from "./components/ui";
 import { AlertsProvider, useAlerts } from "./hooks/useAlerts";
@@ -103,12 +103,13 @@ function Shell({ path }: { path: string }) {
   const tabs = [
     { href: "/", label: t("nav.map"), icon: <MapIcon /> },
     { href: "/alerts", label: t("nav.alerts"), icon: <BellIcon />, badge: unread },
+    { href: "/history", label: t("nav.history"), icon: <HistoryIcon /> },
     { href: "/family", label: t("nav.family"), icon: <FamilyIcon /> },
     { href: "/privacy", label: t("nav.privacy"), icon: <ShieldIcon /> },
   ];
-  const historyOf = /^\/history\/([0-9a-fA-F-]{36})$/.exec(path)?.[1];
-  const view = historyOf ? (
-    <HistoryView key={historyOf} userId={historyOf} />
+  const historyMatch = /^\/history(?:\/([0-9a-fA-F-]{36}))?$/.exec(path);
+  const view = historyMatch ? (
+    <HistoryView userId={historyMatch[1]} />
   ) : path === "/family" ? (
     <FamilyView />
   ) : path === "/privacy" ? (
@@ -132,7 +133,7 @@ function Shell({ path }: { path: string }) {
           <a
             key={tab.href}
             href={tab.href}
-            aria-current={(tab.href === "/" ? !historyOf && !known.includes(path) : path === tab.href) ? "page" : undefined}
+            aria-current={(tab.href === "/" ? !historyMatch && !known.includes(path) : tab.href === "/history" ? !!historyMatch : path === tab.href) ? "page" : undefined}
             onClick={(e) => {
               e.preventDefault();
               navigate(tab.href);
