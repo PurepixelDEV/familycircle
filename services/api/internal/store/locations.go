@@ -266,26 +266,97 @@ func (s *Store) History(ctx context.Context, userID uuid.UUID, from, to time.Tim
 // (visibleSQL), the owner granted history on the share, and the owner has history enabled.
 // Otherwise ErrNotFound – the reader cannot tell "not allowed" from "no such user".
 func (s *Store) HistoryFor(ctx context.Context, viewer, owner uuid.UUID, from, to time.Time, limit int) ([]HistoryPoint, error) {
-	if viewer != owner {
-		var ok, battery bool
-		err := s.pool.QueryRow(ctx, `SELECT `+visibleSQL("$1", "$2")+`
-			AND EXISTS (SELECT 1 FROM location_shares hs WHERE hs.owner_id = $1 AND hs.viewer_id = $2 AND hs.history)
-			AND hu.history_enabled, hu.share_battery FROM user_settings hu WHERE hu.user_id = $1`, owner, viewer).Scan(&ok, &battery)
-		if err != nil {
-			return nil, notFound(err)
-		}
-		if !ok {
-			return nil, ErrNotFound
-		}
-		points, err := s.History(ctx, owner, from, to, limit)
-		if !battery {
-			for i := range points {
-				points[i].Location = points[i].WithoutBattery()
-			}
-		}
-		return points, err
+	battery, err := s.historyAccess(ctx, viewer, owner)
+	if err != nil {
+		return nil, err
 	}
-	return s.History(ctx, owner, from, to, limit)
+	points, err := s.History(ctx, owner, from, to, limit)
+	if !battery {
+		for i := range points {
+			points[i].Location = points[i].WithoutBattery()
+		}
+	}
+	return points, err
+}
+
+// historyAccess is THE rule for reading someone's history (points, day summaries, events): the
+// owner always; others need a visible location, the owner's history grant on the share and history
+// enabled – otherwise ErrNotFound. battery reports whether battery values may be shown.
+func (s *Store) historyAccess(ctx context.Context, viewer, owner uuid.UUID) (battery bool, err error) {
+	if viewer == owner {
+		return true, nil
+	}
+	var ok bool
+	err = s.pool.QueryRow(ctx, `SELECT `+visibleSQL("$1", "$2")+`
+		AND EXISTS (SELECT 1 FROM location_shares hs WHERE hs.owner_id = $1 AND hs.viewer_id = $2 AND hs.history)
+		AND hu.history_enabled, hu.share_battery FROM user_settings hu WHERE hu.user_id = $1`, owner, viewer).Scan(&ok, &battery)
+	if err != nil {
+		return false, notFound(err)
+	}
+	if !ok {
+		return false, ErrNotFound
+	}
+	return battery, nil
+}
+
+// HistoryDay summarises one interval of a day overview (GET /users/{id}/history/days).
+type HistoryDay struct {
+	From, To  time.Time
+	Points    int
+	DistanceM float64
+	FirstAt   *time.Time
+	LastAt    *time.Time
+}
+
+// Distance rule shared with the clients (web lib/timeline.ts, Android TimelineModel): only
+// plausible points (not suspect, accuracy ≤ TimelineMaxAccuracyM) count, and a step between two
+// consecutive points is only added when it is at least as long as the larger accuracy of both and
+// TimelineMinStepM – shorter steps are measurement noise of someone standing still.
+const (
+	TimelineMaxAccuracyM = 200
+	TimelineMinStepM     = 25
+)
+
+// HistoryDays summarises owner's history per interval [bounds[i], bounds[i+1]) for viewer (same
+// access rule as HistoryFor). The client sends its local midnights, so days with a daylight-saving
+// change need no time zone on the server. Steps across an interval boundary are not counted.
+func (s *Store) HistoryDays(ctx context.Context, viewer, owner uuid.UUID, bounds []time.Time) ([]HistoryDay, error) {
+	if _, err := s.historyAccess(ctx, viewer, owner); err != nil {
+		return nil, err
+	}
+	rows, err := s.pool.Query(ctx, `
+		WITH p AS (
+			SELECT width_bucket(l.recorded_at, $2::timestamptz[]) AS b, l.recorded_at, l.position, l.accuracy_m
+			FROM location_history l
+			WHERE l.user_id = $1 AND NOT l.suspect AND l.accuracy_m <= $3::float8
+			  AND l.recorded_at >= ($2::timestamptz[])[1] AND l.recorded_at < ($2::timestamptz[])[cardinality($2::timestamptz[])]
+		), s AS (
+			SELECT b, recorded_at,
+			       ST_Distance(lag(position) OVER w, position, false) AS step,
+			       greatest(accuracy_m::float8, (lag(accuracy_m) OVER w)::float8, $4::float8) AS noise
+			FROM p WINDOW w AS (PARTITION BY b ORDER BY recorded_at)
+		)
+		SELECT b, count(*), coalesce(sum(step) FILTER (WHERE step >= noise), 0)::float8, min(recorded_at), max(recorded_at)
+		FROM s GROUP BY b`, owner, bounds, TimelineMaxAccuracyM, TimelineMinStepM)
+	if err != nil {
+		return nil, err
+	}
+	days := make([]HistoryDay, len(bounds)-1)
+	for i := range days {
+		days[i] = HistoryDay{From: bounds[i], To: bounds[i+1]}
+	}
+	var b, n int
+	var dist float64
+	var first, last time.Time
+	_, err = pgx.ForEachRow(rows, []any{&b, &n, &dist, &first, &last}, func() error {
+		if b >= 1 && b <= len(days) {
+			d := &days[b-1]
+			f, l := first, last
+			d.Points, d.DistanceM, d.FirstAt, d.LastAt = n, dist, &f, &l
+		}
+		return nil
+	})
+	return days, err
 }
 
 // DeleteAllLocations removes every stored position of the user (latest and history).

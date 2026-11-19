@@ -166,6 +166,28 @@ func (s *Store) ListAlerts(ctx context.Context, me uuid.UUID, after int64, limit
 	return pgx.CollectRows(rows, scanAlert)
 }
 
+// TimelineKinds are the alert kinds shown in a person's history timeline. Arrival/departure are
+// left out: the timeline derives stays at places from the positions itself.
+var TimelineKinds = []string{AlertSOS, AlertSOSResolved, AlertCheckIn, AlertBatteryLow, AlertLastLocation}
+
+// HistoryEvents returns owner's timeline alerts created in [from, to), oldest first, for viewer
+// (access as for HistoryFor). The owner sees all of them; others only those they received and may
+// still read – the timeline never reveals more than the alert list itself.
+func (s *Store) HistoryEvents(ctx context.Context, viewer, owner uuid.UUID, from, to time.Time) ([]Alert, error) {
+	if _, err := s.historyAccess(ctx, viewer, owner); err != nil {
+		return nil, err
+	}
+	rows, err := s.pool.Query(ctx, `SELECT `+alertColumns+`, a.actor_id = $2 FROM alerts a JOIN users u ON u.id = a.actor_id
+		WHERE a.actor_id = $1 AND a.kind = ANY($3) AND a.created_at >= $4 AND a.created_at < $5
+		  AND (a.actor_id = $2 OR (EXISTS (SELECT 1 FROM alert_recipients r WHERE r.alert_id = a.id AND r.user_id = $2)
+		                           AND `+readableSQL("$2")+`))
+		ORDER BY a.created_at, a.id LIMIT 500`, owner, viewer, TimelineKinds, from, to)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, scanAlert)
+}
+
 // SentAlerts returns every alert the actor created (data export).
 func (s *Store) SentAlerts(ctx context.Context, actor uuid.UUID) ([]Alert, error) {
 	rows, err := s.pool.Query(ctx, `SELECT `+alertColumns+`, true FROM alerts a JOIN users u ON u.id = a.actor_id
