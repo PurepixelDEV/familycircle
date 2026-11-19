@@ -1,6 +1,6 @@
 # Projektstatus
 
-Stand: **2026-10-18** · Version **0.3.0** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
+Stand: **2026-11-19** · Version **0.4.0** · Phase 1.5 (benutzbare Familien-App, Hardware-Testbereitschaft)
 
 Legende: ✅ automatisiert getestet · 🧪 Ende-zu-Ende getestet (Emulator/Browser/Docker) · 📱 **Hardwaretest offen** · ⏳ offen
 
@@ -63,6 +63,19 @@ Check-in und Verlauf – Regeln in [ALERTS.md](ALERTS.md). Kinderkonten und iPho
 | Android | **238** JVM-Tests, Lint 0 Fehler; im Emulator: SOS empfangen/senden/beenden, Klingeln (Opt-in, Stopp, 60 s), Standort aktualisieren, Check-in, Akku ≤ 15 % einmalig, letzter Standort beim Ausschalten, Nachholen nach Prozess-Kill und per Worker, Orte, Verlauf |
 | Docker | Smoke-Test **19/19** (inkl. SOS, Klingeln ohne Opt-in = 403, Orte); Upgrade 0.2.1 → Phase 3 mit Daten, Downgrade verweigert |
 | Hardware | 📱 H-26 bis H-33 offen (u. a. Vollbild-SOS auf gesperrtem Handy, Doze, Hersteller) |
+
+## Verlauf mit Zeitachse (Release 0.4.0)
+Tageszeitachse (Aufenthalte mit Ortsnamen, Wege zu Fuss/Fahrt, Lücken, SOS/Check-in/Akku), Tagesüberblick,
+Wochenleiste und Abspielen – in Web und App. Gleiche Regeln in Web, App und Server (Tabelle in
+[ALERTS.md](ALERTS.md), Abschnitt „Verlauf“); keine Datenbankmigration.
+
+| Bereich | Ergebnis |
+|---|---|
+| Go-Backend | alle Tests grün gegen PostGIS; neu: Wochenüberblick (Distanzregel, Zugriff 404 → Freigabe → Verlauf-Erlaubnis, Validierung) und Ereignisse (nur lesbare Meldungen) |
+| Web | **89** Tests (neu: 14 Zeitachsen-Regeln, 4 Verlaufsansicht), Lint/TypeScript/API-Vertrag grün; im Browser geprüft (mobil, Desktop, dunkel) |
+| Android | **256** JVM-Tests (neu: 15 Zeitachsen-Regeln), Lint 0 Fehler; im Emulator gleiche Zahlen wie im Web (Strecke, Zeit unterwegs, Aufenthalte, Akku) |
+| CI | alle Checks grün inkl. Container-Image und End-to-End-Smoke-Test (PR #24) |
+| Hardware | 📱 H-34 offen (Erkennung zu Fuss/Fahrt und Aufenthalte mit echten GPS-Daten) |
 
 ## Offen – physische Hardwaretests 📱
 Alle 24 Fälle in [HARDWARE_TESTS.md](HARDWARE_TESTS.md) sind offen, insbesondere: zwei echte Handys gegenseitig

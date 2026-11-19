@@ -5,6 +5,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-19
+
+Verlauf mit Zeitachse: zurückschauen, wo jemand an einem Tag war – in Web und App. Update über 0.3.x ohne
+Neuanmeldung (gleicher Signaturschlüssel), keine Datenbankmigration. Hardwaretest mit echten GPS-Daten
+(H-34) steht noch aus.
+
 ### Hinzugefügt – Verlauf mit Zeitachse (docs/ALERTS.md, Abschnitt „Verlauf“)
 - **Zeitachse pro Tag**: Aufenthalte (mit Ortsnamen und Dauer), Wege (zu Fuss / Fahrt, Strecke, Dauer,
   Ø-Tempo), Lücken ohne Daten sowie Check-ins, SOS und Akku-Meldungen zur richtigen Uhrzeit. Antippen zeigt
